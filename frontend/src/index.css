@@ -1,0 +1,104 @@
+:root {
+  /* Renk paleti */
+  --color-text: #1a1a1a;
+  --color-bg: #ffffff;
+  --color-sidebar-bg: rgba(171, 204, 171, 0.2);
+  --color-card-bg: rgba(159, 177, 202, 0.26);
+  --color-header-button-bg: rgba(159, 177, 202, 0.44);
+
+  /* Font ve temel değerler */
+  --font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --font-size-base: 16px;
+  --radius: 8px;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* Genel bağlantı stilleri */
+a {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 500;
+}
+a:hover {
+  opacity: 0.8;
+}
+
+/* Buton stilleri */
+button {
+  border-radius: var(--radius);
+  border: none;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: var(--color-header-button-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background-color 0.25s ease;
+}
+
+button:hover {
+  background-color: rgba(159, 177, 202, 0.6);
+}
+
+/* Başlık stilleri */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+/* Layout sınıfları */
+.dashboard-layout {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+}
+
+.sidebar {
+  width: 240px;
+  background-color: var(--color-sidebar-bg);
+  padding: 1rem;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  overflow-y: auto;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+}
+
+.main-content {
+  margin-left: 240px;
+  width: calc(100% - 240px);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  height: 64px;
+  background-color: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 1rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
