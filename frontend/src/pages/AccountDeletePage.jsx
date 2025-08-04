@@ -57,7 +57,7 @@ const AccountDeletePage = () => {
 
   const handleDeleteAccount = async () => {
     try {
-      const res = await fetch(`http://localhost:8080/api/accounts/${selectedAccountId}`, {
+      const res = await fetch(`http://localhost:8080/api/accounts/delete/${selectedAccountId}`, {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error('Silme başarısız');

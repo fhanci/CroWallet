@@ -111,12 +111,12 @@ const AccountToAccountTransferPage = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(incomingTransfer),
         }),
-        fetch(`http://localhost:8080/api/accounts/${selectedSenderAccount.id}`, {
+        fetch(`http://localhost:8080/api/accounts/update/${selectedSenderAccount.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedSender),
         }),
-        fetch(`http://localhost:8080/api/accounts/${selectedReceiverAccount.id}`, {
+        fetch(`http://localhost:8080/api/accounts/update/${selectedReceiverAccount.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedReceiver),

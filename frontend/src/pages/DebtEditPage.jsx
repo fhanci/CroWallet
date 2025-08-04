@@ -101,7 +101,7 @@ const DebtEditPage = () => {
         const newAccount = await resNewAcc.json();
 
         const oldAccUpdatedBalance = oldAccount.balance - parseFloat(oldDebt.debtAmount);
-        const oldAccUpdateRes = await fetch(`http://localhost:8080/api/accounts/${oldAccount.id}`, {
+        const oldAccUpdateRes = await fetch(`http://localhost:8080/api/accounts/update/${oldAccount.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -113,7 +113,7 @@ const DebtEditPage = () => {
         if (!oldAccUpdateRes.ok) throw new Error("Eski hesap bakiyesi güncellenemedi");
 
         const newAccUpdatedBalance = newAccount.balance + parseFloat(selectedDebt.debtAmount);
-        const newAccUpdateRes = await fetch(`http://localhost:8080/api/accounts/${newAccount.id}`, {
+        const newAccUpdateRes = await fetch(`http://localhost:8080/api/accounts/update/${newAccount.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -169,7 +169,7 @@ const DebtEditPage = () => {
 
         const updatedBalance = accountToUpdate.balance + debtDifference;
 
-        const accountUpdateResponse = await fetch(`http://localhost:8080/api/accounts/${accountToUpdate.id}`, {
+        const accountUpdateResponse = await fetch(`http://localhost:8080/api/accounts/update/${accountToUpdate.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -202,7 +202,7 @@ const DebtEditPage = () => {
       }
 
       
-      const response = await fetch(`http://localhost:8080/api/debts/${selectedDebt.id}`, {
+      const response = await fetch(`http://localhost:8080/api/debts/update/${selectedDebt.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
