@@ -20,7 +20,7 @@ const AccountPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await fetch('http://localhost:8080/api/accounts');
+        const res = await fetch('http://localhost:8082/api/accounts');
         if (res.ok) {
           const data = await res.json();
           setAccounts(data.filter(a => a.user.id === parseInt(userId)));
@@ -35,7 +35,7 @@ const AccountPage = () => {
   useEffect(() => {
     const fetchTransfers = async () => {
       try {
-        const res = await fetch('http://localhost:8080/api/transfers');
+        const res = await fetch('http://localhost:8082/api/transfers');
         if (res.ok) {
           const data = await res.json();
           setTransfers(data.filter(t => t.user?.id === parseInt(userId)));
@@ -50,7 +50,7 @@ const AccountPage = () => {
   useEffect(() => {
     const fetchDebts = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/debts");
+        const res = await fetch("http://localhost:8082/api/debts");
         if (res.ok) {
           const data = await res.json();
           const filtered = data.filter(d => d.user?.id === parseInt(userId) && d.debtAmount > 0);

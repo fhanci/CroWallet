@@ -18,7 +18,7 @@ const NotificationPage = () => {
   useEffect(() => {
     const fetchDebts = async () => {
       try {
-        const res = await fetch('http://localhost:8080/api/debts');
+        const res = await fetch('http://localhost:8082/api/debts');
         if (res.ok) {
           const data = await res.json();
           const filtered = data

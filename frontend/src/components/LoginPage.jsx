@@ -25,7 +25,7 @@ const LoginPage = ({ onLoginSuccess }) => {
     setMessage('');
 
     try {
-      const response = await fetch('http://localhost:8080/api/users');
+      const response = await fetch('http://localhost:8082/api/users');
       if (!response.ok) throw new Error('Sunucuyla bağlantı kurulamadı!');
       const users = await response.json();
 
@@ -59,7 +59,7 @@ const LoginPage = ({ onLoginSuccess }) => {
     }
 
     try {
-      const checkResponse = await fetch('http://localhost:8080/api/users');
+      const checkResponse = await fetch('http://localhost:8082/api/users');
       if (!checkResponse.ok) throw new Error('Sunucuyla bağlantı kurulamadı!');
       const users = await checkResponse.json();
 
@@ -68,7 +68,7 @@ const LoginPage = ({ onLoginSuccess }) => {
         return;
       }
 
-      const response = await fetch('http://localhost:8080/api/users', {
+      const response = await fetch('http://localhost:8082/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), password, name: name.trim() }),

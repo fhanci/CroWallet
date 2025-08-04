@@ -8,7 +8,7 @@ const DebtPage = () => {
   useEffect(() => {
     const fetchDebts = async () => {
       try {
-        const response = await fetch("http://localhost:8080/api/debts");
+        const response = await fetch("http://localhost:8082/api/debts");
         if (!response.ok) throw new Error("Borçlar alınamadı");
         const data = await response.json();
         const userDebts = data.filter((debt) => debt.user?.id === parseInt(userId));
