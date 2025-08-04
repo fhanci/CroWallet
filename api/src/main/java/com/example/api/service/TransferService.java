@@ -1,5 +1,7 @@
 package com.example.api.service;
 
+import com.example.api.dto.TransferDTO;
+import com.example.api.mapper.TransferMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,20 +20,22 @@ public class TransferService {
         this.transferRepository = transferRepository;
     }
 
-    public Transfer createTransfer(Transfer transfer) {
-        return transferRepository.save(transfer);
+    public TransferDTO createTransfer(TransferDTO transfer) {
+        Transfer transfer1 = TransferMapper.INSTANCE.toTransfer(transfer);
+        transferRepository.save(transfer1);
+        return transfer;
     }
 
-    public List<Transfer> getAllTransfers() {
-        return transferRepository.findAll();
+    public List<TransferDTO> getAllTransfers() {
+        return TransferMapper.INSTANCE.toTransferDTOList(transferRepository.findAll());
     }
 
-    public Transfer getTransferById(Long id) {
-        return transferRepository.findById(id)
-                .orElseThrow(() -> new GeneralException("Transfer not found: " + id));
+    public TransferDTO getTransferById(Long id) {
+        return TransferMapper.INSTANCE.toTransferDTO(transferRepository.findById(id)
+                .orElseThrow(() -> new GeneralException("Transfer not found: " + id)));
     }
 
-    public Transfer updateTransfer(Long id, Transfer updatedTransfer) {
+    public TransferDTO updateTransfer(Long id, TransferDTO updatedTransfer) {
         Transfer existingTransfer = transferRepository.findById(id)
                 .orElseThrow(() -> new GeneralException("Transfer to be updated not found: " + id));
 
@@ -44,10 +48,10 @@ public class TransferService {
         existingTransfer.setType(updatedTransfer.getType());
         existingTransfer.setDetails(updatedTransfer.getDetails());
         existingTransfer.setExchangeRate(updatedTransfer.getExchangeRate());
-        existingTransfer.setUser(updatedTransfer.getUser());
-        existingTransfer.setAccount(updatedTransfer.getAccount());
+        existingTransfer.setUserId(updatedTransfer.getUserId());
+        existingTransfer.setAccountId(updatedTransfer.getAccountId());
 
-        return transferRepository.save(existingTransfer);
+        return TransferMapper.INSTANCE.toTransferDTO(transferRepository.save(existingTransfer));
     }
 
     public void deleteTransfer(Long id) {

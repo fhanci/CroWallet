@@ -1,6 +1,8 @@
 package com.example.api.service;
 
 import com.example.api.dto.UserDTO;
+import com.example.api.mapper.UserMapper;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,20 +20,23 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public User createUser(User user) {
-        return userRepository.save(user);
+    public UserDTO createUser(UserDTO user) {
+        User user1 = UserMapper.INSTANCE.toUser(user);
+        userRepository.save(user1);
+        return user;
     }
 
     public List<UserDTO> getAllUsers() {
-        return userRepository.findAll();
+        return UserMapper.INSTANCE.toUserDTOList(userRepository.findAll());
     }
 
-    public User getUserById(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new GeneralException("User not found: " + id));
+    public UserDTO getUserById(Long id) {
+        return UserMapper.INSTANCE.toUserDTO(userRepository.findById(id)
+                .orElseThrow(() -> new GeneralException("User not found: " + id)));
     }
 
-    public User updateUser(Long id, User updatedUser) {
+    @Transactional
+    public UserDTO updateUser(Long id, UserDTO updatedUser) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new GeneralException("User to be updated not found: " + id));
 
@@ -39,7 +44,8 @@ public class UserService {
         existingUser.setPassword(updatedUser.getPassword());
         existingUser.setEmail(updatedUser.getEmail());
 
-        return userRepository.save(existingUser);
+        userRepository.save(existingUser);
+        return UserMapper.INSTANCE.toUserDTO(existingUser);
     }
 
     public void deleteUser(Long id) {

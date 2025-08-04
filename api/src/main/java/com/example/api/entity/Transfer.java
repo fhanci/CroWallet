@@ -58,10 +58,10 @@ public class Transfer {
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
-    private User user;
+    private Long userId;
 
     @ManyToOne
     @JoinColumn(name = "account_id", referencedColumnName = "id")
-    private Account account;
+    private Long accountId;
 
 }

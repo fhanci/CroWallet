@@ -1,5 +1,8 @@
 package com.example.api.service;
 
+import com.example.api.dto.DebtDTO;
+import com.example.api.mapper.DebtMapper;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,20 +30,23 @@ public class DebtService {
         this.debtRepository = debtRepository;
     }
 
-    public Debt createDebt(Debt debt) {
-        return debtRepository.save(debt);
+    public DebtDTO createDebt(DebtDTO debt) {
+        Debt debt1 = DebtMapper.INSTANCE.toDebt(debt);
+        debtRepository.save(debt1);
+        return debt;
     }
 
-    public List<Debt> getAllDebts() {
-        return debtRepository.findAll();
+    public List<DebtDTO> getAllDebts() {
+        return DebtMapper.INSTANCE.toDebtDTOList(debtRepository.findAll());
     }
 
-    public Debt getDebtById(Long id) {
-        return debtRepository.findById(id)
-                .orElseThrow(() -> new GeneralException("Debt not found: " + id));
+    public DebtDTO getDebtById(Long id) {
+        return DebtMapper.INSTANCE.toDebtDTO(debtRepository.findById(id)
+                .orElseThrow(() -> new GeneralException("Debt not found: " + id)));
     }
 
-    public Debt updateDebt(Long id, Debt updatedDebt) {
+    @Transactional
+    public DebtDTO updateDebt(Long id, DebtDTO updatedDebt) {
         Debt existingDebt = debtRepository.findById(id)
                 .orElseThrow(() -> new GeneralException("Debt to be updated not found: " + id));
 
@@ -52,22 +58,16 @@ public class DebtService {
         existingDebt.setDueDate(updatedDebt.getDueDate());
 
         // Hesap bilgisi set et
-        if (updatedDebt.getAccount() != null && updatedDebt.getAccount().getId() != null) {
-            existingDebt.setAccount(
-                accountRepository.findById(updatedDebt.getAccount().getId())
-                    .orElseThrow(() -> new GeneralException("Account not found: " + updatedDebt.getAccount().getId()))
-            );
+        if (userRepository.findById(updatedDebt.getAccountId()).isPresent() && updatedDebt.getAccountId() != null) {
+            existingDebt.setAccountId(updatedDebt.getAccountId());
         }
 
         // Kullanıcı bilgisi set et
-        if (updatedDebt.getUser() != null && updatedDebt.getUser().getId() != null) {
-            existingDebt.setUser(
-                userRepository.findById(updatedDebt.getUser().getId())
-                    .orElseThrow(() -> new GeneralException("User not found: " + updatedDebt.getUser().getId()))
-            );
+        if (userRepository.findById(updatedDebt.getUserId()).isPresent() && updatedDebt.getUserId() != null) {
+            existingDebt.setUserId(updatedDebt.getUserId());
         }
+        return DebtMapper.INSTANCE.toDebtDTO(debtRepository.save(existingDebt));
 
-        return debtRepository.save(existingDebt);
     }
 
     public void deleteDebt(Long id) {

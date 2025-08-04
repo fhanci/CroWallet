@@ -1,5 +1,8 @@
 package com.example.api.service;
 
+import com.example.api.dto.AccountDTO;
+import com.example.api.mapper.AccountMapper;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,26 +15,25 @@ import com.example.api.repository.AccountRepository;
 @Service
 public class AccountService {
     @Autowired
-    private final AccountRepository accountRepository;
+    private AccountRepository accountRepository;
 
-    public AccountService(AccountRepository accountRepository) {
-        this.accountRepository = accountRepository;
+    public AccountDTO createAccount(AccountDTO account) {
+        Account account1 = AccountMapper.INSTANCE.toAccount(account);
+        accountRepository.save(account1);
+        return AccountMapper.INSTANCE.toAccountDTO(account1);
     }
 
-    public Account createAccount(Account account) {
-        return accountRepository.save(account);
+    public List<AccountDTO> getAllAccounts() {
+        return AccountMapper.INSTANCE.toAccountDTOList(accountRepository.findAll());
     }
 
-    public List<Account> getAllAccounts() {
-        return accountRepository.findAll();
+    public AccountDTO getAccountById(Long id) {
+        return AccountMapper.INSTANCE.toAccountDTO(accountRepository.findById(id)
+                .orElseThrow(() -> new GeneralException("Account not found: " + id)));
     }
 
-    public Account getAccountById(Long id) {
-        return accountRepository.findById(id)
-                .orElseThrow(() -> new GeneralException("Account not found: " + id));
-    }
-
-    public Account updateAccount(Long id, Account updatedAccount) {
+    @Transactional
+    public AccountDTO updateAccount(Long id, AccountDTO updatedAccount) {
         Account existingAccount = accountRepository.findById(id)
                 .orElseThrow(() -> new GeneralException("Account to be updated not found: " + id));
 
@@ -39,9 +41,9 @@ public class AccountService {
         existingAccount.setAccountName(updatedAccount.getAccountName());
         existingAccount.setBalance(updatedAccount.getBalance());
         existingAccount.setCurrency(updatedAccount.getCurrency());
-        existingAccount.setUser(updatedAccount.getUser());
+        existingAccount.setUserId(updatedAccount.getUserId());
 
-        return accountRepository.save(existingAccount);
+        return AccountMapper.INSTANCE.toAccountDTO(accountRepository.save(existingAccount));
     }
 
     public void deleteAccount(Long id) {

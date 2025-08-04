@@ -32,7 +32,7 @@ public class Debt {
     private String status;
 
     @Column(name = "warning_period")
-    private Long warningPeriod;
+    private Integer warningPeriod;
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
@@ -40,5 +40,5 @@ public class Debt {
 
     @ManyToOne
     @JoinColumn(name = "account_id", referencedColumnName = "id")
-    private Long account;
+    private Long accountId;
 }
