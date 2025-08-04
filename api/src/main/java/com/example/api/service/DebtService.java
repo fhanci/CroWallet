@@ -35,12 +35,12 @@ public class DebtService {
         return debtRepository.findAll();
     }
 
-    public Debt getDebtById(Integer id) {
+    public Debt getDebtById(Long id) {
         return debtRepository.findById(id)
                 .orElseThrow(() -> new GeneralException("Debt not found: " + id));
     }
 
-    public Debt updateDebt(Integer id, Debt updatedDebt) {
+    public Debt updateDebt(Long id, Debt updatedDebt) {
         Debt existingDebt = debtRepository.findById(id)
                 .orElseThrow(() -> new GeneralException("Debt to be updated not found: " + id));
 
@@ -70,7 +70,7 @@ public class DebtService {
         return debtRepository.save(existingDebt);
     }
 
-    public void deleteDebt(Integer id) {
+    public void deleteDebt(Long id) {
         if (!debtRepository.existsById(id)) {
             throw new GeneralException("Debt to be deleted not found: " + id);
         }

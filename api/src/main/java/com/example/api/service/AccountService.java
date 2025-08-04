@@ -26,12 +26,12 @@ public class AccountService {
         return accountRepository.findAll();
     }
 
-    public Account getAccountById(Integer id) {
+    public Account getAccountById(Long id) {
         return accountRepository.findById(id)
                 .orElseThrow(() -> new GeneralException("Account not found: " + id));
     }
 
-    public Account updateAccount(Integer id, Account updatedAccount) {
+    public Account updateAccount(Long id, Account updatedAccount) {
         Account existingAccount = accountRepository.findById(id)
                 .orElseThrow(() -> new GeneralException("Account to be updated not found: " + id));
 
@@ -44,7 +44,7 @@ public class AccountService {
         return accountRepository.save(existingAccount);
     }
 
-    public void deleteAccount(Integer id) {
+    public void deleteAccount(Long id) {
         if (!accountRepository.existsById(id)) {
             throw new GeneralException("Account to be deleted not found: " + id);
         }

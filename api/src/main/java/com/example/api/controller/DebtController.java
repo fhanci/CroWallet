@@ -14,11 +14,7 @@ import com.example.api.service.DebtService;
 public class DebtController {
 
     @Autowired
-    private final DebtService debtService;
-
-    public DebtController(DebtService debtService) {
-        this.debtService = debtService;
-    }
+    private DebtService debtService;
 
     @GetMapping
     public List<Debt> getAllDebts() {
@@ -26,7 +22,7 @@ public class DebtController {
     }
 
     @GetMapping("/{id}")
-    public Debt getDebtById(@PathVariable Integer id) {
+    public Debt getDebtById(@PathVariable Long id) {
         return debtService.getDebtById(id);
     }
 
@@ -36,13 +32,13 @@ public class DebtController {
     }
 
     @PutMapping("/{id}")
-    public Debt updateDebt(@PathVariable Integer id, @RequestBody Debt debt) {
+    public Debt updateDebt(@PathVariable Long id, @RequestBody Debt debt) {
         debt.setId(id);
         return debtService.updateDebt(id, debt);
     }
 
     @DeleteMapping("/{id}")
-    public void deleteDebt(@PathVariable Integer id) {
+    public void deleteDebt(@PathVariable Long id) {
         debtService.deleteDebt(id);
     }
 }

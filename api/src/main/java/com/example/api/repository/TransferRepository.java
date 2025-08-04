@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 import com.example.api.entity.Transfer;
 
 @Repository
-public interface TransferRepository extends JpaRepository<Transfer, Integer> {
+public interface TransferRepository extends JpaRepository<Transfer, Long> {
 }

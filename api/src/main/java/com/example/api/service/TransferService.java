@@ -26,12 +26,12 @@ public class TransferService {
         return transferRepository.findAll();
     }
 
-    public Transfer getTransferById(Integer id) {
+    public Transfer getTransferById(Long id) {
         return transferRepository.findById(id)
                 .orElseThrow(() -> new GeneralException("Transfer not found: " + id));
     }
 
-    public Transfer updateTransfer(Integer id, Transfer updatedTransfer) {
+    public Transfer updateTransfer(Long id, Transfer updatedTransfer) {
         Transfer existingTransfer = transferRepository.findById(id)
                 .orElseThrow(() -> new GeneralException("Transfer to be updated not found: " + id));
 
@@ -50,7 +50,7 @@ public class TransferService {
         return transferRepository.save(existingTransfer);
     }
 
-    public void deleteTransfer(Integer id) {
+    public void deleteTransfer(Long id) {
         if (!transferRepository.existsById(id)) {
             throw new GeneralException("Transfer to be deleted not found: " + id);
         }

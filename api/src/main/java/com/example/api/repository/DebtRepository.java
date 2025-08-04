@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 import com.example.api.entity.Debt;
 
 @Repository
-public interface DebtRepository extends JpaRepository<Debt, Integer> {
+public interface DebtRepository extends JpaRepository<Debt, Long> {
     
 }
