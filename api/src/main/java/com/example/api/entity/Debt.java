@@ -4,15 +4,17 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import jakarta.persistence.*;
+import lombok.Data;
 
 @Entity
 @Table(name = "debts")
+@Data
 public class Debt {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private Long id;
 
     @Column(name = "amount")
     private BigDecimal debtAmount;
@@ -30,86 +32,13 @@ public class Debt {
     private String status;
 
     @Column(name = "warning_period")
-    private Integer warningPeriod;
+    private Long warningPeriod;
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
-    private User user;
+    private Long userId;
 
     @ManyToOne
     @JoinColumn(name = "account_id", referencedColumnName = "id")
-    private Account account;
-
-    // Getter and Setter methods
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public BigDecimal getDebtAmount() {
-        return debtAmount;
-    }
-
-    public void setDebtAmount(BigDecimal debtAmount) {
-        this.debtAmount = debtAmount;
-    }
-
-    public String getDebtCurrency() {
-        return debtCurrency;
-    }
-
-    public void setDebtCurrency(String debtCurrency) {
-        this.debtCurrency = debtCurrency;
-    }
-
-    public String getToWhom() {
-        return toWhom;
-    }
-
-    public void setToWhom(String toWhom) {
-        this.toWhom = toWhom;
-    }
-
-    public LocalDate getDueDate() {
-        return dueDate;
-    }
-
-    public void setDueDate(LocalDate dueDate) {
-        this.dueDate = dueDate;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public Integer getWarningPeriod() {
-        return warningPeriod;
-    }
-
-    public void setWarningPeriod(Integer warningPeriod) {
-        this.warningPeriod = warningPeriod;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public Account getAccount() {
-        return account;
-    }
-
-    public void setAccount(Account account) {
-        this.account = account;
-    }
+    private Long account;
 }

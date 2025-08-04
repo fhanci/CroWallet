@@ -14,11 +14,7 @@ import com.example.api.service.AccountService;
 public class AccountController {
 
     @Autowired
-    private final AccountService accountService;
-
-    public AccountController(AccountService accountService) {
-        this.accountService = accountService;
-    }
+    private AccountService accountService;
 
     @GetMapping
     public List<Account> getAllAccounts() {
@@ -26,7 +22,7 @@ public class AccountController {
     }
 
     @GetMapping("/{id}")
-    public Account getAccountById(@PathVariable Integer id) {
+    public Account getAccountById(@PathVariable Long id) {
         return accountService.getAccountById(id);
     }
 
@@ -36,13 +32,13 @@ public class AccountController {
     }
 
     @PutMapping("/{id}")
-    public Account updateAccount(@PathVariable Integer id, @RequestBody Account account) {
+    public Account updateAccount(@PathVariable Long id, @RequestBody Account account) {
         account.setId(id);
         return accountService.updateAccount(id, account);
     }
 
     @DeleteMapping("/{id}")
-    public void deleteAccount(@PathVariable Integer id) {
+    public void deleteAccount(@PathVariable Long id) {
         accountService.deleteAccount(id);
     }
 }

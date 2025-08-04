@@ -1,5 +1,6 @@
 package com.example.api.service;
 
+import com.example.api.dto.UserDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,16 +22,16 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public List<User> getAllUsers() {
+    public List<UserDTO> getAllUsers() {
         return userRepository.findAll();
     }
 
-    public User getUserById(Integer id) {
+    public User getUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new GeneralException("User not found: " + id));
     }
 
-    public User updateUser(Integer id, User updatedUser) {
+    public User updateUser(Long id, User updatedUser) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new GeneralException("User to be updated not found: " + id));
 
@@ -41,7 +42,7 @@ public class UserService {
         return userRepository.save(existingUser);
     }
 
-    public void deleteUser(Integer id) {
+    public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
             throw new GeneralException("User to be deleted not found: " + id);
         }

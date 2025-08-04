@@ -14,11 +14,7 @@ import com.example.api.service.TransferService;
 public class TransferController {
 
     @Autowired
-    private final TransferService transferService;
-
-    public TransferController(TransferService transferService) {
-        this.transferService = transferService;
-    }
+    private TransferService transferService;
 
     @GetMapping
     public List<Transfer> getAllTransfers() {
@@ -26,7 +22,7 @@ public class TransferController {
     }
 
     @GetMapping("/{id}")
-    public Transfer getTransferById(@PathVariable Integer id) {
+    public Transfer getTransferById(@PathVariable Long id) {
         return transferService.getTransferById(id);
     }
 
@@ -36,13 +32,13 @@ public class TransferController {
     }
 
     @PutMapping("/{id}")
-    public Transfer updateTransfer(@PathVariable Integer id, @RequestBody Transfer transfer) {
+    public Transfer updateTransfer(@PathVariable Long id, @RequestBody Transfer transfer) {
         transfer.setId(id);
         return transferService.updateTransfer(id, transfer);
     }
 
     @DeleteMapping("/{id}")
-    public void deleteTransfer(@PathVariable Integer id) {
+    public void deleteTransfer(@PathVariable Long id) {
         transferService.deleteTransfer(id);
     }
 }
