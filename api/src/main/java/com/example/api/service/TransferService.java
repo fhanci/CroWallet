@@ -1,7 +1,9 @@
 package com.example.api.service;
 
 import com.example.api.dto.TransferDTO;
+import com.example.api.mapper.AccountMapper;
 import com.example.api.mapper.TransferMapper;
+import com.example.api.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -48,8 +50,8 @@ public class TransferService {
         existingTransfer.setType(updatedTransfer.getType());
         existingTransfer.setDetails(updatedTransfer.getDetails());
         existingTransfer.setExchangeRate(updatedTransfer.getExchangeRate());
-        existingTransfer.setUserId(updatedTransfer.getUserId());
-        existingTransfer.setAccountId(updatedTransfer.getAccountId());
+        existingTransfer.setUser(UserMapper.INSTANCE.toUser(updatedTransfer.getUser()));
+        existingTransfer.setAccount(AccountMapper.INSTANCE.toAccount(updatedTransfer.getAccount()));
 
         return TransferMapper.INSTANCE.toTransferDTO(transferRepository.save(existingTransfer));
     }

@@ -6,10 +6,11 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     properties:
       hibernate.format_sql: true
   liquibase:
     change-log: classpath:db/changelog-master.xml
-    enabled: true
-
+    enabled: false
+server:
+  port: 8082

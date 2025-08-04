@@ -36,9 +36,9 @@ public class Debt {
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
-    private Long userId;
+    private User user;
 
     @ManyToOne
     @JoinColumn(name = "account_id", referencedColumnName = "id")
-    private Long accountId;
+    private Account account;
 }
