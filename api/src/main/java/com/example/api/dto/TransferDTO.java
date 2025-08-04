@@ -22,7 +22,7 @@ public class TransferDTO {
     private BigDecimal inputPreviousBalance;
     private BigDecimal outputNextBalance;
     private BigDecimal outputPreviousBalance;
-    private Long userId;
-    private Long accountId;
+    private UserDTO user;
+    private AccountDTO account;
 }
 

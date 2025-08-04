@@ -34,7 +34,7 @@ const DebtCreatePage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/accounts");
+        const res = await fetch("http://localhost:8082/api/accounts");
         if (!res.ok) throw new Error("Hesaplar alınamadı");
         const data = await res.json();
         const userAccounts = data.filter((a) => a.user?.id === parseInt(userId));
@@ -79,7 +79,7 @@ const DebtCreatePage = () => {
       };
 
       // Borç kaydı oluştur
-      const response = await fetch("http://localhost:8080/api/debts", {
+      const response = await fetch("http://localhost:8082/api/debts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newDebt),
@@ -91,7 +91,7 @@ const DebtCreatePage = () => {
       const updatedBalance = selectedAddAccount.balance + parseFloat(debtAmount);
 
       const accountResponse = await fetch(
-        `http://localhost:8080/api/accounts/${selectedAddAccount.id}`,
+        `http://localhost:8082/api/accounts/${selectedAddAccount.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -120,7 +120,7 @@ const DebtCreatePage = () => {
         inputNextBalance: updatedBalance,
       };
 
-      const transferResponse = await fetch("http://localhost:8080/api/transfers", {
+      const transferResponse = await fetch("http://localhost:8082/api/transfers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(transferData),
