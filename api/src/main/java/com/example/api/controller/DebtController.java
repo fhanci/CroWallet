@@ -1,5 +1,6 @@
 package com.example.api.controller;
 
+import com.example.api.dto.DebtDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,27 +18,26 @@ public class DebtController {
     private DebtService debtService;
 
     @GetMapping
-    public List<Debt> getAllDebts() {
+    public List<DebtDTO> getAllDebts() {
         return debtService.getAllDebts();
     }
 
     @GetMapping("/{id}")
-    public Debt getDebtById(@PathVariable Long id) {
+    public DebtDTO getDebtById(@PathVariable Long id) {
         return debtService.getDebtById(id);
     }
 
     @PostMapping
-    public Debt createDebt(@RequestBody Debt debt) {
+    public DebtDTO createDebt(@RequestBody DebtDTO debt) {
         return debtService.createDebt(debt);
     }
 
-    @PutMapping("/{id}")
-    public Debt updateDebt(@PathVariable Long id, @RequestBody Debt debt) {
-        debt.setId(id);
+    @PutMapping("/update/{id}")
+    public DebtDTO updateDebt(@PathVariable Long id, @RequestBody DebtDTO debt) {
         return debtService.updateDebt(id, debt);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public void deleteDebt(@PathVariable Long id) {
         debtService.deleteDebt(id);
     }

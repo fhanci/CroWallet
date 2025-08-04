@@ -1,5 +1,6 @@
 package com.example.api.controller;
 
+import com.example.api.dto.AccountDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,27 +18,27 @@ public class AccountController {
     private AccountService accountService;
 
     @GetMapping
-    public List<Account> getAllAccounts() {
+    public List<AccountDTO> getAllAccounts() {
         return accountService.getAllAccounts();
     }
 
     @GetMapping("/{id}")
-    public Account getAccountById(@PathVariable Long id) {
+    public AccountDTO getAccountById(@PathVariable Long id) {
         return accountService.getAccountById(id);
     }
 
     @PostMapping
-    public Account createAccount(@RequestBody Account account) {
+    public AccountDTO createAccount(@RequestBody AccountDTO account) {
         return accountService.createAccount(account);
     }
 
-    @PutMapping("/{id}")
-    public Account updateAccount(@PathVariable Long id, @RequestBody Account account) {
+    @PutMapping("/update/{id}")
+    public AccountDTO updateAccount(@PathVariable Long id, @RequestBody AccountDTO account) {
         account.setId(id);
         return accountService.updateAccount(id, account);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public void deleteAccount(@PathVariable Long id) {
         accountService.deleteAccount(id);
     }
