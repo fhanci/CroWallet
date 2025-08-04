@@ -20,7 +20,7 @@ const AccountToAccountTransferPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/accounts');
+        const response = await fetch('http://localhost:8082/api/accounts');
         const data = await response.json();
         const userAccounts = data.filter(acc => acc.user.id === parseInt(userId));
         setAccounts(userAccounts);
@@ -101,22 +101,22 @@ const AccountToAccountTransferPage = () => {
 
     try {
       const [res1, res2, res3, res4] = await Promise.all([
-        fetch('http://localhost:8080/api/transfers', {
+        fetch('http://localhost:8082/api/transfers', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(outgoingTransfer),
         }),
-        fetch('http://localhost:8080/api/transfers', {
+        fetch('http://localhost:8082/api/transfers', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(incomingTransfer),
         }),
-        fetch(`http://localhost:8080/api/accounts/update/${selectedSenderAccount.id}`, {
+        fetch(`http://localhost:8082/api/accounts/update/${selectedSenderAccount.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedSender),
         }),
-        fetch(`http://localhost:8080/api/accounts/update/${selectedReceiverAccount.id}`, {
+        fetch(`http://localhost:8082/api/accounts/update/${selectedReceiverAccount.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedReceiver),

@@ -16,7 +16,7 @@ const AccountEditPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/accounts');
+        const response = await fetch('http://localhost:8082/api/accounts');
         if (response.ok) {
           const data = await response.json();
           const filtered = data.filter((a) => a.user.id === parseInt(userId));
@@ -39,7 +39,7 @@ const AccountEditPage = () => {
       const updateDate = new Date(now.getTime() + (3 * 60 * 60 * 1000)).toISOString();
       const updatedAccount = { ...selectedAccount, updateDate };
 
-      const response = await fetch(`http://localhost:8080/api/accounts/update/${selectedAccount.id}`, {
+      const response = await fetch(`http://localhost:8082/api/accounts/update/${selectedAccount.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedAccount),
