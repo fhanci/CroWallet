@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Container, Typography, Paper, Box } from "@mui/material";
 
+
+
 const DebtPage = () => {
   const [debts, setDebts] = useState([]);
   const userId = localStorage.getItem("userId");
