@@ -1,9 +1,7 @@
 package com.example.api.service;
 
 import com.example.api.dto.DebtDTO;
-import com.example.api.mapper.AccountMapper;
 import com.example.api.mapper.DebtMapper;
-import com.example.api.mapper.UserMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -60,13 +58,13 @@ public class DebtService {
         existingDebt.setDueDate(updatedDebt.getDueDate());
 
         // Hesap bilgisi set et
-        if (userRepository.findById(updatedDebt.getAccount().getId()).isPresent() && updatedDebt.getAccount().getId() != null) {
-            existingDebt.setAccount(AccountMapper.INSTANCE.toAccount(updatedDebt.getAccount()));
+        if (userRepository.findById(updatedDebt.getAccountId()).isPresent() && updatedDebt.getAccountId() != null) {
+            existingDebt.setAccountId(updatedDebt.getAccountId());
         }
 
         // Kullanıcı bilgisi set et
-        if (userRepository.findById(updatedDebt.getUser().getId()).isPresent() && updatedDebt.getUser().getId() != null) {
-            existingDebt.setUser(UserMapper.INSTANCE.toUser(updatedDebt.getUser()));
+        if (userRepository.findById(updatedDebt.getUserId()).isPresent() && updatedDebt.getUserId() != null) {
+            existingDebt.setUserId(updatedDebt.getUserId());
         }
         return DebtMapper.INSTANCE.toDebtDTO(debtRepository.save(existingDebt));
 

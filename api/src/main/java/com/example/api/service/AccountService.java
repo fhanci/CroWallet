@@ -2,7 +2,6 @@ package com.example.api.service;
 
 import com.example.api.dto.AccountDTO;
 import com.example.api.mapper.AccountMapper;
-import com.example.api.mapper.UserMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,7 +41,7 @@ public class AccountService {
         existingAccount.setAccountName(updatedAccount.getAccountName());
         existingAccount.setBalance(updatedAccount.getBalance());
         existingAccount.setCurrency(updatedAccount.getCurrency());
-        existingAccount.setUser(UserMapper.INSTANCE.toUser(updatedAccount.getUser()));
+        existingAccount.setUserId(updatedAccount.getUserId());
 
         return AccountMapper.INSTANCE.toAccountDTO(accountRepository.save(existingAccount));
     }

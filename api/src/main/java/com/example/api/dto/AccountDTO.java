@@ -12,5 +12,6 @@ public class AccountDTO {
     private String currency;
     private String accountName;
     private LocalDateTime updateDate;
-    private UserDTO user;
+    private Long userId;
+
 }
