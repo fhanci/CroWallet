@@ -34,7 +34,7 @@ const ProfilePage = () => {
   };
 
   const handleSave = async () => {
-    const response = await fetch(`http://localhost:8080/api/users/${userId}`, {
+    const response = await fetch(`http://localhost:8080/api/users/update/${userId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editData)
@@ -47,7 +47,7 @@ const ProfilePage = () => {
   };
 
   const handleDelete = async () => {
-    const response = await fetch(`http://localhost:8080/api/users/${userId}`, { method: 'DELETE' });
+    const response = await fetch(`http://localhost:8080/api/users/delete/${userId}`, { method: 'DELETE' });
     if (response.ok) {
       setSnackbar({ open: true, message: 'Hesap silindi.', severity: 'info' });
       localStorage.clear();

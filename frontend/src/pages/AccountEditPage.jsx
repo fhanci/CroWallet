@@ -39,7 +39,7 @@ const AccountEditPage = () => {
       const updateDate = new Date(now.getTime() + (3 * 60 * 60 * 1000)).toISOString();
       const updatedAccount = { ...selectedAccount, updateDate };
 
-      const response = await fetch(`http://localhost:8080/api/accounts/${selectedAccount.id}`, {
+      const response = await fetch(`http://localhost:8080/api/accounts/update/${selectedAccount.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedAccount),
