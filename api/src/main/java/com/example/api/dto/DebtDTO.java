@@ -13,6 +13,6 @@ public class DebtDTO {
     private LocalDate dueDate;
     private String status;
     private Integer warningPeriod;
-    private UserDTO user;
-    private AccountDTO account;
+    private Long userId;
+    private Long accountId;
 }

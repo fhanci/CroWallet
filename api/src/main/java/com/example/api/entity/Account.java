@@ -7,8 +7,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
-@Table(name = "accounts")
 @Data
+@Table(name = "accounts")
 public class Account {
 
     @Id
@@ -30,5 +30,5 @@ public class Account {
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
-    private User user;
+    private Long userId;
 }

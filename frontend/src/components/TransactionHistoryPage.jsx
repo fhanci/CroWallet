@@ -32,7 +32,7 @@ const TransactionHistoryPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/api/transfers`);
+        const response = await fetch(`http://localhost:8082/api/transfers`);
         if (!response.ok) throw new Error("Hesap hareketleri getirilemedi.");
         const data = await response.json();
 
@@ -66,7 +66,7 @@ const TransactionHistoryPage = () => {
   // güncel bakiye için
   const fetchAccountBalance = async () => {
     try {
-      const res = await fetch(`http://localhost:8080/api/accounts/${accountId}`);
+      const res = await fetch(`http://localhost:8082/api/accounts/${accountId}`);
       if (!res.ok) throw new Error("Hesap bilgileri getirilemedi.");
       const account = await res.json();
       setAccountBalance(account.balance);
