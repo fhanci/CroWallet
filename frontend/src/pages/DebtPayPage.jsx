@@ -21,7 +21,7 @@ const DebtPayPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/accounts");
+        const res = await fetch("http://localhost:8082/api/accounts");
         if (res.ok) {
           const data = await res.json();
           const userAccounts = data.filter((acc) => acc.user.id === parseInt(userId));
@@ -39,7 +39,7 @@ const DebtPayPage = () => {
   useEffect(() => {
     const fetchDebts = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/debts");
+        const res = await fetch("http://localhost:8082/api/debts");
         if (res.ok) {
           const data = await res.json();
           const userDebts = data.filter((debt) => debt.user.id === parseInt(userId) && debt.status === "odenmedi");
@@ -77,7 +77,7 @@ const DebtPayPage = () => {
       const createDate = new Date().toISOString();
 
       // Borcu güncelle
-      const debtResponse = await fetch(`http://localhost:8080/api/debts/${selectedPayDebt.id}`, {
+      const debtResponse = await fetch(`http://localhost:8082/api/debts/${selectedPayDebt.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -90,7 +90,7 @@ const DebtPayPage = () => {
       if (!debtResponse.ok) throw new Error("Borç ödeme işlemi başarısız!");
 
       // Hesap bakiyesini güncelle
-      const accountResponse = await fetch(`http://localhost:8080/api/accounts/${selectedTransferAccount.id}`, {
+      const accountResponse = await fetch(`http://localhost:8082/api/accounts/${selectedTransferAccount.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -117,7 +117,7 @@ const DebtPayPage = () => {
         outputNextBalance: updatedBalance,
       };
 
-      const transferResponse = await fetch("http://localhost:8080/api/transfers", {
+      const transferResponse = await fetch("http://localhost:8082/api/transfers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(transferData),

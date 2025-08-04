@@ -18,7 +18,7 @@ const OutgoingTransferPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/accounts');
+        const response = await fetch('http://localhost:8082/api/accounts');
         const data = await response.json();
         const userAccounts = data.filter(acc => acc.user.id === parseInt(userId));
         setAccounts(userAccounts);
@@ -81,13 +81,13 @@ const OutgoingTransferPage = () => {
     };
 
     try {
-      const response = await fetch("http://localhost:8080/api/transfers", {
+      const response = await fetch("http://localhost:8082/api/transfers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedTransfer),
       });
 
-      const response2 = await fetch(`http://localhost:8080/api/accounts/${selectedTransferAccount.id}`, {
+      const response2 = await fetch(`http://localhost:8082/api/accounts/${selectedTransferAccount.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedAccount),

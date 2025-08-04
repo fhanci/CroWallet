@@ -21,7 +21,7 @@ const DebtEditPage = () => {
   useEffect(() => {
     const fetchDebts = async () => {
       try {
-        const res = await fetch('http://localhost:8080/api/debts');
+        const res = await fetch('http://localhost:8082/api/debts');
         if (!res.ok) throw new Error('Borçlar alınamadı');
         const data = await res.json();
         const filtered = data.filter(d => d.user?.id === parseInt(userId) && d.status === "odenmedi");
@@ -36,7 +36,7 @@ const DebtEditPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await fetch('http://localhost:8080/api/accounts');
+        const res = await fetch('http://localhost:8082/api/accounts');
         if (!res.ok) throw new Error('Hesaplar alınamadı');
         const data = await res.json();
         const userAccounts = data.filter(acc => acc.user?.id === parseInt(userId));
@@ -92,16 +92,16 @@ const DebtEditPage = () => {
       if (!newAccountId) throw new Error("Hesap seçimi yapılmalı");
 
       if (oldAccountId !== newAccountId) {
-        const resOldAcc = await fetch(`http://localhost:8080/api/accounts/${oldAccountId}`);
+        const resOldAcc = await fetch(`http://localhost:8082/api/accounts/${oldAccountId}`);
         if (!resOldAcc.ok) throw new Error("Eski hesap bilgisi alınamadı");
         const oldAccount = await resOldAcc.json();
 
-        const resNewAcc = await fetch(`http://localhost:8080/api/accounts/${newAccountId}`);
+        const resNewAcc = await fetch(`http://localhost:8082/api/accounts/${newAccountId}`);
         if (!resNewAcc.ok) throw new Error("Yeni hesap bilgisi alınamadı");
         const newAccount = await resNewAcc.json();
 
         const oldAccUpdatedBalance = oldAccount.balance - parseFloat(oldDebt.debtAmount);
-        const oldAccUpdateRes = await fetch(`http://localhost:8080/api/accounts/update/${oldAccount.id}`, {
+        const oldAccUpdateRes = await fetch(`http://localhost:8082/api/accounts/update/${oldAccount.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -113,7 +113,7 @@ const DebtEditPage = () => {
         if (!oldAccUpdateRes.ok) throw new Error("Eski hesap bakiyesi güncellenemedi");
 
         const newAccUpdatedBalance = newAccount.balance + parseFloat(selectedDebt.debtAmount);
-        const newAccUpdateRes = await fetch(`http://localhost:8080/api/accounts/update/${newAccount.id}`, {
+        const newAccUpdateRes = await fetch(`http://localhost:8082/api/accounts/update/${newAccount.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -126,7 +126,7 @@ const DebtEditPage = () => {
 
         const createDate = new Date().toISOString();
 
-        await fetch("http://localhost:8080/api/transfers", {
+        await fetch("http://localhost:8082/api/transfers", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -144,7 +144,7 @@ const DebtEditPage = () => {
           }),
         });
 
-        await fetch("http://localhost:8080/api/transfers", {
+        await fetch("http://localhost:8082/api/transfers", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -163,13 +163,13 @@ const DebtEditPage = () => {
         });
 
       } else {
-        const resAccount = await fetch(`http://localhost:8080/api/accounts/${newAccountId}`);
+        const resAccount = await fetch(`http://localhost:8082/api/accounts/${newAccountId}`);
         if (!resAccount.ok) throw new Error("Hesap bilgisi alınamadı");
         const accountToUpdate = await resAccount.json();
 
         const updatedBalance = accountToUpdate.balance + debtDifference;
 
-        const accountUpdateResponse = await fetch(`http://localhost:8080/api/accounts/update/${accountToUpdate.id}`, {
+        const accountUpdateResponse = await fetch(`http://localhost:8082/api/accounts/update/${accountToUpdate.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -182,7 +182,7 @@ const DebtEditPage = () => {
 
         const createDate = new Date().toISOString();
 
-        await fetch("http://localhost:8080/api/transfers", {
+        await fetch("http://localhost:8082/api/transfers", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -202,7 +202,7 @@ const DebtEditPage = () => {
       }
 
       
-      const response = await fetch(`http://localhost:8080/api/debts/update/${selectedDebt.id}`, {
+      const response = await fetch(`http://localhost:8082/api/debts/update/${selectedDebt.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
