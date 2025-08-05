@@ -91,7 +91,7 @@ const DebtCreatePage = () => {
       const updatedBalance = selectedAddAccount.balance + parseFloat(debtAmount);
 
       const accountResponse = await fetch(
-        `http://localhost:8082/api/accounts/${selectedAddAccount.id}`,
+        `http://localhost:8082/api/accounts/update/${selectedAddAccount.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
