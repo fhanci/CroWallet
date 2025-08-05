@@ -1,13 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, TextField, Button, Autocomplete } from '@mui/material';
+import React, { useState, useEffect } from "react";
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Autocomplete,
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const SettingPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const userId = localStorage.getItem('userId');
+  const userId = localStorage.getItem("userId");
 
-  const defaultIncomeOptions = ["Maaş", "Serbest Çalışma Geliri", "Yatırım Geliri", "Kira Geliri", "Burs", "Ek İş"];
-  const defaultExpenseOptions = ["Kira", "Fatura", "Market Alışverişi", "Ulaşım", "Eğitim", "Eğlence", "Sağlık"];
+  const defaultIncomeOptions = t("defaultIncomeOptions", {
+    returnObjects: true,
+  });
+  const defaultExpenseOptions = t("defaultExpenseOptions", {
+    returnObjects: true,
+  });
 
   const [incomeSources, setIncomeSources] = useState([]);
   const [expenseSources, setExpenseSources] = useState([]);
@@ -17,13 +29,17 @@ const SettingPage = () => {
   const [newExpense, setNewExpense] = useState("");
 
   useEffect(() => {
-    const savedIncome = JSON.parse(localStorage.getItem(`incomeSources_${userId}`)) || [];
-    const savedExpense = JSON.parse(localStorage.getItem(`expenseSources_${userId}`)) || [];
+    const savedIncome =
+      JSON.parse(localStorage.getItem(`incomeSources_${userId}`)) || [];
+    const savedExpense =
+      JSON.parse(localStorage.getItem(`expenseSources_${userId}`)) || [];
 
     setIncomeSources(savedIncome);
     setExpenseSources(savedExpense);
     setIncomeOptions([...new Set([...defaultIncomeOptions, ...savedIncome])]);
-    setExpenseOptions([...new Set([...defaultExpenseOptions, ...savedExpense])]);
+    setExpenseOptions([
+      ...new Set([...defaultExpenseOptions, ...savedExpense]),
+    ]);
   }, [userId]);
 
   const handleAddIncome = () => {
@@ -45,8 +61,14 @@ const SettingPage = () => {
   const handleClose = () => navigate("/account");
 
   const handleSave = () => {
-    localStorage.setItem(`incomeSources_${userId}`, JSON.stringify(incomeSources));
-    localStorage.setItem(`expenseSources_${userId}`, JSON.stringify(expenseSources));
+    localStorage.setItem(
+      `incomeSources_${userId}`,
+      JSON.stringify(incomeSources)
+    );
+    localStorage.setItem(
+      `expenseSources_${userId}`,
+      JSON.stringify(expenseSources)
+    );
     handleClose();
   };
 
@@ -62,8 +84,15 @@ const SettingPage = () => {
         mt: { xs: 2, sm: 5 },
       }}
     >
-      <Typography variant="h4" sx={{ mb: 4, textAlign: "center", fontSize: { xs: "1.5rem", md: "2rem" } }}>
-        Ayarlar
+      <Typography
+        variant="h4"
+        sx={{
+          mb: 4,
+          textAlign: "center",
+          fontSize: { xs: "1.5rem", md: "2rem" },
+        }}
+      >
+        {t("settings")}
       </Typography>
 
       <Box sx={{ mb: 4 }}>
@@ -74,19 +103,31 @@ const SettingPage = () => {
           value={incomeSources}
           onChange={(event, newValues) => setIncomeSources(newValues)}
           renderInput={(params) => (
-            <TextField {...params} label="Gelir Kaynakları" fullWidth />
+            <TextField {...params} label={t("incomeSources")} fullWidth />
           )}
         />
 
-        <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, mt: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            gap: 2,
+            mt: 2,
+          }}
+        >
           <TextField
-            label="Yeni Gelir Kaynağı"
+            label={t("newIncomeSource")}
             value={newIncome}
             onChange={(e) => setNewIncome(e.target.value)}
             fullWidth
           />
-          <Button onClick={handleAddIncome} variant="contained" fullWidth sx={{ maxWidth: { sm: 150 } }}>
-            Ekle
+          <Button
+            onClick={handleAddIncome}
+            variant="contained"
+            fullWidth
+            sx={{ maxWidth: { sm: 150 } }}
+          >
+            {t("add")}
           </Button>
         </Box>
       </Box>
@@ -103,25 +144,44 @@ const SettingPage = () => {
           )}
         />
 
-        <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, mt: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            gap: 2,
+            mt: 2,
+          }}
+        >
           <TextField
-            label="Yeni Gider Kaynağı"
+            label={t("newExpenseSource")}
             value={newExpense}
             onChange={(e) => setNewExpense(e.target.value)}
             fullWidth
           />
-          <Button onClick={handleAddExpense} variant="contained" fullWidth sx={{ maxWidth: { sm: 150 } }}>
-            Ekle
+          <Button
+            onClick={handleAddExpense}
+            variant="contained"
+            fullWidth
+            sx={{ maxWidth: { sm: 150 } }}
+          >
+            {t("add")}
           </Button>
         </Box>
       </Box>
 
-      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, flexWrap: "wrap" }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 2,
+          flexWrap: "wrap",
+        }}
+      >
         <Button onClick={handleClose} variant="outlined">
-          İptal
+          {t("cancel")}
         </Button>
         <Button onClick={handleSave} variant="contained" color="primary">
-          Uygula
+          {t("apply")}
         </Button>
       </Box>
     </Box>

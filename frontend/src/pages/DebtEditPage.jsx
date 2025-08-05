@@ -245,7 +245,7 @@ const DebtEditPage = () => {
     <Container maxWidth="sm" sx={{ mt: 8 }}>
       <Box sx={{ p: 4 }}>
         <Typography variant="h5" align="center" gutterBottom>
-          Borç Düzenle
+          {t("Borç Düzenle")}
         </Typography>
 
         <FormControl fullWidth margin="normal">
@@ -293,7 +293,7 @@ const DebtEditPage = () => {
         {selectedDebt && (
           <>
             <TextField
-              label="Miktar"
+              label={t("amount")}
               type="number"
               fullWidth
               margin="normal"
@@ -360,7 +360,7 @@ const DebtEditPage = () => {
 
         <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
           <Button variant="outlined" onClick={() => setSelectedDebt(null)}>
-            İptal
+            {t("cancel")}
           </Button>
           <Button
             variant="contained"

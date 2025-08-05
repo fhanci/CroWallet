@@ -56,7 +56,7 @@ const AccountCreatePage = () => {
     <Container maxWidth="sm" sx={{ mt: 8 }}>
       <Box sx={{ p: 4 }}>
         <Typography variant="h5" align="center" gutterBottom>
-          Yeni Hesap Ekle
+          {t("addAccount")}
         </Typography>
 
         <TextField
@@ -97,7 +97,7 @@ const AccountCreatePage = () => {
 
         <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
           <Button variant="outlined" onClick={() => navigate('/account')}>
-            İptal
+            {t("cancel")}
           </Button>
           <Button variant="contained" color="success" onClick={handleAddAccount} startIcon={<SaveIcon />}>
             Kaydet

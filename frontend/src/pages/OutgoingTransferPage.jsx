@@ -157,7 +157,7 @@ const OutgoingTransferPage = () => {
 
     <Box display="flex" alignItems="center" marginTop={2} marginBottom={1}>
             <TextField
-            label="Miktar*"
+            label={t("amount")}
             type="number"
             value={selectedTransfer.amount || ""}
             onChange={(e) => setSelectedTransfer({ ...selectedTransfer, amount: e.target.value })}
@@ -183,7 +183,7 @@ const OutgoingTransferPage = () => {
           value={selectedTransfer.category || ""}
           onChange={(e, newValue) => setSelectedTransfer({ ...selectedTransfer, category: newValue })}
           renderInput={(params) => (
-            <TextField {...params} label="Kategori*" fullWidth margin="normal" />
+            <TextField {...params} label={t("category")} fullWidth margin="normal" />
           )}
         />
       </FormControl>
@@ -230,7 +230,7 @@ const OutgoingTransferPage = () => {
       )}
 
       <TextField
-        label="Açıklama"
+        label={t("description")}
         value={selectedTransfer.description || ""}
         onChange={(e) => setSelectedTransfer({ ...selectedTransfer, description: e.target.value })}
         fullWidth

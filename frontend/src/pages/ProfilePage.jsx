@@ -5,6 +5,7 @@ import {
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon, Save as SaveIcon, Close as CloseIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from "react-i18next";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -14,6 +15,8 @@ const ProfilePage = () => {
   const [editData, setEditData] = useState({ name: '', email: '', password: '' });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -66,7 +69,7 @@ const ProfilePage = () => {
 
       <Box display="flex" flexDirection="column" gap={3} mt={4}>
         <TextField
-          label="Ad"
+          label={t("name")}
           value={editData.name}
           onChange={(e) => setEditData({ ...editData, name: e.target.value })}
           disabled={!isEditing}
@@ -82,7 +85,7 @@ const ProfilePage = () => {
         />
 
         <TextField
-          label="Şifre"
+          label={t("password")}
           type="password"
           value={editData.password}
           onChange={(e) => setEditData({ ...editData, password: e.target.value })}
@@ -100,7 +103,7 @@ const ProfilePage = () => {
           ) : (
             <Box display="flex" gap={2}>
               <Button variant="outlined" startIcon={<CloseIcon />} onClick={handleCancel}>
-                İptal
+                {t("cancel")}
               </Button>
               <Button variant="contained" color="success" startIcon={<SaveIcon />} onClick={handleSave}>
                 Kaydet
@@ -121,7 +124,7 @@ const ProfilePage = () => {
           <Typography>Hesabınızı kalıcı olarak silmek istediğinizden emin misiniz?</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>İptal</Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}>{t("cancel")}</Button>
           <Button onClick={handleDelete} color="error" variant="contained">Sil</Button>
         </DialogActions>
       </Dialog>

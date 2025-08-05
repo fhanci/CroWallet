@@ -137,7 +137,7 @@ const AccountToAccountTransferPage = () => {
 
   return (
     <Container maxWidth="sm">
-      <Typography variant="h5" align="center" gutterBottom>Hesaplar Arası Transfer</Typography>
+      <Typography variant="h5" align="center" gutterBottom>{t("interAccount")} Transfer</Typography>
 
       <FormControl fullWidth margin="normal">
         <InputLabel id="sender-label">Gönderen Hesap*</InputLabel>
@@ -177,7 +177,7 @@ const AccountToAccountTransferPage = () => {
 
       <Box display="flex" alignItems="center" marginTop={2} marginBottom={1}>
         <TextField
-          label="Miktar*"
+          label={t("amount")}
           type="number"
           value={transferData.amount || ""}
           onChange={(e) => setTransferData({ ...transferData, amount: e.target.value })}
@@ -234,7 +234,7 @@ const AccountToAccountTransferPage = () => {
       />
 
       <TextField
-        label="Açıklama"
+        label={t("description")}
         value={transferData.description || ""}
         onChange={(e) => setTransferData({ ...transferData, description: e.target.value })}
         fullWidth

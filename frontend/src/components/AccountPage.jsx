@@ -3,8 +3,10 @@ import { Container, Typography, Box, Card, CardContent } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import { PieChart, Pie, Tooltip, Cell, Legend } from "recharts";
+import { useTranslation } from "react-i18next";
 
 const AccountPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [accounts, setAccounts] = useState([]);
@@ -127,12 +129,12 @@ const AccountPage = () => {
   return (
     <Container sx={{ display: "flex", flexDirection: "column", alignItems: "center", width: "75vw", overflow: "hidden" }}>
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%", p: 2 }}>
-        <Typography variant="h4">HESAPLAR</Typography>
+        <Typography variant="h4">{t("accounts")}</Typography>
       </Box>
 
       {accounts.length === 0 && (
         <Typography variant="h6" align="center" color="text.secondary" sx={{ mt: 2 }}>
-          Şu anda hesabınız bulunmamaktadır. Lütfen menüden hesap ekleyin.
+          {t("noAccounts")}
         </Typography>
       )}
 
@@ -150,16 +152,16 @@ const AccountPage = () => {
       </Box>
 
       <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", width: "75vw", mt: 10 }}>
-        <Typography variant="h5" align="center">Gelir ve Gider Kaynakları</Typography>
+        <Typography variant="h5" align="center">{t("sources")}</Typography>
 
         {incomeData.length === 0 && expenseData.length === 0 ? (
           <Typography variant="h6" align="center" color="text.secondary" sx={{ mt: 2 }}>
-            Gelir ve gider kaynakları mevcut, ancak herhangi bir işlem yapılmamıştır.
+            {t("noTransactions")}
           </Typography>
         ) : (
           <Box sx={{ display: "flex", gap: 5, mt: 3 }}>
             <Box>
-              <Typography variant="h6">Gelir Kaynakları</Typography>
+              <Typography variant="h6">{t("incomeSources")}</Typography>
               <PieChart width={400} height={300}>
                 <Pie data={incomeData} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" dataKey="value">
                   {incomeData.map((_, i) => (
@@ -172,7 +174,7 @@ const AccountPage = () => {
             </Box>
 
             <Box>
-              <Typography variant="h6">Gider Kaynakları</Typography>
+              <Typography variant="h6">{t("expenseSources")}</Typography>
               <PieChart width={400} height={300}>
                 <Pie data={expenseData} cx="50%" cy="50%" outerRadius={100} fill="#82ca9d" dataKey="value">
                   {expenseData.map((_, i) => (
