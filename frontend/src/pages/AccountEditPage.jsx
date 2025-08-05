@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Typography, TextField, Box, FormControl, InputLabel, Select, MenuItem, Button, Snackbar, Alert } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import { useNavigate } from 'react-router-dom';
+import { t } from 'i18next';
 
 const AccountEditPage = () => {
   const navigate = useNavigate();
@@ -59,7 +60,7 @@ const AccountEditPage = () => {
     <Container maxWidth="sm" sx={{ mt: 8 }}>
       <Box sx={{ p: 4 }}>
         <Typography variant="h5" align="center" gutterBottom>
-          Hesap Düzenle
+          {t("editAccount")}
         </Typography>
 
         <FormControl fullWidth margin="normal">
@@ -129,7 +130,7 @@ const AccountEditPage = () => {
 
         <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
           <Button variant="outlined" onClick={() => navigate('/account')}>
-            İptal
+            {t("cancel")}
           </Button>
           <Button variant="contained" color="success" startIcon={<SaveIcon />} onClick={handleUpdateAccount}>
             Kaydet

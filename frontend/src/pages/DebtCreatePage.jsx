@@ -140,7 +140,7 @@ const DebtCreatePage = () => {
   return (
     <Container maxWidth="sm" sx={{ mt: 4 }}>
       <Typography variant="h5" align="center" gutterBottom>
-        Borç Ekle
+        {t("addDebt")}
       </Typography>
 
       <TextField
@@ -157,7 +157,7 @@ const DebtCreatePage = () => {
       />
 
       <TextField
-        label="Miktar"
+        label={t("amount")}
         type="number"
         value={debtAmount}
         onChange={(e) => setDebtAmount(e.target.value)}

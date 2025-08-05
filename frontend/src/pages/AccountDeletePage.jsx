@@ -95,7 +95,7 @@ const AccountDeletePage = () => {
         </FormControl>
 
         <TextField
-          label="Şifreniz"
+          label={t("password")}
           type="password"
           fullWidth
           margin="normal"
@@ -106,7 +106,7 @@ const AccountDeletePage = () => {
         />
 
         <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
-          <Button variant="outlined" onClick={() => navigate('/account')}>İptal</Button>
+          <Button variant="outlined" onClick={() => navigate('/account')}>{t("cancel")}</Button>
           <Button
             variant="contained"
             color="error"

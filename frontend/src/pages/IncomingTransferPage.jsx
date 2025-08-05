@@ -146,7 +146,7 @@ const IncomingTransferPage = () => {
 
     <Box display="flex" alignItems="center" marginTop={2} marginBottom={1}>
         <TextField
-            label="Miktar*"
+            label={t("amount")}
             type="number"
             value={selectedTransfer.amount || ""}
             onChange={(e) => setSelectedTransfer({ ...selectedTransfer, amount: e.target.value })}
@@ -187,12 +187,12 @@ const IncomingTransferPage = () => {
         />
 
       <FormControl fullWidth margin="normal">
-        <InputLabel id="category-label">Kategori*</InputLabel>
+        <InputLabel id="category-label">{t("category")}</InputLabel>
         <Select
           labelId="category-label"
           id="category-select"
           value={selectedTransfer.category || ""}
-          label="Kategori*"
+          label={t("category")}
           onChange={(e) => setSelectedTransfer({ ...selectedTransfer, category: e.target.value })}
         >
           {incomeSources.map((source) => (
@@ -221,7 +221,7 @@ const IncomingTransferPage = () => {
       )}
 
       <TextField
-        label="Açıklama"
+        label={t("description")}
         value={selectedTransfer.description || ""}
         onChange={(e) => setSelectedTransfer({ ...selectedTransfer, description: e.target.value })}
         fullWidth
