@@ -57,7 +57,7 @@ const OutgoingTransferPage = () => {
     const currentBalance = parseFloat(selectedTransferAccount.balance);
 
     if (currentBalance < amount) {
-      setError("Yetersiz bakiye!");
+      setError(t("insufficientBalance"));
       return;
     }
 
@@ -97,7 +97,7 @@ const OutgoingTransferPage = () => {
         setOpenSnackbar(true);
         setTimeout(() => navigate("/account"), 1000);
       } else {
-        setError("Transfer başarısız oldu.");
+        setError(t("transferFailed"));
       }
     } catch (err) {
       console.error("Transfer hatası:", err);
@@ -123,7 +123,7 @@ const OutgoingTransferPage = () => {
       <Typography variant="h5" align="center" gutterBottom>Para Çıkar</Typography>
 
       <FormControl fullWidth margin="normal">
-        <InputLabel id="account-label">Hesap Seçin*</InputLabel>
+        <InputLabel id="account-label">{t("selectAccount")}</InputLabel>
         <Select
           labelId="account-label"
           id="account-select"
@@ -142,7 +142,7 @@ const OutgoingTransferPage = () => {
       {selectedTransferAccount?.currency !== "TRY" && (
         <>
           <TextField
-            label="Kur*"
+            label={t("exchangeRate")}
             type="number"
             value={selectedTransfer.exchangeRate || ""}
             onChange={(e) => setSelectedTransfer({ ...selectedTransfer, exchangeRate: e.target.value })}
@@ -190,7 +190,7 @@ const OutgoingTransferPage = () => {
 
 
       <TextField
-        label="Tarih*"
+        label={t("date")}
         type="date"
         value={selectedTransfer.date || ""}
         onChange={(e) => setSelectedTransfer({ ...selectedTransfer, date: e.target.value })}
@@ -244,7 +244,7 @@ const OutgoingTransferPage = () => {
           startIcon={<SaveIcon />}
           onClick={handleSubmit}
         >
-          Kaydet
+          {t("save")}
         </Button>
       </Box>
 

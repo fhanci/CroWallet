@@ -84,5 +84,46 @@
   "filterByDate": "Tarihe Göre Filtrele",
   "startDateLabel": "Başlangıç Tarihi ve Saati",
   "endDateLabel": "Bitiş Tarihi ve Saati",
-  "applyFilter": "Filtrele"
+  "applyFilter": "Filtrele",
+  
+  "accountName": "Hesap Adı",
+  "balance": "Bakiye",
+  "currency": "Para Birimi",
+  "eur": "€ EUR",
+  "usd": "$ USD",
+  "try": "₺ TRY",
+  "save": "Kaydet",
+  "accountAddedSuccess": "Hesap başarıyla eklendi!",
+  "accountAddFailed": "Hesap ekleme başarısız!",
+
+  "accountToDelete": "Silinecek Hesap",
+  "delete": "Sil",
+  "confirmDeleteTitle": "Silme Onayı",
+  "confirmDeleteMessage": "Seçilen hesabı silmek üzeresiniz. Bu işlem geri alınamaz. Emin misiniz?",
+  "confirmDeleteCancel": "Vazgeç",
+  "confirmDeleteConfirm": "Evet, Sil",
+  "accountDeletedSuccess": "Hesap başarıyla silindi!",
+  "wrongPassword": "Şifre yanlış, lütfen tekrar deneyin.",
+  
+  "selectAccount": "Hesap Seç",
+  "accountUpdatedSuccess": "Hesap başarıyla güncellendi!",
+
+  "senderAccount": "Gönderen Hesap",
+  "receiverAccount": "Alıcı Hesap",
+  "exchangeRate": "Kur",
+  "exchangeRateHint": "Kur: 1 {{fromCurrency}} kaç {{toCurrency}} ediyor?",
+  "date": "Tarih",
+  "transferSuccess": "Transfer başarılı!",
+  "transferFailed": "Transfer başarısız oldu.",
+  "insufficientBalance": "Yetersiz bakiye!",
+  "sameAccountError": "Gönderici ve alıcı hesap aynı olamaz!",
+
+  "debtAddedSuccess": "Borç başarıyla eklendi!",
+  "currencyMismatch": "Seçilen hesabın para birimi ile borcun para birimi uyuşmuyor!",
+  "toWhom": "Kime",
+  "toWhomPlaceholder": "Borçlu olduğunuz kişiyi girin",
+  "dueDate": "Son Ödeme Tarihi",
+  "warningPeriod": "Uyarılma Süresi (Gün)",
+  "warningPeriodPlaceholder": "Son ödeme tarihinden kaç gün önce size hatırlatalım?",
+  "accountNote": "Borcunuz seçtiğiniz hesaba gelir olarak eklenecektir."
 }

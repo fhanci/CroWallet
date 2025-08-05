@@ -106,7 +106,7 @@ const ProfilePage = () => {
                 {t("cancel")}
               </Button>
               <Button variant="contained" color="success" startIcon={<SaveIcon />} onClick={handleSave}>
-                Kaydet
+                {t("save")}
               </Button>
             </Box>
           )}
@@ -125,7 +125,7 @@ const ProfilePage = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>{t("cancel")}</Button>
-          <Button onClick={handleDelete} color="error" variant="contained">Sil</Button>
+          <Button onClick={handleDelete} color="error" variant="contained">{t("delete")}</Button>
         </DialogActions>
       </Dialog>
 

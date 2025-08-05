@@ -66,5 +66,37 @@
   "errorFetchingBalance": "Failed to fetch account information.",
   "income": "Income",
   "expense": "Expense",
-  "unknownTransaction": "Unknown transaction"
+  "unknownTransaction": "Unknown transaction",
+
+  "accountName": "Account Name",
+  "balance": "Balance",
+  "currency": "Currency",
+  "eur": "€ EUR",
+  "usd": "$ USD",
+  "try": "₺ TRY",
+  "save": "Save",
+  "accountAddedSuccess": "Account added successfully!",
+  "accountAddFailed": "Account creation failed!",
+
+  "accountToDelete": "Account to Delete",
+  "delete": "Delete",
+  "confirmDeleteTitle": "Delete Confirmation",
+  "confirmDeleteMessage": "You are about to delete the selected account. This action cannot be undone. Are you sure?",
+  "confirmDeleteCancel": "Cancel",
+  "confirmDeleteConfirm": "Yes, Delete",
+  "accountDeletedSuccess": "Account deleted successfully!",
+  "wrongPassword": "Incorrect password, please try again.",
+
+  "selectAccount": "Select Account",
+  "accountUpdatedSuccess": "Account updated successfully!",
+
+  "amount": "Amount",
+  "debtAddedSuccess": "Debt added successfully!",
+  "currencyMismatch": "Selected account currency does not match debt currency!",
+  "toWhom": "To Whom",
+  "toWhomPlaceholder": "Enter the person you owe",
+  "dueDate": "Due Date",
+  "warningPeriod": "Warning Period (Days)",
+  "warningPeriodPlaceholder": "How many days before the due date should we remind you?",
+  "accountNote": "Your debt will be added as income to the selected account."
 }

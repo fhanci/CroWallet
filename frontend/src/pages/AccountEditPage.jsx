@@ -64,11 +64,11 @@ const AccountEditPage = () => {
         </Typography>
 
         <FormControl fullWidth margin="normal">
-            <InputLabel id="account-select-label">Hesap Seç</InputLabel>
+            <InputLabel id="account-select-label">{t("selectAccount")}</InputLabel>
                 <Select
                     labelId="account-select-label"
                     id="account-select"
-                    label="Hesap Seç"
+                    label={t("selectAccount")}
                     value={selectedAccount?.id || ''}
                     onChange={(e) =>
                     setSelectedAccount(accounts.find((a) => a.id === e.target.value))
@@ -85,7 +85,7 @@ const AccountEditPage = () => {
         {selectedAccount && (
           <>
             <TextField
-              label="Hesap Adı"
+              label={t("accountName")}
               fullWidth
               margin="normal"
               value={selectedAccount.accountName}
@@ -94,7 +94,7 @@ const AccountEditPage = () => {
               }
             />
             <TextField
-              label="Bakiye"
+              label={t("balance")}
               fullWidth
               type="number"
               margin="normal"
@@ -104,11 +104,11 @@ const AccountEditPage = () => {
               }
             />
             <FormControl fullWidth margin="normal">
-            <InputLabel id="currency-select-label">Para Birimi</InputLabel>
+            <InputLabel id="currency-select-label">{t("currency")}</InputLabel>
                 <Select
                     labelId="currency-select-label"
                     id="currency-select"
-                    label="Para Birimi"
+                    label={t("currency")}
                     value={selectedAccount.currency}
                     onChange={(e) =>
                     setSelectedAccount({ ...selectedAccount, currency: e.target.value })
@@ -133,7 +133,7 @@ const AccountEditPage = () => {
             {t("cancel")}
           </Button>
           <Button variant="contained" color="success" startIcon={<SaveIcon />} onClick={handleUpdateAccount}>
-            Kaydet
+            {t("save")}
           </Button>
         </Box>
       </Box>
@@ -145,7 +145,7 @@ const AccountEditPage = () => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert onClose={() => setOpenSnackbar(false)} severity="success">
-          Hesap başarıyla güncellendi!
+          {t("accountUpdatedSuccess")}
         </Alert>
       </Snackbar>
     </Container>
