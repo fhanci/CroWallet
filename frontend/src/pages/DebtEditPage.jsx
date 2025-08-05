@@ -307,13 +307,13 @@ const DebtEditPage = () => {
 
           
             <FormControl fullWidth margin="normal">
-              <InputLabel id="currency-select-label">Para Birimi</InputLabel>
+              <InputLabel id="currency-select-label">{t("currency")}</InputLabel>
               <Select
                 labelId="currency-select-label"
                 id="currency-select"
                 value={selectedDebt.debtCurrency}
                 onChange={(e) => setSelectedDebt({ ...selectedDebt, debtCurrency: e.target.value })}
-                label="Para Birimi"
+                label={t("currency")}
                 autoComplete="off"
                 inputProps={{ autoComplete: 'off' }}
               >
@@ -324,7 +324,7 @@ const DebtEditPage = () => {
             </FormControl>
 
             <TextField
-              label="Son Ödeme Tarihi"
+              label={t("dueDate")}
               type="date"
               fullWidth
               margin="normal"
@@ -338,7 +338,7 @@ const DebtEditPage = () => {
             />
 
             <TextField
-              label="Uyarılma Süresi (Gün)"
+              label={t("warningPeriod")}
               type="number"
               fullWidth
               margin="normal"
@@ -375,7 +375,7 @@ const DebtEditPage = () => {
               !selectedDebt?.account?.id
             }
           >
-            Kaydet
+            {t("save")}
           </Button>
         </Box>
       </Box>

@@ -39,10 +39,10 @@ const DebtPage = () => {
                   <strong>Borç:</strong> {debt.debtAmount} {debt.debtCurrency}
                 </Typography>
                 <Typography>
-                  <strong>Kime:</strong> {debt.toWhom}
+                  <strong>{t("toWhom")}:</strong> {debt.toWhom}
                 </Typography>
                 <Typography>
-                  <strong>Son Ödeme Tarihi:</strong>{" "}
+                  <strong>{t("dueDate")}:</strong>{" "}
                   {new Date(debt.dueDate).toLocaleDateString()}
                 </Typography>
               </Paper>

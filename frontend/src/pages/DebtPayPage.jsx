@@ -61,7 +61,7 @@ const DebtPayPage = () => {
     }
 
     if (selectedTransferAccount.currency !== selectedPayDebt.debtCurrency) {
-      setError("Seçilen hesabın para birimi ile borcun para birimi uyuşmuyor!");
+      setError(t("currencyMismatch"));
       return;
     }
 
@@ -159,7 +159,7 @@ const DebtPayPage = () => {
         <Select
           value={selectedTransferAccount?.id || ""}
           onChange={(e) => setSelectedTransferAccount(accounts.find((acc) => acc.id === e.target.value))}
-          label="Hesap Seçin"
+          label={t("selectAccount")}
         >
           {accounts.map((account) => (
             <MenuItem key={account.id} value={account.id}>

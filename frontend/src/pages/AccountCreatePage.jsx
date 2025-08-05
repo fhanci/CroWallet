@@ -39,7 +39,7 @@ const AccountCreatePage = () => {
         }),
       });
 
-      if (!response.ok) throw new Error("Hesap ekleme başarısız!");
+      if (!response.ok) throw new Error(t("accountAddFailed"));
 
       setOpenSnackbar(true);
       setTimeout(() => {
@@ -60,14 +60,14 @@ const AccountCreatePage = () => {
         </Typography>
 
         <TextField
-          label="Hesap Adı"
+          label={t("accountName")}
           fullWidth
           value={accountName}
           onChange={(e) => setAccountName(e.target.value)}
           margin="normal"
         />
         <TextField
-          label="Bakiye"
+          label={t("balance")}
           type="number"
           fullWidth
           value={balance}
@@ -75,17 +75,17 @@ const AccountCreatePage = () => {
           margin="normal"
         />
         <FormControl fullWidth margin="normal">
-        <InputLabel id="currency-label">Para Birimi</InputLabel>
+        <InputLabel id="currency-label">{t("currency")}</InputLabel>
             <Select
                 labelId="currency-label"
                 id="currency-select"
-                label="Para Birimi" // ← Bu satır şart
+                label={t("currency")} // ← Bu satır şart
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
             >
-            <MenuItem value="EUR">€ EUR</MenuItem>
-            <MenuItem value="USD">$ USD</MenuItem>
-            <MenuItem value="TRY">₺ TRY</MenuItem>
+            <MenuItem value="EUR">{t("eur")}</MenuItem>
+            <MenuItem value="USD">{t("eur")}</MenuItem>
+            <MenuItem value="TRY">{t("eur")}</MenuItem>
             </Select>
         </FormControl>
 
@@ -112,7 +112,7 @@ const AccountCreatePage = () => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert onClose={() => setOpenSnackbar(false)} severity="success">
-          Hesap başarıyla eklendi!
+          {t("accountAddedSuccess")}
         </Alert>
       </Snackbar>
     </Container>

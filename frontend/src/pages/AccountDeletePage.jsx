@@ -51,7 +51,7 @@ const AccountDeletePage = () => {
       setError('');
       setConfirmOpen(true);
     } else {
-      setError('Şifre yanlış, lütfen tekrar deneyin.');
+      setError(t("wrongPassword"));
     }
   };
 
@@ -78,11 +78,11 @@ const AccountDeletePage = () => {
         </Typography>
 
         <FormControl fullWidth margin="normal">
-        <InputLabel id="account-label">Silinecek Hesap</InputLabel>
+        <InputLabel id="account-label">{t("accountToDelete")}</InputLabel>
             <Select
                 labelId="account-label"
                 id="account-select"
-                label="Silinecek Hesap" 
+                label={t("accountToDelete")}
                 value={selectedAccountId}
                 onChange={(e) => setSelectedAccountId(e.target.value)}
             >
@@ -114,23 +114,23 @@ const AccountDeletePage = () => {
             onClick={handleVerifyPassword}
             disabled={!selectedAccountId}
           >
-            Sil
+            {t("delete")}
           </Button>
         </Box>
       </Box>
 
       {/* Onay Dialogu */}
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>Silme Onayı</DialogTitle>
+        <DialogTitle>{t("confirmDeleteTitle")}</DialogTitle>
         <DialogContent>
           <Typography>
-            Seçilen hesabı silmek üzeresiniz. Bu işlem geri alınamaz. Emin misiniz?
+            {t("confirmDeleteMessage")}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)}>Vazgeç</Button>
+          <Button onClick={() => setConfirmOpen(false)}>{t("confirmDeleteCancel")}</Button>
           <Button onClick={handleDeleteAccount} color="error" variant="contained" startIcon={<DeleteIcon />}>
-            Evet, Sil
+            {t("confirmDeleteConfirm")}
           </Button>
         </DialogActions>
       </Dialog>
@@ -142,7 +142,7 @@ const AccountDeletePage = () => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert severity="success" onClose={() => setOpenSnackbar(false)}>
-          Hesap başarıyla silindi!
+          {t("accountDeletedSuccess")}
         </Alert>
       </Snackbar>
     </Container>

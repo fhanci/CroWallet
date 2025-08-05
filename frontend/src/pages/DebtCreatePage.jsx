@@ -60,7 +60,7 @@ const DebtCreatePage = () => {
     }
 
     if (selectedAddAccount.currency !== debtCurrency) {
-      setError("Seçilen hesabın para birimi ile borcun para birimi uyuşmuyor!");
+      setError(t("currencyMismatch"));
       return;
     }
 
@@ -144,8 +144,8 @@ const DebtCreatePage = () => {
       </Typography>
 
       <TextField
-        label="Kime"
-        placeholder="Borçlu olduğunuz kişiyi girin"
+        label={t("toWhom")}
+        placeholder={t("toWhomPlaceholder")}
         value={toWhom}
         onChange={(e) => setToWhom(e.target.value)}
         fullWidth
@@ -170,23 +170,23 @@ const DebtCreatePage = () => {
       />
 
       <FormControl fullWidth margin="normal" required>
-        <InputLabel id="currency-label">Para Birimi</InputLabel>
+        <InputLabel id="currency-label">{t("currency")}</InputLabel>
         <Select
           labelId="currency-label"
           id="currency-select"
           value={debtCurrency}
           onChange={(e) => setDebtCurrency(e.target.value)}
-          label="Para Birimi"
+          label={t("currency")}
           required
         >
-          <MenuItem value="EUR">€ EUR</MenuItem>
-          <MenuItem value="USD">$ USD</MenuItem>
-          <MenuItem value="TRY">₺ TRY</MenuItem>
+          <MenuItem value="EUR">{t("eur")}</MenuItem>
+          <MenuItem value="USD">{t("usd")}</MenuItem>
+          <MenuItem value="TRY">{t("try")}</MenuItem>
         </Select>
       </FormControl>
 
       <TextField
-        label="Son Ödeme Tarihi"
+        label={t("dueDate")}
         type="date"
         value={dueDate}
         onChange={(e) => setDueDate(e.target.value)}
@@ -200,9 +200,9 @@ const DebtCreatePage = () => {
       />
 
       <TextField
-        label="Uyarılma Süresi (Gün)"
+        label={t("warningPeriod")}
         type="number"
-        placeholder="Son ödeme tarihinden kaç gün önce size hatırlatalım?"
+        placeholder={t("warningPeriodPlaceholder")}
         value={warningPeriod}
         onChange={(e) => setWarningPeriod(e.target.value)}
         fullWidth
@@ -214,7 +214,7 @@ const DebtCreatePage = () => {
       />
 
       <FormControl fullWidth margin="normal" required>
-        <InputLabel id="account-label">Hesap Seçin</InputLabel>
+        <InputLabel id="account-label">{t("selectAccount")}</InputLabel>
         <Select
           labelId="account-label"
           id="account-select"
@@ -231,7 +231,7 @@ const DebtCreatePage = () => {
         </Select>
 
         <Typography variant="caption" color="textSecondary" sx={{ mt: 0.5, ml: 1 }}>
-          Borcunuz seçtiğiniz hesaba gelir olarak eklenecektir.
+          {t("accountNote")}
         </Typography>
 
       </FormControl>
@@ -257,7 +257,7 @@ const DebtCreatePage = () => {
             !selectedAddAccount
           }
         >
-          Kaydet
+          {t("save")}
         </Button>
       </Box>
 
@@ -268,7 +268,7 @@ const DebtCreatePage = () => {
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Alert onClose={() => setOpenSnackbar(false)} severity="success">
-          Borç başarıyla eklendi!
+          {t("debtAddedSuccess")}
         </Alert>
       </Snackbar>
     </Container>

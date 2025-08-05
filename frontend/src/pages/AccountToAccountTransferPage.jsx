@@ -40,7 +40,7 @@ const AccountToAccountTransferPage = () => {
     }
 
     if (selectedSenderAccount.id === selectedReceiverAccount.id) {
-      setError("Gönderici ve alıcı hesap aynı olamaz!");
+      setError(t("sameAccountError"));
       return;
     }
 
@@ -48,7 +48,7 @@ const AccountToAccountTransferPage = () => {
     const senderBalance = parseFloat(selectedSenderAccount.balance);
 
     if (senderBalance < amount) {
-      setError("Yetersiz bakiye!");
+      setError(t("insufficientBalance"));
       return;
     }
 
@@ -127,7 +127,7 @@ const AccountToAccountTransferPage = () => {
         setOpenSnackbar(true);
         setTimeout(() => navigate("/account"), 1000);
       } else {
-        setError("Transfer başarısız oldu.");
+        setError(t("transferFailed"));
       }
     } catch (err) {
       console.error("Transfer hatası:", err);
@@ -140,12 +140,12 @@ const AccountToAccountTransferPage = () => {
       <Typography variant="h5" align="center" gutterBottom>{t("interAccount")} Transfer</Typography>
 
       <FormControl fullWidth margin="normal">
-        <InputLabel id="sender-label">Gönderen Hesap*</InputLabel>
+        <InputLabel id="sender-label">{t("senderAccount")}</InputLabel>
         <Select
           labelId="sender-label"
           id="sender-select"
           value={selectedSenderAccount?.id || ""}
-          label="Gönderen Hesap*"
+          label={t("senderAccount")}
           onChange={(e) => setSelectedSenderAccount(accounts.find(acc => acc.id === e.target.value))}
         >
           {accounts.map(account => (
@@ -157,12 +157,12 @@ const AccountToAccountTransferPage = () => {
       </FormControl>
 
       <FormControl fullWidth margin="normal">
-        <InputLabel id="receiver-label">Alıcı Hesap*</InputLabel>
+        <InputLabel id="receiver-label">{t("receiverAccount")}</InputLabel>
         <Select
             labelId="receiver-label"
             id="receiver-select"
             value={selectedReceiverAccount?.id || ""}
-            label="Alıcı Hesap*"
+            label={t("receiverAccount")}
             onChange={(e) => setSelectedReceiverAccount(accounts.find(acc => acc.id === e.target.value))}
             >
             {accounts
@@ -192,7 +192,7 @@ const AccountToAccountTransferPage = () => {
         selectedSenderAccount.currency !== selectedReceiverAccount.currency && (
           <>
            <TextField
-              label="Kur*"
+              label={t("exchangeRate")}
               type="number"
               value={transferData.exchangeRate || ""}
               onChange={(e) => setTransferData({ ...transferData, exchangeRate: e.target.value })}
@@ -202,7 +202,7 @@ const AccountToAccountTransferPage = () => {
             />
 
             <Typography variant="caption" sx={{ color: 'gray', mt: 0.5 }}>
-              Kur: 1 {selectedSenderAccount?.currency} kaç {selectedReceiverAccount?.currency} ediyor?
+              {t("exchangeRateHint")}
             </Typography>
 
 
@@ -212,7 +212,7 @@ const AccountToAccountTransferPage = () => {
 
 
       <TextField
-        label="Tarih*"
+        label={t("date")}
         type="date"
         value={transferData.date || ""}
         onChange={(e) => setTransferData({ ...transferData, date: e.target.value })}
@@ -260,7 +260,7 @@ const AccountToAccountTransferPage = () => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert onClose={() => setOpenSnackbar(false)} severity="success">
-          Transfer başarılı!
+          {t("transferSuccess")}
         </Alert>
       </Snackbar>
     </Container>
