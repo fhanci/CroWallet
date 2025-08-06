@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Container, Typography, TextField, Box, FormControl, InputLabel, Select, MenuItem, Button, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from 'react-router-dom';
-
+import { useTranslation } from "react-i18next";
 const AccountDeletePage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const userId = localStorage.getItem('userId');
 

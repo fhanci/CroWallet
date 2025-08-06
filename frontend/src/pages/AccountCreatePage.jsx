@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Container, Typography, Box, TextField, MenuItem, InputLabel, FormControl, Select, Button, Snackbar, Alert } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from "react-i18next";
 
 const AccountCreatePage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const userId = localStorage.getItem('userId');
   const now = new Date();

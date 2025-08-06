@@ -3,7 +3,7 @@ import { Container, Typography, Box, FormControl, InputLabel, Select, MenuItem, 
           DialogContent, DialogActions } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import { useNavigate } from 'react-router-dom';
-
+import { t } from 'i18next';
 const DebtEditPage = () => {
   const userId = localStorage.getItem('userId');
 
@@ -221,10 +221,10 @@ const DebtEditPage = () => {
       if (!response.ok) throw new Error('Borç güncelleme başarısız!');
 
       setOpenSnackbar(true);
-      setError('');
+      setError(t("deptUpdateFailed"));
     } catch (err) {
       console.error(err);
-      setError('Güncelleme başarısız, tekrar deneyiniz.');
+      setError();
     }
   };
 
@@ -245,7 +245,7 @@ const DebtEditPage = () => {
     <Container maxWidth="sm" sx={{ mt: 8 }}>
       <Box sx={{ p: 4 }}>
         <Typography variant="h5" align="center" gutterBottom>
-          {t("Borç Düzenle")}
+          {t("editDebt")}
         </Typography>
 
         <FormControl fullWidth margin="normal">
@@ -271,7 +271,7 @@ const DebtEditPage = () => {
 
         {selectedDebt && (
           <FormControl fullWidth margin="normal">
-            <InputLabel id="account-select-label">Borcun Eklendiği Hesap</InputLabel>
+            <InputLabel id="account-select-label">{t("debtAccountLabel")}</InputLabel>
             <Select
               labelId="account-select-label"
               id="account-select"
@@ -317,9 +317,9 @@ const DebtEditPage = () => {
                 autoComplete="off"
                 inputProps={{ autoComplete: 'off' }}
               >
-                <MenuItem value="EUR">€ EUR</MenuItem>
-                <MenuItem value="USD">$ USD</MenuItem>
-                <MenuItem value="TRY">₺ TRY</MenuItem>
+                <MenuItem value="EUR">€ {t("eur")} </MenuItem>
+                <MenuItem value="USD">$ {t("usd")} </MenuItem>
+                <MenuItem value="TRY">₺ {t("try")} </MenuItem>
               </Select>
             </FormControl>
 
@@ -387,17 +387,17 @@ const DebtEditPage = () => {
         >
           <DialogTitle>Onay</DialogTitle>
           <DialogContent>
-            Borç miktarını 0 yapmak borcu ‘ödendi’ olarak işaretler ve listeden kaldırır. Devam edilsin mi?
+            {t("debtConfirm")}
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setShowZeroDialog(false)}>
-              Hayır
+              {t("no")}
             </Button>
             <Button
               onClick={() => handleUpdateDebt()} 
               autoFocus
             >
-              Evet
+              {t("yes")}
             </Button>
           </DialogActions>
         </Dialog>
@@ -409,7 +409,7 @@ const DebtEditPage = () => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert onClose={() => setOpenSnackbar(false)} severity="success">
-          Borç başarıyla güncellendi!
+          {t("debtUpdatedSuccess")}
         </Alert>
       </Snackbar>
     </Container>

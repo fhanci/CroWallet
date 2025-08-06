@@ -85,7 +85,7 @@
   "startDateLabel": "Başlangıç Tarihi ve Saati",
   "endDateLabel": "Bitiş Tarihi ve Saati",
   "applyFilter": "Filtrele",
-  
+
   "accountName": "Hesap Adı",
   "balance": "Bakiye",
   "currency": "Para Birimi",
@@ -104,7 +104,7 @@
   "confirmDeleteConfirm": "Evet, Sil",
   "accountDeletedSuccess": "Hesap başarıyla silindi!",
   "wrongPassword": "Şifre yanlış, lütfen tekrar deneyin.",
-  
+
   "selectAccount": "Hesap Seç",
   "accountUpdatedSuccess": "Hesap başarıyla güncellendi!",
 
@@ -125,5 +125,47 @@
   "dueDate": "Son Ödeme Tarihi",
   "warningPeriod": "Uyarılma Süresi (Gün)",
   "warningPeriodPlaceholder": "Son ödeme tarihinden kaç gün önce size hatırlatalım?",
-  "accountNote": "Borcunuz seçtiğiniz hesaba gelir olarak eklenecektir."
+  "accountNote": "Borcunuz seçtiğiniz hesaba gelir olarak eklenecektir.",
+
+  "selectDebt": "Borç Seçin",
+  "debtUpdateFailed": "Güncelleme başarısız, tekrar deneyiniz.",
+  "zeroDebtConfirmTitle": "Borç Tutarı Sıfır",
+  "zeroDebtConfirmMessage": "Borç tutarı sıfır olarak girildi. Bu borç ödenmiş olarak işaretlenecek. Onaylıyor musunuz?",
+  "confirm": "Onayla",
+  "debtUpdatedSuccess": "Borç başarıyla güncellendi!",
+  "debtConfirm": "Borç miktarını 0 yapmak borcu ‘ödendi’ olarak işaretler ve listeden kaldırır. Devam edilsin mi?",
+
+  "debtAccountLabel": "Borcun Eklendiği Hesap",
+  "yes": "Evet",
+  "no": "Hayır",
+  "noDebts": "Henüz borç eklenmemiş.",
+
+  "selectDebtToPay": "Ödenecek Borcu Seçin",
+  "payAmount": "Ödenecek Miktar",
+  "pay": "Öde",
+  "debtPaidSuccess": "Borç ödeme başarılı!",
+  "balanceTooLow": "Bakiye yetersiz! Lütfen farklı bir hesap seçin veya miktarı azaltın.",
+
+  "myDebts": "Borçlarım",
+  "noDebtsYet": "Henüz borcunuz yok.",
+  "debt": "Borç",
+
+  "addMoney": "Para Ekle",
+  "details": "Detay",
+  "detailsHint": "Kategoriye bağlı olarak detayları da seçebilirsiniz.",
+  "moneyAddedSuccess": "Para eklendi!",
+  "requiredFieldsError": "Zorunlu alanları doldurmanız gerekiyor!",
+
+  "upcomingDebts": "YAKLAŞAN BORÇLAR",
+  "noUpcomingDebts": "Henüz tarihi yaklaşan bir borç yok.",
+
+  "profileTitle": "KULLANICI BİLGİLERİ",
+  "profileSubtitle": "Hesap bilgilerinizi görüntüleyin ve yönetin.",
+  "edit": "Düzenle",
+  "deleteConfirmTitle": "Hesabı Sil",
+  "deleteConfirmText": "Hesabınızı kalıcı olarak silmek istediğinizden emin misiniz?",
+  "profileUpdated": "Profil başarıyla güncellendi.",
+  "accountDeleted": "Hesap silindi.",
+
+  "chooseLanguage": "Dil Seçin"
 }

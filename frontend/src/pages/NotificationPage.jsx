@@ -10,7 +10,7 @@ import {
   TableBody,
   Paper,
 } from '@mui/material';
-
+import { t } from 'i18next';
 const NotificationPage = () => {
   const [debts, setDebts] = useState([]);
   const userId = localStorage.getItem('userId');
@@ -44,7 +44,7 @@ const NotificationPage = () => {
     <Container sx={{ mt: 4 }}>
       {/* Başlık */}
       <Typography variant="h4" align="center" gutterBottom>
-        YAKLAŞAN BORÇLAR
+        {t("upcomingDebts")}
       </Typography>
 
       {/* Borçlar Tablosu */}
@@ -100,7 +100,7 @@ const NotificationPage = () => {
         </Box>
         ) : (
         <Typography align="center" color="text.secondary" sx={{ fontSize: "1rem" }}>
-            Henüz tarihi yaklaşan bir borç yok.
+            {t("noUpcomingDebts")}
         </Typography>
         )}
     </Container>

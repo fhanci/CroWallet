@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import {Container,Typography,Box,FormControl,InputLabel,Select,MenuItem,TextField,Button,Snackbar,Alert,} from "@mui/material";
 import PaymentIcon from "@mui/icons-material/Payment";
 import { useNavigate } from "react-router-dom";
-
+import { t } from 'i18next';
 const DebtPayPage = () => {
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
@@ -66,7 +66,7 @@ const DebtPayPage = () => {
     }
 
     if (parseFloat(selectedTransferAccount.balance) < parseFloat(payAmount)) {
-      setError("Bakiye yetersiz! Lütfen farklı bir hesap seçin veya miktarı azaltın.");
+      setError(t("balanceTooLow"));
       return;
     }
 
@@ -140,11 +140,11 @@ const DebtPayPage = () => {
       </Typography>
 
       <FormControl fullWidth margin="normal">
-        <InputLabel>Ödenecek Borcu Seçin</InputLabel>
+        <InputLabel>{t("selectDebtToPay")}</InputLabel>
         <Select
           value={selectedPayDebt?.id || ""}
           onChange={(e) => setSelectedPayDebt(debts.find((debt) => debt.id === e.target.value))}
-          label="Ödenecek Borcu Seçin"
+          label={t("selectDebtToPay")}
         >
           {debts.map((debt) => (
             <MenuItem key={debt.id} value={debt.id}>
@@ -170,7 +170,7 @@ const DebtPayPage = () => {
       </FormControl>
 
       <TextField
-        label="Ödenecek Miktar"
+        label={t("payAmount")}
         type="number"
         value={payAmount}
         onChange={(e) => setPayAmount(e.target.value)}
@@ -192,7 +192,7 @@ const DebtPayPage = () => {
           onClick={handlePayDebt}
           disabled={!selectedTransferAccount || !selectedPayDebt || !payAmount}
         >
-          Öde
+          {t("pay")}
         </Button>
       </Box>
 
@@ -203,7 +203,7 @@ const DebtPayPage = () => {
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Alert onClose={() => setOpenSnackbar(false)} severity="success">
-          Borç ödeme başarılı!
+          {t("debtPaidSuccess")}
         </Alert>
       </Snackbar>
     </Container>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {Container,Typography,FormControl,InputLabel,Select,MenuItem,TextField,Autocomplete,Button,Snackbar,Alert,Box} from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import { useNavigate } from 'react-router-dom';
-
+import { t } from 'i18next';
 const OutgoingTransferPage = () => {
   const navigate = useNavigate();
   const userId = localStorage.getItem('userId');
@@ -49,7 +49,7 @@ const OutgoingTransferPage = () => {
   const handleSubmit = async () => {
     // Detay zorunluluğunu kaldırdık, o yüzden details kontrolü kaldırıldı
     if (!selectedTransferAccount || !selectedTransfer.amount || !selectedTransfer.category || !selectedTransfer.date || (selectedTransferAccount.currency !== "TRY" && !selectedTransfer.exchangeRate)) {
-      setError("Zorunlu alanları doldurmanız gerekiyor!");
+      setError(t("requiredFieldsError"));
       return;
     }
 
@@ -216,11 +216,11 @@ const OutgoingTransferPage = () => {
         value={selectedTransfer.details || ""}
         onChange={(e, newValue) => setSelectedTransfer({ ...selectedTransfer, details: newValue })}
         renderInput={(params) => (
-          <TextField {...params} label="Detay" fullWidth margin="normal" />
+          <TextField {...params} label={t("addMoney")} fullWidth margin="normal" />
         )}
       />
       <Typography variant="caption" sx={{ color: 'gray', mt: 0.5 }}>
-        Kategoriye bağlı olarak detayları da seçebilirsiniz.
+        {t("detailsHint")}
       </Typography>
 
       {error && (

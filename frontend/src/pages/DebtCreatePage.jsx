@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import { useNavigate } from "react-router-dom";
-
+import { t } from 'i18next';
 const DebtCreatePage = () => {
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
