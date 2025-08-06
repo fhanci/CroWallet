@@ -151,5 +151,8 @@
   "deleteConfirmText": "هل أنت متأكد أنك تريد حذف حسابك بشكل دائم؟",
   "profileUpdated": "تم تحديث الملف الشخصي بنجاح.",
   "accountDeleted": "تم حذف الحساب.",
-  "chooseLanguage": "اختر اللغة"
+  "chooseLanguage": "اختر اللغة",
+  "exchangeRateHintTwo": "يرجى إدخال سعر الصرف الحالي لـ {{currency}}/TRY",
+
+  "dueDateTwo": "التاريخ النهائي"
 }

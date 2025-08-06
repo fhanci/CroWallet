@@ -140,7 +140,7 @@ const SettingPage = () => {
           value={expenseSources}
           onChange={(event, newValues) => setExpenseSources(newValues)}
           renderInput={(params) => (
-            <TextField {...params} label="Gider Kaynakları" fullWidth />
+            <TextField {...params} label={t("expenseSources")} fullWidth />
           )}
         />
 

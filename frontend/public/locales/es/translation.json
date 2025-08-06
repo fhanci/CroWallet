@@ -151,5 +151,7 @@
   "deleteConfirmText": "¿Estás seguro de que deseas eliminar tu cuenta permanentemente?",
   "profileUpdated": "Perfil actualizado exitosamente.",
   "accountDeleted": "Cuenta eliminada.",
-  "chooseLanguage": "Seleccionar Idioma"
+  "chooseLanguage": "Seleccionar Idioma",
+  "exchangeRateHintTwo": "Por favor, introduce el tipo de cambio actual {{currency}}/TRY",
+  "dueDateTwo": "Fecha límite"
 }
