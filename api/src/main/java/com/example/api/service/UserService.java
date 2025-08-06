@@ -4,6 +4,7 @@ import com.example.api.dto.UserDTO;
 import com.example.api.mapper.UserMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,8 +17,26 @@ public class UserService {
     @Autowired
     private final UserRepository userRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
+    }
+
+    public UserDTO register(String email, String username, String password){
+        User usr = userRepository.findByUsername(username).orElse(null);
+        if (usr != null) {
+            return null;
+        }
+        usr = userRepository.findByEmail(email).orElse(null);
+        if(usr != null){
+            return null;
+        }
+        String hashedPassword = passwordEncoder.encode(password);
+        User user = new User(email, username, password);
+        userRepository.save(user);
+        return UserMapper.INSTANCE.toUserDTO(user);
     }
 
     public UserDTO createUser(UserDTO user) {
@@ -40,7 +59,7 @@ public class UserService {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new GeneralException("User to be updated not found: " + id));
 
-        existingUser.setName(updatedUser.getName());
+        existingUser.setUsername(updatedUser.getUsername());
         existingUser.setPassword(updatedUser.getPassword());
         existingUser.setEmail(updatedUser.getEmail());
 
@@ -53,5 +72,13 @@ public class UserService {
             throw new GeneralException("User to be deleted not found: " + id);
         }
         userRepository.deleteById(id);
+    }
+
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username).orElse(null);
+    }
+
+    public User findById(Long id) {
+        return userRepository.findById(id).orElse(null);
     }
 }
