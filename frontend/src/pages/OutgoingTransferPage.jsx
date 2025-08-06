@@ -1,11 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import {Container,Typography,FormControl,InputLabel,Select,MenuItem,TextField,Autocomplete,Button,Snackbar,Alert,Box} from '@mui/material';
-import SaveIcon from '@mui/icons-material/Save';
-import { useNavigate } from 'react-router-dom';
-import { t } from 'i18next';
+import React, { useState, useEffect } from "react";
+import {
+  Container,
+  Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+  Autocomplete,
+  Button,
+  Snackbar,
+  Alert,
+  Box,
+} from "@mui/material";
+import SaveIcon from "@mui/icons-material/Save";
+import { useNavigate } from "react-router-dom";
+import { t } from "i18next";
 const OutgoingTransferPage = () => {
   const navigate = useNavigate();
-  const userId = localStorage.getItem('userId');
+  const userId = localStorage.getItem("userId");
   const now = new Date();
 
   const [accounts, setAccounts] = useState([]);
@@ -14,13 +27,17 @@ const OutgoingTransferPage = () => {
   const [expenseSources, setExpenseSources] = useState([]);
   const [error, setError] = useState(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
-
+  const hintText = t("exchangeRateHintTwo", {
+    currency: selectedTransferAccount?.currency || "TRY",
+  });
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const response = await fetch('http://localhost:8082/api/accounts');
+        const response = await fetch("http://localhost:8082/api/accounts");
         const data = await response.json();
-        const userAccounts = data.filter(acc => acc.user.id === parseInt(userId));
+        const userAccounts = data.filter(
+          (acc) => acc.user.id === parseInt(userId)
+        );
         setAccounts(userAccounts);
       } catch (error) {
         console.error("Hesaplar alınamadı:", error);
@@ -39,16 +56,24 @@ const OutgoingTransferPage = () => {
       "Ulaşım",
       "Eğitim",
       "Eğlence",
-      "Sağlık"
+      "Sağlık",
     ];
-    const savedExpense = JSON.parse(localStorage.getItem(`expenseSources_${userId}`)) || [];
+    const savedExpense =
+      JSON.parse(localStorage.getItem(`expenseSources_${userId}`)) || [];
     const merged = Array.from(new Set([...defaultExpense, ...savedExpense]));
     setExpenseSources(merged);
   }, [userId]);
 
   const handleSubmit = async () => {
     // Detay zorunluluğunu kaldırdık, o yüzden details kontrolü kaldırıldı
-    if (!selectedTransferAccount || !selectedTransfer.amount || !selectedTransfer.category || !selectedTransfer.date || (selectedTransferAccount.currency !== "TRY" && !selectedTransfer.exchangeRate)) {
+    if (
+      !selectedTransferAccount ||
+      !selectedTransfer.amount ||
+      !selectedTransfer.category ||
+      !selectedTransfer.date ||
+      (selectedTransferAccount.currency !== "TRY" &&
+        !selectedTransfer.exchangeRate)
+    ) {
       setError(t("requiredFieldsError"));
       return;
     }
@@ -61,11 +86,16 @@ const OutgoingTransferPage = () => {
       return;
     }
 
-    const createDate = new Date(now.getTime() + (3 * 60 * 60 * 1000)).toISOString();
+    const createDate = new Date(
+      now.getTime() + 3 * 60 * 60 * 1000
+    ).toISOString();
 
     const updatedTransfer = {
       ...selectedTransfer,
-      exchangeRate: selectedTransferAccount.currency === "TRY" ? 1 : selectedTransfer.exchangeRate,
+      exchangeRate:
+        selectedTransferAccount.currency === "TRY"
+          ? 1
+          : selectedTransfer.exchangeRate,
       type: "outgoing",
       createDate,
       user: { id: parseInt(userId) },
@@ -87,11 +117,14 @@ const OutgoingTransferPage = () => {
         body: JSON.stringify(updatedTransfer),
       });
 
-      const response2 = await fetch(`http://localhost:8082/api/accounts/${selectedTransferAccount.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedAccount),
-      });
+      const response2 = await fetch(
+        `http://localhost:8082/api/accounts/${selectedTransferAccount.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedAccount),
+        }
+      );
 
       if (response.ok && response2.ok) {
         setOpenSnackbar(true);
@@ -106,13 +139,46 @@ const OutgoingTransferPage = () => {
   };
 
   const detailsOptions = {
-    "Kira": ["Ev Kirası", "Ofis Kirası", "Dükkan Kirası", "Depo Kirası"],
-    "Fatura": ["Elektrik Faturası", "Su Faturası", "İnternet Faturası", "Doğalgaz Faturası", "Telefon Faturası"],
-    "Market Alışverişi": ["Gıda Ürünleri", "İçecekler", "Kişisel Bakım Ürünleri", "Temizlik Malzemeleri"],
-    "Ulaşım": ["Toplu Taşıma", "Benzin ve Mazot", "Araç Bakımı", "Sigorta ve Muayene", "Araç Kiralama"],
-    "Eğitim": ["Okul Ücreti", "Kurs Ücreti", "Kitap ve Kırtasiye", "Online Eğitim Platformları"],
-    "Eğlence": ["Sinema ve Tiyatro", "Konser ve Etkinlikler", "Online Abonelikler", "Tatiller ve Geziler"],
-    "Sağlık": ["Hastane Masrafı", "Eczane Alışverişi", "Diş Tedavisi", "Göz Muayenesi", "Özel Sağlık Sigortası"]
+    Kira: ["Ev Kirası", "Ofis Kirası", "Dükkan Kirası", "Depo Kirası"],
+    Fatura: [
+      "Elektrik Faturası",
+      "Su Faturası",
+      "İnternet Faturası",
+      "Doğalgaz Faturası",
+      "Telefon Faturası",
+    ],
+    "Market Alışverişi": [
+      "Gıda Ürünleri",
+      "İçecekler",
+      "Kişisel Bakım Ürünleri",
+      "Temizlik Malzemeleri",
+    ],
+    Ulaşım: [
+      "Toplu Taşıma",
+      "Benzin ve Mazot",
+      "Araç Bakımı",
+      "Sigorta ve Muayene",
+      "Araç Kiralama",
+    ],
+    Eğitim: [
+      "Okul Ücreti",
+      "Kurs Ücreti",
+      "Kitap ve Kırtasiye",
+      "Online Eğitim Platformları",
+    ],
+    Eğlence: [
+      "Sinema ve Tiyatro",
+      "Konser ve Etkinlikler",
+      "Online Abonelikler",
+      "Tatiller ve Geziler",
+    ],
+    Sağlık: [
+      "Hastane Masrafı",
+      "Eczane Alışverişi",
+      "Diş Tedavisi",
+      "Göz Muayenesi",
+      "Özel Sağlık Sigortası",
+    ],
   };
 
   const selectedCategory = selectedTransfer?.category || "";
@@ -120,7 +186,9 @@ const OutgoingTransferPage = () => {
 
   return (
     <Container maxWidth="sm">
-      <Typography variant="h5" align="center" gutterBottom>Para Çıkar</Typography>
+      <Typography variant="h5" align="center" gutterBottom>
+        Para Çıkar
+      </Typography>
 
       <FormControl fullWidth margin="normal">
         <InputLabel id="account-label">{t("selectAccount")}</InputLabel>
@@ -129,9 +197,13 @@ const OutgoingTransferPage = () => {
           id="account-select"
           value={selectedTransferAccount?.id || ""}
           label="Hesap Seçin*"
-          onChange={(e) => setSelectedTransferAccount(accounts.find(acc => acc.id === e.target.value))}
+          onChange={(e) =>
+            setSelectedTransferAccount(
+              accounts.find((acc) => acc.id === e.target.value)
+            )
+          }
         >
-          {accounts.map(account => (
+          {accounts.map((account) => (
             <MenuItem key={account.id} value={account.id}>
               {account.accountName} - {account.balance} {account.currency}
             </MenuItem>
@@ -145,68 +217,83 @@ const OutgoingTransferPage = () => {
             label={t("exchangeRate")}
             type="number"
             value={selectedTransfer.exchangeRate || ""}
-            onChange={(e) => setSelectedTransfer({ ...selectedTransfer, exchangeRate: e.target.value })}
+            onChange={(e) =>
+              setSelectedTransfer({
+                ...selectedTransfer,
+                exchangeRate: e.target.value,
+              })
+            }
             fullWidth
             margin="normal"
           />
-          <Typography variant="caption" sx={{ color: 'gray', mt: 0.5 }}>
-            Lütfen güncel {selectedTransferAccount?.currency}/TRY kurunu giriniz (örneğin: 35)
+          <Typography variant="caption" sx={{ color: "gray", mt: 0.5 }}>
+            {hintText}
           </Typography>
         </>
       )}
 
-    <Box display="flex" alignItems="center" marginTop={2} marginBottom={1}>
-            <TextField
-            label={t("amount")}
-            type="number"
-            value={selectedTransfer.amount || ""}
-            onChange={(e) => setSelectedTransfer({ ...selectedTransfer, amount: e.target.value })}
-            fullWidth
-            />
-            <Typography
-            sx={{
-                marginLeft: 1,
-                whiteSpace: 'nowrap',
-                lineHeight: '40px',
-                fontSize: '1rem',
-                color: 'gray',
-            }}
-            >
-            {selectedTransferAccount?.currency}
+      <Box display="flex" alignItems="center" marginTop={2} marginBottom={1}>
+        <TextField
+          label={t("amount")}
+          type="number"
+          value={selectedTransfer.amount || ""}
+          onChange={(e) =>
+            setSelectedTransfer({ ...selectedTransfer, amount: e.target.value })
+          }
+          fullWidth
+        />
+        <Typography
+          sx={{
+            marginLeft: 1,
+            whiteSpace: "nowrap",
+            lineHeight: "40px",
+            fontSize: "1rem",
+            color: "gray",
+          }}
+        >
+          {selectedTransferAccount?.currency}
         </Typography>
-    </Box>
+      </Box>
 
       <FormControl fullWidth margin="normal">
         <Autocomplete
           freeSolo
           options={expenseSources}
           value={selectedTransfer.category || ""}
-          onChange={(e, newValue) => setSelectedTransfer({ ...selectedTransfer, category: newValue })}
+          onChange={(e, newValue) =>
+            setSelectedTransfer({ ...selectedTransfer, category: newValue })
+          }
           renderInput={(params) => (
-            <TextField {...params} label={t("category")} fullWidth margin="normal" />
+            <TextField
+              {...params}
+              label={t("category")}
+              fullWidth
+              margin="normal"
+            />
           )}
         />
       </FormControl>
-
 
       <TextField
         label={t("date")}
         type="date"
         value={selectedTransfer.date || ""}
-        onChange={(e) => setSelectedTransfer({ ...selectedTransfer, date: e.target.value })}
+        onChange={(e) =>
+          setSelectedTransfer({ ...selectedTransfer, date: e.target.value })
+        }
         fullWidth
         margin="normal"
         InputLabelProps={{ shrink: true }}
         InputProps={{
           sx: {
             "& input::-webkit-calendar-picker-indicator": {
-              cursor: 'pointer',
-              display: 'block',
-              position: 'relative',
+              cursor: "pointer",
+              display: "block",
+              position: "relative",
               right: 0,
-              filter: 'none',
+              filter: "none",
             },
-          }
+          },
         }}
       />
 
@@ -214,12 +301,19 @@ const OutgoingTransferPage = () => {
         freeSolo
         options={selectedDetailsOptions}
         value={selectedTransfer.details || ""}
-        onChange={(e, newValue) => setSelectedTransfer({ ...selectedTransfer, details: newValue })}
+        onChange={(e, newValue) =>
+          setSelectedTransfer({ ...selectedTransfer, details: newValue })
+        }
         renderInput={(params) => (
-          <TextField {...params} label={t("addMoney")} fullWidth margin="normal" />
+          <TextField
+            {...params}
+            label={t("addMoney")}
+            fullWidth
+            margin="normal"
+          />
         )}
       />
-      <Typography variant="caption" sx={{ color: 'gray', mt: 0.5 }}>
+      <Typography variant="caption" sx={{ color: "gray", mt: 0.5 }}>
         {t("detailsHint")}
       </Typography>
 
@@ -232,7 +326,12 @@ const OutgoingTransferPage = () => {
       <TextField
         label={t("description")}
         value={selectedTransfer.description || ""}
-        onChange={(e) => setSelectedTransfer({ ...selectedTransfer, description: e.target.value })}
+        onChange={(e) =>
+          setSelectedTransfer({
+            ...selectedTransfer,
+            description: e.target.value,
+          })
+        }
         fullWidth
         margin="normal"
       />

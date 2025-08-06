@@ -55,8 +55,8 @@ const NotificationPage = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>{t("toWhom")}</TableCell>
-                  <TableCell>Tutar</TableCell>
-                  <TableCell>Son Tarih</TableCell>
+                  <TableCell>{t("amount")} </TableCell>
+                  <TableCell>{t("dueDateTwo")}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

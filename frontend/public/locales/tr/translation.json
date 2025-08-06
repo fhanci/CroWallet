@@ -167,5 +167,8 @@
   "profileUpdated": "Profil başarıyla güncellendi.",
   "accountDeleted": "Hesap silindi.",
 
-  "chooseLanguage": "Dil Seçin"
+  "chooseLanguage": "Dil Seçin",
+  "exchangeRateHintTwo": "Lütfen güncel {{currency}}/TRY kurunu giriniz",
+
+  "dueDateTwo": "Son Tarih"
 }
