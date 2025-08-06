@@ -34,10 +34,8 @@ import ProfileButton from "./ProfileButton";
 import { useTranslation } from "react-i18next";
 
 const MenuPage = ({ isDrawerOpen, setIsDrawerOpen }) => {
-  const { t, i18n } = useTranslation();
-  const changeLanguage = (lng) => {
-    i18n.changeLanguage(lng);
-  };
+  const { t } = useTranslation();
+  
   const navigate = useNavigate();
   const [transferMenuOpen, setTransferMenuOpen] = React.useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = React.useState(false);
@@ -310,7 +308,7 @@ const MenuPage = ({ isDrawerOpen, setIsDrawerOpen }) => {
                 <ListItemIcon>
                   <EditIcon />
                 </ListItemIcon>
-                <ListItemText primary={t("Borç Düzenle")} />
+                <ListItemText primary={t("editDebt")} />
               </ListItem>
               <ListItem
                 component="button"
@@ -350,15 +348,6 @@ const MenuPage = ({ isDrawerOpen, setIsDrawerOpen }) => {
             <ListItemText primary={t("logout")} />
           </ListItem>
         </List>
-        <Box sx={{ mt: "auto", px: 2, py: 2 }}>
-          <Typography variant="body2" sx={{ mb: 1, fontWeight: "bold" }}>
-            Choose Language
-          </Typography>
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <button onClick={() => changeLanguage("tr")}>🇹🇷 Türkçe</button>
-            <button onClick={() => changeLanguage("en")}>🇬🇧 English</button>
-          </Box>
-        </Box>
       </Drawer>
     </Box>
   );

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Container, Typography, Paper, Box } from "@mui/material";
-
+import { t } from 'i18next';
 const DebtPage = () => {
   const [debts, setDebts] = useState([]);
   const userId = localStorage.getItem("userId");
@@ -23,12 +23,12 @@ const DebtPage = () => {
   return (
     <Container maxWidth="md" sx={{ mt: 3 }}>
       <Typography variant="h4" gutterBottom>
-        Borçlarım
+        {t("myDebts")}
       </Typography>
 
       <Box mt={3}>
         {debts.length === 0 ? (
-          <Typography>Henüz borcunuz yok.</Typography>
+          <Typography>{t("noDebtsYet")}</Typography>
         ) : (
           debts
             .filter((debt) => debt.status === "odenmedi")
@@ -36,7 +36,7 @@ const DebtPage = () => {
             .map((debt) => (
               <Paper key={debt.id} sx={{ p: 2, mb: 2 }}>
                 <Typography>
-                  <strong>Borç:</strong> {debt.debtAmount} {debt.debtCurrency}
+                  <strong>{t("debt")}:</strong> {debt.debtAmount} {debt.debtCurrency}
                 </Typography>
                 <Typography>
                   <strong>{t("toWhom")}:</strong> {debt.toWhom}
