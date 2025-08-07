@@ -42,6 +42,7 @@ const DebtEditPage = () => {
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         });
+
         if (!res.ok) throw new Error("Borçlar alınamadı");
         const data = await res.json();
         const filtered = data.filter(
@@ -58,7 +59,14 @@ const DebtEditPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await fetch("http://localhost:8082/api/accounts");
+        const res = await fetch("http://localhost:8082/api/accounts", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        });
+
         if (!res.ok) throw new Error("Hesaplar alınamadı");
         const data = await res.json();
         const userAccounts = data.filter(

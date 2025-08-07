@@ -28,10 +28,6 @@ const AccountToAccountTransferPage = () => {
 
   useEffect(() => {
     const fetchAccounts = async () => {
-      if (!token) {
-        navigate("/login");
-        return;
-      }
       try {
         const response = await fetch("http://localhost:8082/api/accounts", {
           method: "GET",
@@ -40,6 +36,7 @@ const AccountToAccountTransferPage = () => {
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         });
+
         const data = await response.json();
         const userAccounts = data.filter(
           (acc) => acc.user.id === parseInt(userId)

@@ -33,7 +33,6 @@ const DebtCreatePage = () => {
 
   useEffect(() => {
     const fetchAccounts = async () => {
-      
       try {
         const res = await fetch("http://localhost:8082/api/accounts", {
           method: "GET",
@@ -42,6 +41,7 @@ const DebtCreatePage = () => {
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         });
+
         if (!res.ok) throw new Error("Hesaplar alınamadı");
         const data = await res.json();
         const userAccounts = data.filter(
@@ -148,7 +148,6 @@ const DebtCreatePage = () => {
           body: JSON.stringify(transferData),
         }
       );
-
       if (!transferResponse.ok)
         throw new Error("Transfer işlemi kaydedilemedi!");
 

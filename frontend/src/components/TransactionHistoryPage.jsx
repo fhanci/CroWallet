@@ -49,10 +49,6 @@ const TransactionHistoryPage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!token) {
-        navigate("/login");
-        return;
-      }
       try {
         const response = await fetch(`http://localhost:8082/api/transfers`, {
           method: "GET",
@@ -61,6 +57,7 @@ const TransactionHistoryPage = () => {
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         });
+
         if (!response.ok) throw new Error(t("errorFetchingTransactions"));
         const data = await response.json();
 
@@ -110,6 +107,7 @@ const TransactionHistoryPage = () => {
           },
         }
       );
+
       if (!res.ok) throw new Error(t(errorFetchingBalance));
       const account = await res.json();
       setAccountBalance(account.balance);
