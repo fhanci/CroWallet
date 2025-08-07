@@ -34,10 +34,6 @@ const AccountDeletePage = () => {
 
   useEffect(() => {
     const fetchAccounts = async () => {
-      if (!token) {
-        navigate("/login");
-        return;
-      }
       try {
         const res = await fetch("http://localhost:8082/api/accounts", {
           method: "GET",
@@ -46,6 +42,7 @@ const AccountDeletePage = () => {
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         });
+
         if (res.ok) {
           const data = await res.json();
           const filtered = data.filter((a) => a.user.id === parseInt(userId));
@@ -60,10 +57,6 @@ const AccountDeletePage = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      if (!token) {
-        navigate("/login");
-        return;
-      }
       try {
         const res = await fetch(`http://localhost:8082/api/users/${userId}`, {
           method: "GET",
@@ -72,6 +65,7 @@ const AccountDeletePage = () => {
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         });
+
         if (res.ok) {
           const data = await res.json();
           setUser(data);
@@ -108,6 +102,7 @@ const AccountDeletePage = () => {
           },
         }
       );
+
       if (!res.ok) throw new Error("Silme başarısız");
 
       setOpenSnackbar(true);

@@ -32,6 +32,7 @@ const DebtPayPage = () => {
   // Hesapları çek
   useEffect(() => {
     const fetchAccounts = async () => {
+
       try {
         const res = await fetch("http://localhost:8082/api/accounts", {
           method: "GET",
@@ -58,6 +59,7 @@ const DebtPayPage = () => {
   // Borçları çek
   useEffect(() => {
     const fetchDebts = async () => {
+
       try {
         const res = await fetch("http://localhost:8082/api/debts", {
           method: "GET",
@@ -100,6 +102,7 @@ const DebtPayPage = () => {
     }
 
     try {
+
       const updatedDebtAmount =
         selectedPayDebt.debtAmount - parseFloat(payAmount);
       const updatedStatus = updatedDebtAmount <= 0 ? "odendi" : "odenmedi";

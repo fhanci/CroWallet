@@ -28,10 +28,6 @@ const AccountEditPage = () => {
 
   useEffect(() => {
     const fetchAccounts = async () => {
-      if (!token) {
-        navigate("/login");
-        return;
-      }
       try {
         const response = await fetch("http://localhost:8082/api/accounts", {
           method: "GET",
@@ -40,6 +36,7 @@ const AccountEditPage = () => {
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         });
+
         if (response.ok) {
           const data = await response.json();
           const filtered = data.filter((a) => a.user.id === parseInt(userId));
@@ -63,10 +60,6 @@ const AccountEditPage = () => {
     }
 
     try {
-      if (!token) {
-        navigate("/login");
-        return;
-      }
       const updateDate = new Date(
         now.getTime() + 3 * 60 * 60 * 1000
       ).toISOString();
