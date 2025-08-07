@@ -28,6 +28,10 @@ const AccountPage = () => {
 
   useEffect(() => {
     const fetchAccounts = async () => {
+      if (!token) {
+        navigate("/login");
+        return;
+      }
       try {
         const res = await fetch("http://localhost:8082/api/accounts", {
           method: "GET",
@@ -49,6 +53,10 @@ const AccountPage = () => {
 
   useEffect(() => {
     const fetchTransfers = async () => {
+      if (!token) {
+        navigate("/login");
+        return;
+      }
       try {
         const res = await fetch("http://localhost:8082/api/transfers", {
           method: "GET",
@@ -70,6 +78,10 @@ const AccountPage = () => {
 
   useEffect(() => {
     const fetchDebts = async () => {
+      if (!token) {
+        navigate("/login");
+        return;
+      }
       try {
         const res = await fetch("http://localhost:8082/api/debts", {
           method: "GET",

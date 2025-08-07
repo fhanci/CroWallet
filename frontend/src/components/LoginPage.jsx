@@ -44,7 +44,7 @@ const LoginPage = () => {
           password: password,
         }
       );
-      // if (!response.ok) throw new Error(t("serverError"));
+      if (!response.ok) throw new Error(t("serverError"));
       setUserInfo({
         id: response.data.id,
         username: response.data.username,

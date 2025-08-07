@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Container, Typography, Paper, Box } from "@mui/material";
-import { t } from 'i18next';
+import { t } from "i18next";
 const DebtPage = () => {
   const [debts, setDebts] = useState([]);
   const userId = localStorage.getItem("userId");
@@ -8,10 +8,18 @@ const DebtPage = () => {
   useEffect(() => {
     const fetchDebts = async () => {
       try {
-        const response = await fetch("http://localhost:8082/api/debts");
+        const response = await fetch("http://localhost:8082/api/debts", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        });
         if (!response.ok) throw new Error("Borçlar alınamadı");
         const data = await response.json();
-        const userDebts = data.filter((debt) => debt.user?.id === parseInt(userId));
+        const userDebts = data.filter(
+          (debt) => debt.user?.id === parseInt(userId)
+        );
         setDebts(userDebts);
       } catch (error) {
         console.error(error);
@@ -36,7 +44,8 @@ const DebtPage = () => {
             .map((debt) => (
               <Paper key={debt.id} sx={{ p: 2, mb: 2 }}>
                 <Typography>
-                  <strong>{t("debt")}:</strong> {debt.debtAmount} {debt.debtCurrency}
+                  <strong>{t("debt")}:</strong> {debt.debtAmount}{" "}
+                  {debt.debtCurrency}
                 </Typography>
                 <Typography>
                   <strong>{t("toWhom")}:</strong> {debt.toWhom}

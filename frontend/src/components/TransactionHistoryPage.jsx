@@ -49,6 +49,10 @@ const TransactionHistoryPage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!token) {
+        navigate("/login");
+        return;
+      }
       try {
         const response = await fetch(`http://localhost:8082/api/transfers`, {
           method: "GET",
@@ -91,6 +95,10 @@ const TransactionHistoryPage = () => {
 
   // güncel bakiye için
   const fetchAccountBalance = async () => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
     try {
       const res = await fetch(
         `http://localhost:8082/api/accounts/${accountId}`,

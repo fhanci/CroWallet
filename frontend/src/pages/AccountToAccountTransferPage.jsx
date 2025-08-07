@@ -1,13 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
-  Container, Typography, FormControl, InputLabel, Select, MenuItem,
-  TextField, Button, Snackbar, Alert, Box
-} from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { t } from 'i18next';
+  Container,
+  Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+  Button,
+  Snackbar,
+  Alert,
+  Box,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { t } from "i18next";
 const AccountToAccountTransferPage = () => {
   const navigate = useNavigate();
-  const userId = localStorage.getItem('userId');
+  const userId = localStorage.getItem("userId");
   const now = new Date();
 
   const [accounts, setAccounts] = useState([]);
@@ -19,10 +28,22 @@ const AccountToAccountTransferPage = () => {
 
   useEffect(() => {
     const fetchAccounts = async () => {
+      if (!token) {
+        navigate("/login");
+        return;
+      }
       try {
-        const response = await fetch('http://localhost:8082/api/accounts');
+        const response = await fetch("http://localhost:8082/api/accounts", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        });
         const data = await response.json();
-        const userAccounts = data.filter(acc => acc.user.id === parseInt(userId));
+        const userAccounts = data.filter(
+          (acc) => acc.user.id === parseInt(userId)
+        );
         setAccounts(userAccounts);
       } catch (error) {
         console.error("Hesaplar alınamadı:", error);
@@ -33,8 +54,14 @@ const AccountToAccountTransferPage = () => {
   }, [userId]);
 
   const handleSubmit = async () => {
-    if (!selectedSenderAccount || !selectedReceiverAccount || !transferData.amount || !transferData.date ||
-      (selectedSenderAccount.currency !== selectedReceiverAccount.currency && !transferData.exchangeRate)) {
+    if (
+      !selectedSenderAccount ||
+      !selectedReceiverAccount ||
+      !transferData.amount ||
+      !transferData.date ||
+      (selectedSenderAccount.currency !== selectedReceiverAccount.currency &&
+        !transferData.exchangeRate)
+    ) {
       setError("Lütfen tüm alanları doldurun.");
       return;
     }
@@ -52,10 +79,13 @@ const AccountToAccountTransferPage = () => {
       return;
     }
 
-    const createDate = new Date(now.getTime() + (3 * 60 * 60 * 1000)).toISOString();
-    const exchangeRate = selectedSenderAccount.currency === selectedReceiverAccount.currency
-      ? 1
-      : parseFloat(transferData.exchangeRate);
+    const createDate = new Date(
+      now.getTime() + 3 * 60 * 60 * 1000
+    ).toISOString();
+    const exchangeRate =
+      selectedSenderAccount.currency === selectedReceiverAccount.currency
+        ? 1
+        : parseFloat(transferData.exchangeRate);
 
     const convertedAmount = amount * exchangeRate;
 
@@ -101,26 +131,32 @@ const AccountToAccountTransferPage = () => {
 
     try {
       const [res1, res2, res3, res4] = await Promise.all([
-        fetch('http://localhost:8082/api/transfers', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        fetch("http://localhost:8082/api/transfers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(outgoingTransfer),
         }),
-        fetch('http://localhost:8082/api/transfers', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        fetch("http://localhost:8082/api/transfers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(incomingTransfer),
         }),
-        fetch(`http://localhost:8082/api/accounts/update/${selectedSenderAccount.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedSender),
-        }),
-        fetch(`http://localhost:8082/api/accounts/update/${selectedReceiverAccount.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedReceiver),
-        }),
+        fetch(
+          `http://localhost:8082/api/accounts/update/${selectedSenderAccount.id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedSender),
+          }
+        ),
+        fetch(
+          `http://localhost:8082/api/accounts/update/${selectedReceiverAccount.id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedReceiver),
+          }
+        ),
       ]);
 
       if (res1.ok && res2.ok && res3.ok && res4.ok) {
@@ -137,7 +173,9 @@ const AccountToAccountTransferPage = () => {
 
   return (
     <Container maxWidth="sm">
-      <Typography variant="h5" align="center" gutterBottom>{t("interAccount")} Transfer</Typography>
+      <Typography variant="h5" align="center" gutterBottom>
+        {t("interAccount")} Transfer
+      </Typography>
 
       <FormControl fullWidth margin="normal">
         <InputLabel id="sender-label">{t("senderAccount")}</InputLabel>
@@ -146,9 +184,13 @@ const AccountToAccountTransferPage = () => {
           id="sender-select"
           value={selectedSenderAccount?.id || ""}
           label={t("senderAccount")}
-          onChange={(e) => setSelectedSenderAccount(accounts.find(acc => acc.id === e.target.value))}
+          onChange={(e) =>
+            setSelectedSenderAccount(
+              accounts.find((acc) => acc.id === e.target.value)
+            )
+          }
         >
-          {accounts.map(account => (
+          {accounts.map((account) => (
             <MenuItem key={account.id} value={account.id}>
               {account.accountName} - {account.balance} {account.currency}
             </MenuItem>
@@ -159,18 +201,22 @@ const AccountToAccountTransferPage = () => {
       <FormControl fullWidth margin="normal">
         <InputLabel id="receiver-label">{t("receiverAccount")}</InputLabel>
         <Select
-            labelId="receiver-label"
-            id="receiver-select"
-            value={selectedReceiverAccount?.id || ""}
-            label={t("receiverAccount")}
-            onChange={(e) => setSelectedReceiverAccount(accounts.find(acc => acc.id === e.target.value))}
-            >
-            {accounts
-                .filter(acc => acc.id !== selectedSenderAccount?.id) // Burada filtreleme yapıyoruz
-                .map(account => (
-                <MenuItem key={account.id} value={account.id}>
-                    {account.accountName} - {account.balance} {account.currency}
-                </MenuItem>
+          labelId="receiver-label"
+          id="receiver-select"
+          value={selectedReceiverAccount?.id || ""}
+          label={t("receiverAccount")}
+          onChange={(e) =>
+            setSelectedReceiverAccount(
+              accounts.find((acc) => acc.id === e.target.value)
+            )
+          }
+        >
+          {accounts
+            .filter((acc) => acc.id !== selectedSenderAccount?.id) // Burada filtreleme yapıyoruz
+            .map((account) => (
+              <MenuItem key={account.id} value={account.id}>
+                {account.accountName} - {account.balance} {account.currency}
+              </MenuItem>
             ))}
         </Select>
       </FormControl>
@@ -180,53 +226,67 @@ const AccountToAccountTransferPage = () => {
           label={t("amount")}
           type="number"
           value={transferData.amount || ""}
-          onChange={(e) => setTransferData({ ...transferData, amount: e.target.value })}
+          onChange={(e) =>
+            setTransferData({ ...transferData, amount: e.target.value })
+          }
           fullWidth
         />
-        <Typography sx={{ marginLeft: 1, whiteSpace: 'nowrap', lineHeight: '40px', fontSize: '1rem', color: 'gray' }}>
+        <Typography
+          sx={{
+            marginLeft: 1,
+            whiteSpace: "nowrap",
+            lineHeight: "40px",
+            fontSize: "1rem",
+            color: "gray",
+          }}
+        >
           {selectedSenderAccount?.currency}
         </Typography>
       </Box>
 
-      {selectedSenderAccount && selectedReceiverAccount &&
+      {selectedSenderAccount &&
+        selectedReceiverAccount &&
         selectedSenderAccount.currency !== selectedReceiverAccount.currency && (
           <>
-           <TextField
+            <TextField
               label={t("exchangeRate")}
               type="number"
               value={transferData.exchangeRate || ""}
-              onChange={(e) => setTransferData({ ...transferData, exchangeRate: e.target.value })}
+              onChange={(e) =>
+                setTransferData({
+                  ...transferData,
+                  exchangeRate: e.target.value,
+                })
+              }
               fullWidth
               margin="normal"
               placeholder={`1 ${selectedSenderAccount?.currency} = ? ${selectedReceiverAccount?.currency}`}
             />
 
-            <Typography variant="caption" sx={{ color: 'gray', mt: 0.5 }}>
+            <Typography variant="caption" sx={{ color: "gray", mt: 0.5 }}>
               {t("exchangeRateHint")}
             </Typography>
-
-
           </>
         )}
-
-
 
       <TextField
         label={t("date")}
         type="date"
         value={transferData.date || ""}
-        onChange={(e) => setTransferData({ ...transferData, date: e.target.value })}
+        onChange={(e) =>
+          setTransferData({ ...transferData, date: e.target.value })
+        }
         fullWidth
         margin="normal"
         InputLabelProps={{ shrink: true }}
         InputProps={{
           sx: {
             "& input::-webkit-calendar-picker-indicator": {
-              cursor: 'pointer',
-              display: 'block',
-              position: 'relative',
+              cursor: "pointer",
+              display: "block",
+              position: "relative",
               right: 0,
-              filter: 'none',
+              filter: "none",
             },
           },
           // KLAVYEDEN MANUEL GİRİŞ İZNİ VERİYORUZ, ONKEYDOWN KALDIRILDI
@@ -236,7 +296,9 @@ const AccountToAccountTransferPage = () => {
       <TextField
         label={t("description")}
         value={transferData.description || ""}
-        onChange={(e) => setTransferData({ ...transferData, description: e.target.value })}
+        onChange={(e) =>
+          setTransferData({ ...transferData, description: e.target.value })
+        }
         fullWidth
         margin="normal"
       />
@@ -257,7 +319,7 @@ const AccountToAccountTransferPage = () => {
         open={openSnackbar}
         autoHideDuration={3000}
         onClose={() => setOpenSnackbar(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Alert onClose={() => setOpenSnackbar(false)} severity="success">
           {t("transferSuccess")}

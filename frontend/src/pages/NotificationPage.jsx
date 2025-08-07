@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Container,
   Typography,
@@ -9,16 +9,22 @@ import {
   TableCell,
   TableBody,
   Paper,
-} from '@mui/material';
-import { t } from 'i18next';
+} from "@mui/material";
+import { t } from "i18next";
 const NotificationPage = () => {
   const [debts, setDebts] = useState([]);
-  const userId = localStorage.getItem('userId');
+  const userId = localStorage.getItem("userId");
 
   useEffect(() => {
     const fetchDebts = async () => {
       try {
-        const res = await fetch('http://localhost:8082/api/debts');
+        const res = await fetch("http://localhost:8082/api/debts", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        });
         if (res.ok) {
           const data = await res.json();
           const filtered = data
@@ -33,7 +39,7 @@ const NotificationPage = () => {
           setDebts(filtered);
         }
       } catch (error) {
-        console.error('Bildirimler alınamadı:', error);
+        console.error("Bildirimler alınamadı:", error);
       }
     };
 
@@ -50,7 +56,7 @@ const NotificationPage = () => {
       {/* Borçlar Tablosu */}
       {debts.length > 0 ? (
         <Box display="flex" justifyContent="center">
-          <Paper sx={{ width: '100%', maxWidth: 700 }}>
+          <Paper sx={{ width: "100%", maxWidth: 700 }}>
             <Table>
               <TableHead>
                 <TableRow>
@@ -66,8 +72,8 @@ const NotificationPage = () => {
                       sx={{
                         color:
                           new Date(debt.dueDate) < new Date()
-                            ? 'error.main'
-                            : 'inherit',
+                            ? "error.main"
+                            : "inherit",
                       }}
                     >
                       {debt.toWhom}
@@ -76,8 +82,8 @@ const NotificationPage = () => {
                       sx={{
                         color:
                           new Date(debt.dueDate) < new Date()
-                            ? 'error.main'
-                            : 'inherit',
+                            ? "error.main"
+                            : "inherit",
                       }}
                     >
                       {debt.debtAmount} {debt.debtCurrency}
@@ -86,11 +92,11 @@ const NotificationPage = () => {
                       sx={{
                         color:
                           new Date(debt.dueDate) < new Date()
-                            ? 'error.main'
-                            : 'inherit',
+                            ? "error.main"
+                            : "inherit",
                       }}
                     >
-                      {new Date(debt.dueDate).toLocaleDateString('tr-TR')}
+                      {new Date(debt.dueDate).toLocaleDateString("tr-TR")}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -98,11 +104,15 @@ const NotificationPage = () => {
             </Table>
           </Paper>
         </Box>
-        ) : (
-        <Typography align="center" color="text.secondary" sx={{ fontSize: "1rem" }}>
-            {t("noUpcomingDebts")}
+      ) : (
+        <Typography
+          align="center"
+          color="text.secondary"
+          sx={{ fontSize: "1rem" }}
+        >
+          {t("noUpcomingDebts")}
         </Typography>
-        )}
+      )}
     </Container>
   );
 };

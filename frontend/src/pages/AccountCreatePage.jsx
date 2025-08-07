@@ -39,6 +39,10 @@ const AccountCreatePage = () => {
     }
 
     try {
+      if (!token) {
+        navigate("/login");
+        return;
+      }
       const updateDate = new Date(
         now.getTime() + 3 * 60 * 60 * 1000
       ).toISOString();
