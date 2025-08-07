@@ -23,7 +23,7 @@ const AccountDeletePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
-
+  const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
   const [selectedAccountId, setSelectedAccountId] = useState("");
   const [password, setPassword] = useState("");

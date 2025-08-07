@@ -20,7 +20,7 @@ const OutgoingTransferPage = () => {
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   const now = new Date();
-
+  const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
   const [selectedTransferAccount, setSelectedTransferAccount] = useState(null);
   const [selectedTransfer, setSelectedTransfer] = useState({});

@@ -15,9 +15,9 @@ const NotificationButton = ({
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-
+  const token = localStorage.getItem("token");
   const { t } = useTranslation();
-  
+
   const handleClick = () => {
     navigate("/notification");
     if (isMobile && setIsDrawerOpen) {

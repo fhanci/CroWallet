@@ -1,4 +1,5 @@
 package com.example.api.security;
+
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
@@ -10,23 +11,35 @@ import java.util.Date;
 @Component
 public class JwtUtil {
     private final String SECRET = "çok-uzun-anahtar-öncekine-göre";
-    // 24 hours
-    private final Integer EXPIRATION_TIME = 1000 * 60 * 60 * 24;
+    private final SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+
+    // Access token: 24 saat
+    private final Integer ACCESS_EXPIRATION = 1000 * 60 * 60 * 24;
+
+    // Refresh token: 7 gün
+    private final Integer REFRESH_EXPIRATION = 1000 * 60 * 60 * 24 * 7;
 
     public String generateToken(Long userId) {
-        SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
-
         return Jwts.builder()
                 .subject(String.valueOf(userId))
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .claim("type", "access")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + ACCESS_EXPIRATION))
+                .signWith(key, Jwts.SIG.HS256)
+                .compact();
+    }
+
+    public String generateRefreshToken(Long userId) {
+        return Jwts.builder()
+                .subject(String.valueOf(userId))
+                .claim("type", "refresh")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + REFRESH_EXPIRATION))
                 .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
 
     public Long extractUserId(String token) {
-        SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
-
         String subject = Jwts.parser()
                 .verifyWith(key)
                 .build()
@@ -42,12 +55,21 @@ public class JwtUtil {
     }
 
     public String extractPayload(String token) {
-        SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
-
         return String.valueOf(Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload());
+    }
+
+    public boolean isRefreshToken(String token) {
+        String type = Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("type", String.class);
+
+        return "refresh".equals(type);
     }
 }

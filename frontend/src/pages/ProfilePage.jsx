@@ -42,7 +42,7 @@ const ProfilePage = () => {
     severity: "success",
   });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-
+  const token = localStorage.getItem("token");
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language;
 

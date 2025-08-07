@@ -20,7 +20,7 @@ const AccountEditPage = () => {
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   const now = new Date();
-
+  const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [error, setError] = useState("");
