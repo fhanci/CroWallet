@@ -31,8 +31,16 @@ const ProfilePage = () => {
   const userId = localStorage.getItem("userId");
   const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({ name: "", email: "", password: "" });
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const [editData, setEditData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const { t, i18n } = useTranslation();
@@ -44,11 +52,24 @@ const ProfilePage = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const response = await fetch(`http://localhost:8082/api/users/${userId}`);
+      const response = await fetch(
+        `http://localhost:8082/api/users/${userId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        }
+      );
       if (response.ok) {
         const data = await response.json();
         setUser(data);
-        setEditData({ name: data.name, email: data.email, password: data.password });
+        setEditData({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+        });
       }
     };
     fetchUser();
@@ -57,29 +78,55 @@ const ProfilePage = () => {
   const handleEdit = () => setIsEditing(true);
 
   const handleCancel = () => {
-    if (user) setEditData({ name: user.name, email: user.email, password: user.password });
+    if (user)
+      setEditData({
+        name: user.name,
+        email: user.email,
+        password: user.password,
+      });
     setIsEditing(false);
   };
 
   const handleSave = async () => {
-    const response = await fetch(`http://localhost:8082/api/users/update/${userId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editData),
-    });
+    const response = await fetch(
+      `http://localhost:8082/api/users/update/${userId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : undefined,
+        },
+        body: JSON.stringify(editData),
+      }
+    );
     if (response.ok) {
       setUser(editData);
       setIsEditing(false);
-      setSnackbar({ open: true, message: t("profileUpdated"), severity: "success" });
+      setSnackbar({
+        open: true,
+        message: t("profileUpdated"),
+        severity: "success",
+      });
     }
   };
 
   const handleDelete = async () => {
-    const response = await fetch(`http://localhost:8082/api/users/delete/${userId}`, {
-      method: "DELETE",
-    });
+    const response = await fetch(
+      `http://localhost:8082/api/users/delete/${userId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : undefined,
+        },
+      }
+    );
     if (response.ok) {
-      setSnackbar({ open: true, message: t("accountDeleted"), severity: "info" });
+      setSnackbar({
+        open: true,
+        message: t("accountDeleted"),
+        severity: "info",
+      });
       localStorage.clear();
       navigate("/login");
     }
@@ -87,7 +134,14 @@ const ProfilePage = () => {
 
   return (
     <Container maxWidth="sm" sx={{ mt: 4 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          p: 2,
+        }}
+      >
         <Typography variant="h4">{t("profileTitle")}</Typography>
       </Box>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
@@ -113,7 +167,9 @@ const ProfilePage = () => {
           label={t("password")}
           type="password"
           value={editData.password}
-          onChange={(e) => setEditData({ ...editData, password: e.target.value })}
+          onChange={(e) =>
+            setEditData({ ...editData, password: e.target.value })
+          }
           disabled={!isEditing}
           fullWidth
         />
@@ -122,45 +178,78 @@ const ProfilePage = () => {
 
         <Box display="flex" justifyContent="space-between">
           {!isEditing ? (
-            <Button variant="contained" startIcon={<EditIcon />} onClick={handleEdit}>
+            <Button
+              variant="contained"
+              startIcon={<EditIcon />}
+              onClick={handleEdit}
+            >
               {t("edit")}
             </Button>
           ) : (
             <Box display="flex" gap={2}>
-              <Button variant="outlined" startIcon={<CloseIcon />} onClick={handleCancel}>
+              <Button
+                variant="outlined"
+                startIcon={<CloseIcon />}
+                onClick={handleCancel}
+              >
                 {t("cancel")}
               </Button>
-              <Button variant="contained" color="success" startIcon={<SaveIcon />} onClick={handleSave}>
+              <Button
+                variant="contained"
+                color="success"
+                startIcon={<SaveIcon />}
+                onClick={handleSave}
+              >
                 {t("save")}
               </Button>
             </Box>
           )}
 
-          <Button variant="contained" color="error" startIcon={<DeleteIcon />} onClick={() => setDeleteDialogOpen(true)}>
+          <Button
+            variant="contained"
+            color="error"
+            startIcon={<DeleteIcon />}
+            onClick={() => setDeleteDialogOpen(true)}
+          >
             {t("deleteConfirmTitle")}
           </Button>
         </Box>
       </Box>
 
       {/* Hesap Silme Onay Dialogu */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
         <DialogTitle>{t("deleteConfirmTitle")}</DialogTitle>
         <DialogContent>
           <Typography>{t("deleteConfirmText")}</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>{t("cancel")}</Button>
-          <Button onClick={handleDelete} color="error" variant="contained">{t("delete")}</Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}>
+            {t("cancel")}
+          </Button>
+          <Button onClick={handleDelete} color="error" variant="contained">
+            {t("delete")}
+          </Button>
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-        <Alert severity={snackbar.severity} variant="filled">{snackbar.message}</Alert>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert severity={snackbar.severity} variant="filled">
+          {snackbar.message}
+        </Alert>
       </Snackbar>
 
       {/* Dil Seçici */}
       <FormControl fullWidth sx={{ mt: 4 }}>
-        <InputLabel id="language-select-label">{t("chooseLanguage")}</InputLabel>
+        <InputLabel id="language-select-label">
+          {t("chooseLanguage")}
+        </InputLabel>
         <Select
           labelId="language-select-label"
           id="language-select"

@@ -34,6 +34,10 @@ const AccountDeletePage = () => {
 
   useEffect(() => {
     const fetchAccounts = async () => {
+      if (!token) {
+        navigate("/login");
+        return;
+      }
       try {
         const res = await fetch("http://localhost:8082/api/accounts", {
           method: "GET",
@@ -56,8 +60,18 @@ const AccountDeletePage = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
+      if (!token) {
+        navigate("/login");
+        return;
+      }
       try {
-        const res = await fetch(`http://localhost:8082/api/users/${userId}`);
+        const res = await fetch(`http://localhost:8082/api/users/${userId}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        });
         if (res.ok) {
           const data = await res.json();
           setUser(data);
@@ -79,11 +93,19 @@ const AccountDeletePage = () => {
   };
 
   const handleDeleteAccount = async () => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
     try {
       const res = await fetch(
         `http://localhost:8082/api/accounts/delete/${selectedAccountId}`,
         {
           method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
         }
       );
       if (!res.ok) throw new Error("Silme başarısız");

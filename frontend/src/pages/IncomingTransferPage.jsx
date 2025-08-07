@@ -34,7 +34,13 @@ const IncomingTransferPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const response = await fetch("http://localhost:8082/api/accounts");
+        const response = await fetch("http://localhost:8082/api/accounts", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        });
         const data = await response.json();
         const userAccounts = data.filter(
           (acc) => acc.user.id === parseInt(userId)
@@ -97,7 +103,10 @@ const IncomingTransferPage = () => {
     try {
       const response = await fetch("http://localhost:8082/api/transfers", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : undefined,
+        },
         body: JSON.stringify(updatedTransfer),
       });
 
@@ -105,7 +114,10 @@ const IncomingTransferPage = () => {
         `http://localhost:8082/api/accounts/${selectedTransferAccount.id}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
           body: JSON.stringify(updatedAccount),
         }
       );

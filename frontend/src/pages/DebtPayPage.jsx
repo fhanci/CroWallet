@@ -1,8 +1,20 @@
 import React, { useEffect, useState } from "react";
-import {Container,Typography,Box,FormControl,InputLabel,Select,MenuItem,TextField,Button,Snackbar,Alert,} from "@mui/material";
+import {
+  Container,
+  Typography,
+  Box,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+  Button,
+  Snackbar,
+  Alert,
+} from "@mui/material";
 import PaymentIcon from "@mui/icons-material/Payment";
 import { useNavigate } from "react-router-dom";
-import { t } from 'i18next';
+import { t } from "i18next";
 const DebtPayPage = () => {
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
@@ -21,10 +33,18 @@ const DebtPayPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await fetch("http://localhost:8082/api/accounts");
+        const res = await fetch("http://localhost:8082/api/accounts", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        });
         if (res.ok) {
           const data = await res.json();
-          const userAccounts = data.filter((acc) => acc.user.id === parseInt(userId));
+          const userAccounts = data.filter(
+            (acc) => acc.user.id === parseInt(userId)
+          );
           setAccounts(userAccounts);
         }
       } catch (err) {
@@ -39,10 +59,19 @@ const DebtPayPage = () => {
   useEffect(() => {
     const fetchDebts = async () => {
       try {
-        const res = await fetch("http://localhost:8082/api/debts");
+        const res = await fetch("http://localhost:8082/api/debts", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        });
         if (res.ok) {
           const data = await res.json();
-          const userDebts = data.filter((debt) => debt.user.id === parseInt(userId) && debt.status === "odenmedi");
+          const userDebts = data.filter(
+            (debt) =>
+              debt.user.id === parseInt(userId) && debt.status === "odenmedi"
+          );
           setDebts(userDebts);
         }
       } catch (err) {
@@ -71,36 +100,51 @@ const DebtPayPage = () => {
     }
 
     try {
-      const updatedDebtAmount = selectedPayDebt.debtAmount - parseFloat(payAmount);
+      const updatedDebtAmount =
+        selectedPayDebt.debtAmount - parseFloat(payAmount);
       const updatedStatus = updatedDebtAmount <= 0 ? "odendi" : "odenmedi";
-      const updatedBalance = selectedTransferAccount.balance - parseFloat(payAmount);
+      const updatedBalance =
+        selectedTransferAccount.balance - parseFloat(payAmount);
       const createDate = new Date().toISOString();
 
       // Borcu güncelle
-      const debtResponse = await fetch(`http://localhost:8082/api/debts/${selectedPayDebt.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...selectedPayDebt,
-          debtAmount: updatedDebtAmount > 0 ? updatedDebtAmount : 0,
-          status: updatedStatus,
-        }),
-      });
+      const debtResponse = await fetch(
+        `http://localhost:8082/api/debts/${selectedPayDebt.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+          body: JSON.stringify({
+            ...selectedPayDebt,
+            debtAmount: updatedDebtAmount > 0 ? updatedDebtAmount : 0,
+            status: updatedStatus,
+          }),
+        }
+      );
 
       if (!debtResponse.ok) throw new Error("Borç ödeme işlemi başarısız!");
 
       // Hesap bakiyesini güncelle
-      const accountResponse = await fetch(`http://localhost:8082/api/accounts/${selectedTransferAccount.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...selectedTransferAccount,
-          balance: updatedBalance,
-          updateDate: createDate,
-        }),
-      });
+      const accountResponse = await fetch(
+        `http://localhost:8082/api/accounts/${selectedTransferAccount.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+          body: JSON.stringify({
+            ...selectedTransferAccount,
+            balance: updatedBalance,
+            updateDate: createDate,
+          }),
+        }
+      );
 
-      if (!accountResponse.ok) throw new Error("Hesap bakiyesi güncellenemedi!");
+      if (!accountResponse.ok)
+        throw new Error("Hesap bakiyesi güncellenemedi!");
 
       // Transfer kaydı oluştur
       const transferData = {
@@ -117,13 +161,20 @@ const DebtPayPage = () => {
         outputNextBalance: updatedBalance,
       };
 
-      const transferResponse = await fetch("http://localhost:8082/api/transfers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(transferData),
-      });
+      const transferResponse = await fetch(
+        "http://localhost:8082/api/transfers",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+          body: JSON.stringify(transferData),
+        }
+      );
 
-      if (!transferResponse.ok) throw new Error("Transfer işlemi kaydedilemedi!");
+      if (!transferResponse.ok)
+        throw new Error("Transfer işlemi kaydedilemedi!");
 
       setOpenSnackbar(true);
       setTimeout(() => navigate("/debt"), 1500);
@@ -143,7 +194,9 @@ const DebtPayPage = () => {
         <InputLabel>{t("selectDebtToPay")}</InputLabel>
         <Select
           value={selectedPayDebt?.id || ""}
-          onChange={(e) => setSelectedPayDebt(debts.find((debt) => debt.id === e.target.value))}
+          onChange={(e) =>
+            setSelectedPayDebt(debts.find((debt) => debt.id === e.target.value))
+          }
           label={t("selectDebtToPay")}
         >
           {debts.map((debt) => (
@@ -158,7 +211,11 @@ const DebtPayPage = () => {
         <InputLabel>Hesap Seçin</InputLabel>
         <Select
           value={selectedTransferAccount?.id || ""}
-          onChange={(e) => setSelectedTransferAccount(accounts.find((acc) => acc.id === e.target.value))}
+          onChange={(e) =>
+            setSelectedTransferAccount(
+              accounts.find((acc) => acc.id === e.target.value)
+            )
+          }
           label={t("selectAccount")}
         >
           {accounts.map((account) => (

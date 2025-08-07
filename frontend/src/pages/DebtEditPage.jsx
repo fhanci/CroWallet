@@ -1,30 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, FormControl, InputLabel, Select, MenuItem, TextField, Button, Snackbar, Alert,Dialog , DialogTitle,
-          DialogContent, DialogActions } from '@mui/material';
-import SaveIcon from '@mui/icons-material/Save';
-import { useNavigate } from 'react-router-dom';
-import { t } from 'i18next';
+import React, { useState, useEffect } from "react";
+import {
+  Container,
+  Typography,
+  Box,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+  Button,
+  Snackbar,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
+import SaveIcon from "@mui/icons-material/Save";
+import { useNavigate } from "react-router-dom";
+import { t } from "i18next";
 const DebtEditPage = () => {
-  const userId = localStorage.getItem('userId');
+  const userId = localStorage.getItem("userId");
 
   const [debts, setDebts] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [selectedDebt, setSelectedDebt] = useState(null);
 
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [openSnackbar, setOpenSnackbar] = useState(false);
-  
+
   const [showZeroDialog, setShowZeroDialog] = useState(false);
   const navigate = useNavigate();
-
 
   useEffect(() => {
     const fetchDebts = async () => {
       try {
-        const res = await fetch('http://localhost:8082/api/debts');
-        if (!res.ok) throw new Error('Borçlar alınamadı');
+        const res = await fetch("http://localhost:8082/api/debts", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        });
+        if (!res.ok) throw new Error("Borçlar alınamadı");
         const data = await res.json();
-        const filtered = data.filter(d => d.user?.id === parseInt(userId) && d.status === "odenmedi");
+        const filtered = data.filter(
+          (d) => d.user?.id === parseInt(userId) && d.status === "odenmedi"
+        );
         setDebts(filtered);
       } catch (err) {
         console.error(err);
@@ -36,10 +58,12 @@ const DebtEditPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await fetch('http://localhost:8082/api/accounts');
-        if (!res.ok) throw new Error('Hesaplar alınamadı');
+        const res = await fetch("http://localhost:8082/api/accounts");
+        if (!res.ok) throw new Error("Hesaplar alınamadı");
         const data = await res.json();
-        const userAccounts = data.filter(acc => acc.user?.id === parseInt(userId));
+        const userAccounts = data.filter(
+          (acc) => acc.user?.id === parseInt(userId)
+        );
         setAccounts(userAccounts);
       } catch (err) {
         console.error(err);
@@ -53,21 +77,20 @@ const DebtEditPage = () => {
   }, [selectedDebt]);
 
   const handleUpdateDebt = async () => {
-
     if (!selectedDebt) return;
 
     if (parseFloat(selectedDebt.debtAmount) === 0 && !showZeroDialog) {
       setShowZeroDialog(true);
       return;
     }
-  
+
     // 2) Dialog’tan “Evet” cevabı geldiyse, statüyü değiştir ve dialog’u kapat
     if (parseFloat(selectedDebt.debtAmount) === 0 && showZeroDialog) {
       selectedDebt.status = "odendi";
       setShowZeroDialog(false);
-      navigate('/account');
+      navigate("/account");
     }
-  
+
     // 3) Geri kalan validasyon
     if (
       !selectedDebt?.debtAmount ||
@@ -76,59 +99,98 @@ const DebtEditPage = () => {
       !selectedDebt?.warningPeriod ||
       !selectedDebt?.account?.id
     ) {
-      setError('Lütfen tüm alanları doldurun!');
+      setError("Lütfen tüm alanları doldurun!");
       return;
     }
 
     try {
-      const oldDebt = debts.find(d => d.id === selectedDebt.id);
+      const oldDebt = debts.find((d) => d.id === selectedDebt.id);
       if (!oldDebt) throw new Error("Eski borç bulunamadı");
-      if (!oldDebt.account?.id) throw new Error("Eski borca bağlı hesap bilgisi eksik!");
+      if (!oldDebt.account?.id)
+        throw new Error("Eski borca bağlı hesap bilgisi eksik!");
 
-      const debtDifference = parseFloat(selectedDebt.debtAmount) - parseFloat(oldDebt.debtAmount);
+      const debtDifference =
+        parseFloat(selectedDebt.debtAmount) - parseFloat(oldDebt.debtAmount);
       const oldAccountId = oldDebt.account.id;
       const newAccountId = selectedDebt.account.id;
 
       if (!newAccountId) throw new Error("Hesap seçimi yapılmalı");
 
       if (oldAccountId !== newAccountId) {
-        const resOldAcc = await fetch(`http://localhost:8082/api/accounts/${oldAccountId}`);
+        const resOldAcc = await fetch(
+          `http://localhost:8082/api/accounts/${oldAccountId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
         if (!resOldAcc.ok) throw new Error("Eski hesap bilgisi alınamadı");
         const oldAccount = await resOldAcc.json();
 
-        const resNewAcc = await fetch(`http://localhost:8082/api/accounts/${newAccountId}`);
+        const resNewAcc = await fetch(
+          `http://localhost:8082/api/accounts/${newAccountId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
         if (!resNewAcc.ok) throw new Error("Yeni hesap bilgisi alınamadı");
         const newAccount = await resNewAcc.json();
 
-        const oldAccUpdatedBalance = oldAccount.balance - parseFloat(oldDebt.debtAmount);
-        const oldAccUpdateRes = await fetch(`http://localhost:8082/api/accounts/update/${oldAccount.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...oldAccount,
-            balance: oldAccUpdatedBalance,
-            updateDate: new Date().toISOString(),
-          }),
-        });
-        if (!oldAccUpdateRes.ok) throw new Error("Eski hesap bakiyesi güncellenemedi");
+        const oldAccUpdatedBalance =
+          oldAccount.balance - parseFloat(oldDebt.debtAmount);
+        const oldAccUpdateRes = await fetch(
+          `http://localhost:8082/api/accounts/update/${oldAccount.id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+            body: JSON.stringify({
+              ...oldAccount,
+              balance: oldAccUpdatedBalance,
+              updateDate: new Date().toISOString(),
+            }),
+          }
+        );
+        if (!oldAccUpdateRes.ok)
+          throw new Error("Eski hesap bakiyesi güncellenemedi");
 
-        const newAccUpdatedBalance = newAccount.balance + parseFloat(selectedDebt.debtAmount);
-        const newAccUpdateRes = await fetch(`http://localhost:8082/api/accounts/update/${newAccount.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...newAccount,
-            balance: newAccUpdatedBalance,
-            updateDate: new Date().toISOString(),
-          }),
-        });
-        if (!newAccUpdateRes.ok) throw new Error("Yeni hesap bakiyesi güncellenemedi");
+        const newAccUpdatedBalance =
+          newAccount.balance + parseFloat(selectedDebt.debtAmount);
+        const newAccUpdateRes = await fetch(
+          `http://localhost:8082/api/accounts/update/${newAccount.id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+            body: JSON.stringify({
+              ...newAccount,
+              balance: newAccUpdatedBalance,
+              updateDate: new Date().toISOString(),
+            }),
+          }
+        );
+        if (!newAccUpdateRes.ok)
+          throw new Error("Yeni hesap bakiyesi güncellenemedi");
 
         const createDate = new Date().toISOString();
 
         await fetch("http://localhost:8082/api/transfers", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
           body: JSON.stringify({
             amount: parseFloat(oldDebt.debtAmount),
             category: "Borç Güncelleme",
@@ -146,7 +208,10 @@ const DebtEditPage = () => {
 
         await fetch("http://localhost:8082/api/transfers", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
           body: JSON.stringify({
             amount: parseFloat(selectedDebt.debtAmount),
             category: "Borç Güncelleme",
@@ -161,30 +226,48 @@ const DebtEditPage = () => {
             inputNextBalance: newAccUpdatedBalance,
           }),
         });
-
       } else {
-        const resAccount = await fetch(`http://localhost:8082/api/accounts/${newAccountId}`);
+        const resAccount = await fetch(
+          `http://localhost:8082/api/accounts/${newAccountId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
         if (!resAccount.ok) throw new Error("Hesap bilgisi alınamadı");
         const accountToUpdate = await resAccount.json();
 
         const updatedBalance = accountToUpdate.balance + debtDifference;
 
-        const accountUpdateResponse = await fetch(`http://localhost:8082/api/accounts/update/${accountToUpdate.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...accountToUpdate,
-            balance: updatedBalance,
-            updateDate: new Date().toISOString(),
-          }),
-        });
-        if (!accountUpdateResponse.ok) throw new Error("Hesap bakiyesi güncellenemedi");
+        const accountUpdateResponse = await fetch(
+          `http://localhost:8082/api/accounts/update/${accountToUpdate.id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+            body: JSON.stringify({
+              ...accountToUpdate,
+              balance: updatedBalance,
+              updateDate: new Date().toISOString(),
+            }),
+          }
+        );
+        if (!accountUpdateResponse.ok)
+          throw new Error("Hesap bakiyesi güncellenemedi");
 
         const createDate = new Date().toISOString();
 
         await fetch("http://localhost:8082/api/transfers", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
           body: JSON.stringify({
             amount: Math.abs(debtDifference),
             category: "Borç Güncelleme",
@@ -201,24 +284,29 @@ const DebtEditPage = () => {
         });
       }
 
-      
-      const response = await fetch(`http://localhost:8082/api/debts/update/${selectedDebt.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: selectedDebt.id,
-          debtAmount: parseFloat(selectedDebt.debtAmount),
-          debtCurrency: selectedDebt.debtCurrency,
-          toWhom: selectedDebt.toWhom,
-          dueDate: selectedDebt.dueDate,
-          status: selectedDebt.status,
-          warningPeriod: selectedDebt.warningPeriod,
-          user: { id: parseInt(userId) },
-          account: { id: selectedDebt.account.id }
-        }) 
-      });
-      
-      if (!response.ok) throw new Error('Borç güncelleme başarısız!');
+      const response = await fetch(
+        `http://localhost:8082/api/debts/update/${selectedDebt.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+          body: JSON.stringify({
+            id: selectedDebt.id,
+            debtAmount: parseFloat(selectedDebt.debtAmount),
+            debtCurrency: selectedDebt.debtCurrency,
+            toWhom: selectedDebt.toWhom,
+            dueDate: selectedDebt.dueDate,
+            status: selectedDebt.status,
+            warningPeriod: selectedDebt.warningPeriod,
+            user: { id: parseInt(userId) },
+            account: { id: selectedDebt.account.id },
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Borç güncelleme başarısız!");
 
       setOpenSnackbar(true);
       setError(t("deptUpdateFailed"));
@@ -229,8 +317,14 @@ const DebtEditPage = () => {
   };
 
   useEffect(() => {
-    if (selectedDebt && selectedDebt.account && !selectedDebt.account.accountName) {
-      const matchedAccount = accounts.find((acc) => acc.id === selectedDebt.account.id);
+    if (
+      selectedDebt &&
+      selectedDebt.account &&
+      !selectedDebt.account.accountName
+    ) {
+      const matchedAccount = accounts.find(
+        (acc) => acc.id === selectedDebt.account.id
+      );
       if (matchedAccount) {
         setSelectedDebt((prev) => ({
           ...prev,
@@ -239,7 +333,6 @@ const DebtEditPage = () => {
       }
     }
   }, [accounts, selectedDebt]);
-
 
   return (
     <Container maxWidth="sm" sx={{ mt: 8 }}>
@@ -254,14 +347,14 @@ const DebtEditPage = () => {
             labelId="debt-select-label"
             id="debt-select"
             label="Borç Seç"
-            value={selectedDebt?.id || ''}
+            value={selectedDebt?.id || ""}
             onChange={(e) =>
-              setSelectedDebt(debts.find(d => d.id === e.target.value))
+              setSelectedDebt(debts.find((d) => d.id === e.target.value))
             }
             autoComplete="off"
-            inputProps={{ autoComplete: 'off' }}
+            inputProps={{ autoComplete: "off" }}
           >
-            {debts.map(d => (
+            {debts.map((d) => (
               <MenuItem key={d.id} value={d.id}>
                 {d.toWhom} - {d.debtAmount} {d.debtCurrency}
               </MenuItem>
@@ -271,13 +364,15 @@ const DebtEditPage = () => {
 
         {selectedDebt && (
           <FormControl fullWidth margin="normal">
-            <InputLabel id="account-select-label">{t("debtAccountLabel")}</InputLabel>
+            <InputLabel id="account-select-label">
+              {t("debtAccountLabel")}
+            </InputLabel>
             <Select
               labelId="account-select-label"
               id="account-select"
-              value={selectedDebt.account?.id || ''}
+              value={selectedDebt.account?.id || ""}
               disabled
-              inputProps={{ autoComplete: 'off' }}
+              inputProps={{ autoComplete: "off" }}
             >
               {accounts.map((acc) => (
                 <MenuItem key={acc.id} value={acc.id}>
@@ -288,8 +383,6 @@ const DebtEditPage = () => {
           </FormControl>
         )}
 
-
-
         {selectedDebt && (
           <>
             <TextField
@@ -299,23 +392,31 @@ const DebtEditPage = () => {
               margin="normal"
               name="no-autocomplete-miktar"
               value={selectedDebt.debtAmount}
-              onChange={(e) => setSelectedDebt({ ...selectedDebt, debtAmount: e.target.value })}
+              onChange={(e) =>
+                setSelectedDebt({ ...selectedDebt, debtAmount: e.target.value })
+              }
               autoComplete="new-password"
-              inputProps={{ autoComplete: 'new-password' }}
+              inputProps={{ autoComplete: "new-password" }}
               spellCheck={false}
             />
 
-          
             <FormControl fullWidth margin="normal">
-              <InputLabel id="currency-select-label">{t("currency")}</InputLabel>
+              <InputLabel id="currency-select-label">
+                {t("currency")}
+              </InputLabel>
               <Select
                 labelId="currency-select-label"
                 id="currency-select"
                 value={selectedDebt.debtCurrency}
-                onChange={(e) => setSelectedDebt({ ...selectedDebt, debtCurrency: e.target.value })}
+                onChange={(e) =>
+                  setSelectedDebt({
+                    ...selectedDebt,
+                    debtCurrency: e.target.value,
+                  })
+                }
                 label={t("currency")}
                 autoComplete="off"
-                inputProps={{ autoComplete: 'off' }}
+                inputProps={{ autoComplete: "off" }}
               >
                 <MenuItem value="EUR">€ {t("eur")} </MenuItem>
                 <MenuItem value="USD">$ {t("usd")} </MenuItem>
@@ -331,9 +432,11 @@ const DebtEditPage = () => {
               InputLabelProps={{ shrink: true }}
               name="no-autocomplete-date"
               value={selectedDebt.dueDate}
-              onChange={(e) => setSelectedDebt({ ...selectedDebt, dueDate: e.target.value })}
+              onChange={(e) =>
+                setSelectedDebt({ ...selectedDebt, dueDate: e.target.value })
+              }
               autoComplete="new-password"
-              inputProps={{ autoComplete: 'new-password' }}
+              inputProps={{ autoComplete: "new-password" }}
               spellCheck={false}
             />
 
@@ -344,9 +447,14 @@ const DebtEditPage = () => {
               margin="normal"
               name="no-autocomplete-warning"
               value={selectedDebt.warningPeriod}
-              onChange={(e) => setSelectedDebt({ ...selectedDebt, warningPeriod: e.target.value })}
+              onChange={(e) =>
+                setSelectedDebt({
+                  ...selectedDebt,
+                  warningPeriod: e.target.value,
+                })
+              }
               autoComplete="new-password"
-              inputProps={{ autoComplete: 'new-password' }}
+              inputProps={{ autoComplete: "new-password" }}
               spellCheck={false}
             />
           </>
@@ -380,33 +488,23 @@ const DebtEditPage = () => {
         </Box>
       </Box>
 
-      {selectedDebt && (   
-        <Dialog
-          open={showZeroDialog}
-          onClose={() => setShowZeroDialog(false)}
-        >
+      {selectedDebt && (
+        <Dialog open={showZeroDialog} onClose={() => setShowZeroDialog(false)}>
           <DialogTitle>Onay</DialogTitle>
-          <DialogContent>
-            {t("debtConfirm")}
-          </DialogContent>
+          <DialogContent>{t("debtConfirm")}</DialogContent>
           <DialogActions>
-            <Button onClick={() => setShowZeroDialog(false)}>
-              {t("no")}
-            </Button>
-            <Button
-              onClick={() => handleUpdateDebt()} 
-              autoFocus
-            >
+            <Button onClick={() => setShowZeroDialog(false)}>{t("no")}</Button>
+            <Button onClick={() => handleUpdateDebt()} autoFocus>
               {t("yes")}
             </Button>
           </DialogActions>
         </Dialog>
-      )}   
+      )}
       <Snackbar
         open={openSnackbar}
         autoHideDuration={3000}
         onClose={() => setOpenSnackbar(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Alert onClose={() => setOpenSnackbar(false)} severity="success">
           {t("debtUpdatedSuccess")}

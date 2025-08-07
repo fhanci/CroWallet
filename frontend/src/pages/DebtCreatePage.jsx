@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import { useNavigate } from "react-router-dom";
-import { t } from 'i18next';
+import { t } from "i18next";
 const DebtCreatePage = () => {
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
@@ -33,11 +33,20 @@ const DebtCreatePage = () => {
 
   useEffect(() => {
     const fetchAccounts = async () => {
+      
       try {
-        const res = await fetch("http://localhost:8082/api/accounts");
+        const res = await fetch("http://localhost:8082/api/accounts", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        });
         if (!res.ok) throw new Error("Hesaplar alınamadı");
         const data = await res.json();
-        const userAccounts = data.filter((a) => a.user?.id === parseInt(userId));
+        const userAccounts = data.filter(
+          (a) => a.user?.id === parseInt(userId)
+        );
         setAccounts(userAccounts);
       } catch (err) {
         console.error(err);
@@ -81,20 +90,27 @@ const DebtCreatePage = () => {
       // Borç kaydı oluştur
       const response = await fetch("http://localhost:8082/api/debts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : undefined,
+        },
         body: JSON.stringify(newDebt),
       });
 
       if (!response.ok) throw new Error("Borç işlemi başarısız!");
 
       // Hesap bakiyesini güncelle
-      const updatedBalance = selectedAddAccount.balance + parseFloat(debtAmount);
+      const updatedBalance =
+        selectedAddAccount.balance + parseFloat(debtAmount);
 
       const accountResponse = await fetch(
         `http://localhost:8082/api/accounts/update/${selectedAddAccount.id}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
           body: JSON.stringify({
             ...selectedAddAccount,
             balance: updatedBalance,
@@ -103,7 +119,8 @@ const DebtCreatePage = () => {
         }
       );
 
-      if (!accountResponse.ok) throw new Error("Hesap bakiyesi güncellenemedi!");
+      if (!accountResponse.ok)
+        throw new Error("Hesap bakiyesi güncellenemedi!");
 
       // Transfer hareketi oluştur
       const transferData = {
@@ -120,13 +137,20 @@ const DebtCreatePage = () => {
         inputNextBalance: updatedBalance,
       };
 
-      const transferResponse = await fetch("http://localhost:8082/api/transfers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(transferData),
-      });
+      const transferResponse = await fetch(
+        "http://localhost:8082/api/transfers",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+          body: JSON.stringify(transferData),
+        }
+      );
 
-      if (!transferResponse.ok) throw new Error("Transfer işlemi kaydedilemedi!");
+      if (!transferResponse.ok)
+        throw new Error("Transfer işlemi kaydedilemedi!");
 
       setOpenSnackbar(true);
       setError("");
@@ -219,7 +243,9 @@ const DebtCreatePage = () => {
           labelId="account-label"
           id="account-select"
           value={selectedAddAccount?.id || ""}
-          onChange={(e) => setSelectedAddAccount(accounts.find((a) => a.id === e.target.value))}
+          onChange={(e) =>
+            setSelectedAddAccount(accounts.find((a) => a.id === e.target.value))
+          }
           label="Hesap Seçin"
           required
         >
@@ -230,10 +256,13 @@ const DebtCreatePage = () => {
           ))}
         </Select>
 
-        <Typography variant="caption" color="textSecondary" sx={{ mt: 0.5, ml: 1 }}>
+        <Typography
+          variant="caption"
+          color="textSecondary"
+          sx={{ mt: 0.5, ml: 1 }}
+        >
           {t("accountNote")}
         </Typography>
-
       </FormControl>
 
       {error && (
