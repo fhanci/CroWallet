@@ -45,11 +45,18 @@ const TransactionHistoryPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [accountBalance, setAccountBalance] = useState(null); // güncel bakiye için
   const [accountCurrency, setAccountCurrency] = useState(""); // güncel bakiye için
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`http://localhost:8082/api/transfers`);
+        const response = await fetch(`http://localhost:8082/api/transfers`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        });
         if (!response.ok) throw new Error(t("errorFetchingTransactions"));
         const data = await response.json();
 
@@ -86,7 +93,14 @@ const TransactionHistoryPage = () => {
   const fetchAccountBalance = async () => {
     try {
       const res = await fetch(
-        `http://localhost:8082/api/accounts/${accountId}`
+        `http://localhost:8082/api/accounts/${accountId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        }
       );
       if (!res.ok) throw new Error(t(errorFetchingBalance));
       const account = await res.json();
@@ -281,8 +295,12 @@ const TransactionHistoryPage = () => {
         open={Boolean(anchorEl)}
         onClose={handleCloseMenu}
       >
-        <MenuItem onClick={() => applyFilter("incoming")}>{t("incomingTransaction")}</MenuItem>
-        <MenuItem onClick={() => applyFilter("outgoing")}>{t("outgoingTransaction")}</MenuItem>
+        <MenuItem onClick={() => applyFilter("incoming")}>
+          {t("incomingTransaction")}
+        </MenuItem>
+        <MenuItem onClick={() => applyFilter("outgoing")}>
+          {t("outgoingTransaction")}
+        </MenuItem>
         <MenuItem onClick={() => applyFilter("inter-account")}>
           {t("interAccount")}
         </MenuItem>
@@ -376,7 +394,8 @@ const TransactionHistoryPage = () => {
                             )}
                             {transaction.inputNextBalance !== null && (
                               <Typography variant="body2">
-                                {t("nextBalance")}: {transaction.inputNextBalance}
+                                {t("nextBalance")}:{" "}
+                                {transaction.inputNextBalance}
                               </Typography>
                             )}
                             {transaction.outputPreviousBalance !== null && (
@@ -387,7 +406,8 @@ const TransactionHistoryPage = () => {
                             )}
                             {transaction.outputNextBalance !== null && (
                               <Typography variant="body2">
-                                {t("nextBalance")}: {transaction.outputNextBalance}
+                                {t("nextBalance")}:{" "}
+                                {transaction.outputNextBalance}
                               </Typography>
                             )}
                           </Box>
