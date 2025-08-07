@@ -4,4 +4,4 @@ api/workspace.xml
 api/mavenHomeManager.xml
 api/target/
 
-frontend/package-lock.json
+node_modules/
