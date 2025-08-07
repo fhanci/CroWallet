@@ -21,7 +21,7 @@ const AccountCreatePage = () => {
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   const now = new Date();
-
+  const token = localStorage.getItem("token");
   // Form alanları
   const [accountName, setAccountName] = useState("");
   const [balance, setBalance] = useState("");
@@ -57,7 +57,6 @@ const AccountCreatePage = () => {
           updateDate,
         }),
       });
-
 
       if (!response.ok) throw new Error(t("accountAddFailed"));
 

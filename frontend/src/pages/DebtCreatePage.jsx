@@ -18,7 +18,7 @@ import { t } from "i18next";
 const DebtCreatePage = () => {
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
-
+  const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
 
   const [debtAmount, setDebtAmount] = useState("");

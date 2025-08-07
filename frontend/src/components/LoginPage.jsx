@@ -23,7 +23,7 @@ const LoginPage = () => {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const navigate = useNavigate();
   const { setUserInfo } = useUser();
-
+  const token = localStorage.getItem("token");
   const clearFields = () => {
     setEmail("");
     setPassword("");

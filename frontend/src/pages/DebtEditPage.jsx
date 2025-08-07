@@ -21,7 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { t } from "i18next";
 const DebtEditPage = () => {
   const userId = localStorage.getItem("userId");
-
+  const token = localStorage.getItem("token");
   const [debts, setDebts] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [selectedDebt, setSelectedDebt] = useState(null);

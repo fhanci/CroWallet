@@ -35,12 +35,12 @@ import { useTranslation } from "react-i18next";
 
 const MenuPage = ({ isDrawerOpen, setIsDrawerOpen }) => {
   const { t } = useTranslation();
-  
+
   const navigate = useNavigate();
   const [transferMenuOpen, setTransferMenuOpen] = React.useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = React.useState(false);
   const [debtMenuOpen, setDebtMenuOpen] = React.useState(false);
-
+  const token = localStorage.getItem("token");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -169,7 +169,7 @@ const MenuPage = ({ isDrawerOpen, setIsDrawerOpen }) => {
                 <ListItemIcon>
                   <AddIcon />
                 </ListItemIcon>
-                <ListItemText primary={t("addAccount")}/>
+                <ListItemText primary={t("addAccount")} />
               </ListItem>
               <ListItem
                 component="button"
@@ -250,7 +250,7 @@ const MenuPage = ({ isDrawerOpen, setIsDrawerOpen }) => {
                 <ListItemIcon>
                   <SwapHorizIcon />
                 </ListItemIcon>
-                <ListItemText primary={t("interAccount")}/>
+                <ListItemText primary={t("interAccount")} />
               </ListItem>
             </List>
           </Collapse>
@@ -322,7 +322,7 @@ const MenuPage = ({ isDrawerOpen, setIsDrawerOpen }) => {
                 <ListItemIcon>
                   <AttachMoneyIcon />
                 </ListItemIcon>
-                <ListItemText primary= {t("payDebt")} />
+                <ListItemText primary={t("payDebt")} />
               </ListItem>
             </List>
           </Collapse>

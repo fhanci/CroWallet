@@ -9,8 +9,10 @@ import com.example.api.security.CustomUserDetailsService;
 import com.example.api.security.JwtUtil;
 import com.example.api.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -20,7 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "localhost:3000")
 @RequestMapping("/api/auth")
 public class AuthController {
     @Autowired
@@ -52,34 +54,50 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+    @CrossOrigin(allowCredentials = "true")
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletResponse response) {
         CustomUserDetails userDetails;
         UserDTO user = userService.findByEmail(loginRequest.getEmail());
+
         try {
             userDetails = userDetailsService.loadUserById(user.getId());
         } catch (UsernameNotFoundException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Kullanıcı bulunamadı");
         }
 
-        if (!(loginRequest.getPassword().equals(userDetails.getPassword()))) {
+        // Şifre kontrolü
+        if (!loginRequest.getPassword().equals(userDetails.getPassword()) ||
+                !loginRequest.getPassword().equals(userService.findById(user.getId()).getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Geçersiz şifre");
         }
 
-        if(!loginRequest.getPassword().equals(userService.findById(user.getId()).getPassword())){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Geçersiz şifre");
-        }
-
+        // Token üretimi
         final String jwt = jwtUtil.generateToken(userDetails.getId());
+        final String refresh = jwtUtil.generateRefreshToken(userDetails.getId());
 
-        Map<String, Object> response = Map.of(
+        // Cookie oluştur
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refresh)
+                .httpOnly(true)
+                .secure(false) // Geliştirme ortamı için false, prod'da true olmalı
+                .path("/")
+                .maxAge(7 * 24 * 60 * 60) // 7 gün
+                .sameSite("Lax") // Cross-origin için Lax veya None
+                .build();
+
+        // Cookie'yi response'a ekle
+        response.addHeader("Set-Cookie", cookie.toString());
+
+        // Body ile birlikte access token ve kullanıcı bilgileri gönder
+        Map<String, Object> responseBody = Map.of(
                 "token", jwt,
                 "id", user.getId(),
                 "username", user.getUsername(),
                 "email", user.getEmail()
         );
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(responseBody);
     }
+
 
     @PostMapping("validate-token")
     public ResponseEntity<?> validate(HttpServletRequest request) {

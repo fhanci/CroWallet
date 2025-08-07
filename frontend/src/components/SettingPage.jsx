@@ -13,7 +13,7 @@ const SettingPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
-
+  const token = localStorage.getItem("token");
   const defaultIncomeOptions = t("defaultIncomeOptions", {
     returnObjects: true,
   });

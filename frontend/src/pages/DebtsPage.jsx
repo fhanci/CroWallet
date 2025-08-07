@@ -4,7 +4,7 @@ import { t } from "i18next";
 const DebtPage = () => {
   const [debts, setDebts] = useState([]);
   const userId = localStorage.getItem("userId");
-
+  const token = localStorage.getItem("token");
   useEffect(() => {
     const fetchDebts = async () => {
       try {
