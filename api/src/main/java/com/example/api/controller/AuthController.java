@@ -54,7 +54,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         CustomUserDetails userDetails;
-        User user = userService.findByUsername(loginRequest.getUsername());
+        UserDTO user = userService.findByEmail(loginRequest.getEmail());
         try {
             userDetails = userDetailsService.loadUserById(user.getId());
         } catch (UsernameNotFoundException e) {

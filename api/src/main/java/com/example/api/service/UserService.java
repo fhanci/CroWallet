@@ -33,7 +33,6 @@ public class UserService {
         if(usr != null){
             return null;
         }
-        String hashedPassword = passwordEncoder.encode(password);
         User user = new User(email, username, password);
         userRepository.save(user);
         return UserMapper.INSTANCE.toUserDTO(user);
@@ -76,6 +75,10 @@ public class UserService {
 
     public User findByUsername(String username) {
         return userRepository.findByUsername(username).orElse(null);
+    }
+
+    public UserDTO findByEmail(String email) {
+        return UserMapper.INSTANCE.toUserDTO(userRepository.findByEmail(email).orElse(null));
     }
 
     public User findById(Long id) {
