@@ -49,7 +49,7 @@ const LoginPage = () => {
         username: response.data.username,
         email: response.data.email,
       });
-      localStorage.setItem("token", response.data.token)
+      localStorage.setItem("token", response.data.token);
       if (response) {
         navigate("/account");
         clearFields();
@@ -77,11 +77,14 @@ const LoginPage = () => {
     }
 
     try {
-      const response = await axios.post("http://localhost:8082/api/auth/register", {
-        email: email,
-        username: name,
-        password: password
-      });
+      const response = await axios.post(
+        "http://localhost:8082/api/auth/register",
+        {
+          email: email,
+          username: name,
+          password: password,
+        }
+      );
 
       if (!response.ok) throw new Error(t(registrationFailed));
       setOpenSnackbar(true);
@@ -170,6 +173,13 @@ const LoginPage = () => {
             label={t("email")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                {
+                  isRegistering ? handleRegister(e) : handleLogin(e);
+                }
+              }
+            }}
             {...commonTextFieldStyles}
           />
           <TextField
@@ -177,6 +187,13 @@ const LoginPage = () => {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                {
+                  isRegistering ? handleRegister(e) : handleLogin(e);
+                }
+              }
+            }}
             {...commonTextFieldStyles}
           />
 
@@ -186,6 +203,13 @@ const LoginPage = () => {
                 label={t("name")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    {
+                      isRegistering ? handleRegister(e) : handleLogin(e);
+                    }
+                  }
+                }}
                 {...commonTextFieldStyles}
               />
               <TextField
@@ -193,6 +217,13 @@ const LoginPage = () => {
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    {
+                      isRegistering ? handleRegister(e) : handleLogin(e);
+                    }
+                  }
+                }}
                 {...commonTextFieldStyles}
               />
             </>
