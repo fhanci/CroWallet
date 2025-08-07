@@ -1,22 +1,34 @@
-import React, { useState } from 'react';
-import { Container, Typography, Box, TextField, MenuItem, InputLabel, FormControl, Select, Button, Snackbar, Alert } from '@mui/material';
-import SaveIcon from '@mui/icons-material/Save';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import {
+  Container,
+  Typography,
+  Box,
+  TextField,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  Select,
+  Button,
+  Snackbar,
+  Alert,
+} from "@mui/material";
+import SaveIcon from "@mui/icons-material/Save";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 const AccountCreatePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const userId = localStorage.getItem('userId');
+  const userId = localStorage.getItem("userId");
   const now = new Date();
 
   // Form alanları
-  const [accountName, setAccountName] = useState('');
-  const [balance, setBalance] = useState('');
-  const [currency, setCurrency] = useState('');
+  const [accountName, setAccountName] = useState("");
+  const [balance, setBalance] = useState("");
+  const [currency, setCurrency] = useState("");
 
   // Uyarı ve durumlar
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
   // Hesap ekleme işlemi
@@ -27,11 +39,16 @@ const AccountCreatePage = () => {
     }
 
     try {
-      const updateDate = new Date(now.getTime() + (3 * 60 * 60 * 1000)).toISOString();
+      const updateDate = new Date(
+        now.getTime() + 3 * 60 * 60 * 1000
+      ).toISOString();
 
-      const response = await fetch('http://localhost:8082/api/accounts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("http://localhost:8082/api/accounts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : undefined,
+        },
         body: JSON.stringify({
           accountName,
           balance,
@@ -45,11 +62,10 @@ const AccountCreatePage = () => {
 
       setOpenSnackbar(true);
       setTimeout(() => {
-        navigate('/account');
+        navigate("/account");
       }, 1000);
-
     } catch (error) {
-      console.error('Hata:', error);
+      console.error("Hata:", error);
       setError("Bir hata oluştu, tekrar deneyiniz.");
     }
   };
@@ -77,18 +93,18 @@ const AccountCreatePage = () => {
           margin="normal"
         />
         <FormControl fullWidth margin="normal">
-        <InputLabel id="currency-label">{t("currency")}</InputLabel>
-            <Select
-                labelId="currency-label"
-                id="currency-select"
-                label={t("currency")} // ← Bu satır şart
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-            >
+          <InputLabel id="currency-label">{t("currency")}</InputLabel>
+          <Select
+            labelId="currency-label"
+            id="currency-select"
+            label={t("currency")} // ← Bu satır şart
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+          >
             <MenuItem value="EUR">{t("eur")}</MenuItem>
             <MenuItem value="USD">{t("eur")}</MenuItem>
             <MenuItem value="TRY">{t("eur")}</MenuItem>
-            </Select>
+          </Select>
         </FormControl>
 
         {error && (
@@ -98,10 +114,15 @@ const AccountCreatePage = () => {
         )}
 
         <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
-          <Button variant="outlined" onClick={() => navigate('/account')}>
+          <Button variant="outlined" onClick={() => navigate("/account")}>
             {t("cancel")}
           </Button>
-          <Button variant="contained" color="success" onClick={handleAddAccount} startIcon={<SaveIcon />}>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleAddAccount}
+            startIcon={<SaveIcon />}
+          >
             Kaydet
           </Button>
         </Box>
@@ -111,7 +132,7 @@ const AccountCreatePage = () => {
         open={openSnackbar}
         autoHideDuration={3000}
         onClose={() => setOpenSnackbar(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Alert onClose={() => setOpenSnackbar(false)} severity="success">
           {t("accountAddedSuccess")}

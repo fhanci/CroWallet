@@ -1,32 +1,54 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Typography, TextField, Box, FormControl, InputLabel, Select, MenuItem, Button, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import {
+  Container,
+  Typography,
+  TextField,
+  Box,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Snackbar,
+  Alert,
+} from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 const AccountDeletePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const userId = localStorage.getItem('userId');
+  const userId = localStorage.getItem("userId");
 
   const [accounts, setAccounts] = useState([]);
-  const [selectedAccountId, setSelectedAccountId] = useState('');
-  const [password, setPassword] = useState('');
+  const [selectedAccountId, setSelectedAccountId] = useState("");
+  const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await fetch('http://localhost:8082/api/accounts');
+        const res = await fetch("http://localhost:8082/api/accounts", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        });
         if (res.ok) {
           const data = await res.json();
-          const filtered = data.filter(a => a.user.id === parseInt(userId));
+          const filtered = data.filter((a) => a.user.id === parseInt(userId));
           setAccounts(filtered);
         }
       } catch (err) {
-        console.error('Hesaplar alınamadı:', err);
+        console.error("Hesaplar alınamadı:", err);
       }
     };
     fetchAccounts();
@@ -41,7 +63,7 @@ const AccountDeletePage = () => {
           setUser(data);
         }
       } catch (err) {
-        console.error('Kullanıcı bilgileri alınamadı:', err);
+        console.error("Kullanıcı bilgileri alınamadı:", err);
       }
     };
     fetchUser();
@@ -49,7 +71,7 @@ const AccountDeletePage = () => {
 
   const handleVerifyPassword = () => {
     if (password === user?.password) {
-      setError('');
+      setError("");
       setConfirmOpen(true);
     } else {
       setError(t("wrongPassword"));
@@ -58,16 +80,19 @@ const AccountDeletePage = () => {
 
   const handleDeleteAccount = async () => {
     try {
-      const res = await fetch(`http://localhost:8082/api/accounts/delete/${selectedAccountId}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error('Silme başarısız');
+      const res = await fetch(
+        `http://localhost:8082/api/accounts/delete/${selectedAccountId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (!res.ok) throw new Error("Silme başarısız");
 
       setOpenSnackbar(true);
-      setTimeout(() => navigate('/account'), 1000);
+      setTimeout(() => navigate("/account"), 1000);
     } catch (err) {
-      console.error('Silme hatası:', err);
-      setError('Bir hata oluştu, lütfen tekrar deneyin.');
+      console.error("Silme hatası:", err);
+      setError("Bir hata oluştu, lütfen tekrar deneyin.");
     }
   };
 
@@ -79,20 +104,20 @@ const AccountDeletePage = () => {
         </Typography>
 
         <FormControl fullWidth margin="normal">
-        <InputLabel id="account-label">{t("accountToDelete")}</InputLabel>
-            <Select
-                labelId="account-label"
-                id="account-select"
-                label={t("accountToDelete")}
-                value={selectedAccountId}
-                onChange={(e) => setSelectedAccountId(e.target.value)}
-            >
-                {accounts.map((account) => (
-                <MenuItem key={account.id} value={account.id}>
-                    {account.accountName} - {account.balance} {account.currency}
-                </MenuItem>
-             ))}
-            </Select>
+          <InputLabel id="account-label">{t("accountToDelete")}</InputLabel>
+          <Select
+            labelId="account-label"
+            id="account-select"
+            label={t("accountToDelete")}
+            value={selectedAccountId}
+            onChange={(e) => setSelectedAccountId(e.target.value)}
+          >
+            {accounts.map((account) => (
+              <MenuItem key={account.id} value={account.id}>
+                {account.accountName} - {account.balance} {account.currency}
+              </MenuItem>
+            ))}
+          </Select>
         </FormControl>
 
         <TextField
@@ -107,7 +132,9 @@ const AccountDeletePage = () => {
         />
 
         <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
-          <Button variant="outlined" onClick={() => navigate('/account')}>{t("cancel")}</Button>
+          <Button variant="outlined" onClick={() => navigate("/account")}>
+            {t("cancel")}
+          </Button>
           <Button
             variant="contained"
             color="error"
@@ -124,13 +151,18 @@ const AccountDeletePage = () => {
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
         <DialogTitle>{t("confirmDeleteTitle")}</DialogTitle>
         <DialogContent>
-          <Typography>
-            {t("confirmDeleteMessage")}
-          </Typography>
+          <Typography>{t("confirmDeleteMessage")}</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)}>{t("confirmDeleteCancel")}</Button>
-          <Button onClick={handleDeleteAccount} color="error" variant="contained" startIcon={<DeleteIcon />}>
+          <Button onClick={() => setConfirmOpen(false)}>
+            {t("confirmDeleteCancel")}
+          </Button>
+          <Button
+            onClick={handleDeleteAccount}
+            color="error"
+            variant="contained"
+            startIcon={<DeleteIcon />}
+          >
             {t("confirmDeleteConfirm")}
           </Button>
         </DialogActions>
@@ -140,7 +172,7 @@ const AccountDeletePage = () => {
         open={openSnackbar}
         autoHideDuration={3000}
         onClose={() => setOpenSnackbar(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Alert severity="success" onClose={() => setOpenSnackbar(false)}>
           {t("accountDeletedSuccess")}

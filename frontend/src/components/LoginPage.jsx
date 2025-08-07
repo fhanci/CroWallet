@@ -9,8 +9,10 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import axios from "axios";
+import { useUser } from "../config/UserStore";
 
-const LoginPage = ({ onLoginSuccess }) => {
+const LoginPage = () => {
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,6 +22,7 @@ const LoginPage = ({ onLoginSuccess }) => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const navigate = useNavigate();
+  const { setUserInfo } = useUser();
 
   const clearFields = () => {
     setEmail("");
@@ -34,16 +37,21 @@ const LoginPage = ({ onLoginSuccess }) => {
     setMessage("");
 
     try {
-      const response = await fetch("http://localhost:8082/api/users");
-      if (!response.ok) throw new Error(t("serverError"));
-      const users = await response.json();
-
-      const user = users.find(
-        (u) => u.email.trim() === email.trim() && u.password === password
+      const response = await axios.post(
+        "http://localhost:8082/api/auth/login",
+        {
+          email: email,
+          password: password,
+        }
       );
-      if (user) {
-        localStorage.setItem("userId", user.id);
-        onLoginSuccess(user.id);
+      // if (!response.ok) throw new Error(t("serverError"));
+      setUserInfo({
+        id: response.data.id,
+        username: response.data.username,
+        email: response.data.email,
+      });
+      localStorage.setItem("token", response.data.token)
+      if (response) {
         navigate("/account");
         clearFields();
       } else {
@@ -70,29 +78,13 @@ const LoginPage = ({ onLoginSuccess }) => {
     }
 
     try {
-      const checkResponse = await fetch("http://localhost:8082/api/users");
-      if (!checkResponse.ok) throw new Error(t("serverError"));
-      const users = await checkResponse.json();
-
-      if (users.some((user) => user.email.trim() === email.trim())) {
-        setMessage(t("emailExists"));
-        return;
-      }
-
-      const response = await fetch("http://localhost:8082/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: email.trim(),
-          password,
-          name: name.trim(),
-        }),
+      const response = await axios.post("http://localhost:8082/api/auth/register", {
+        email: email,
+        username: name,
+        password: password
       });
 
-      if (!response.ok)
-        throw new Error(
-          t(registrationFailed)
-        );
+      if (!response.ok) throw new Error(t(registrationFailed));
       setOpenSnackbar(true);
       setTimeout(() => {
         setIsRegistering(false);
@@ -228,10 +220,7 @@ const LoginPage = ({ onLoginSuccess }) => {
             fullWidth
             sx={{ mt: 2, color: "#fff", textDecoration: "underline" }}
           >
-            {isRegistering
-              ? t("alreadyHaveAccount")
-              : t("dontHaveAccount")
-            }
+            {isRegistering ? t("alreadyHaveAccount") : t("dontHaveAccount")}
           </Button>
         </Box>
       </Box>

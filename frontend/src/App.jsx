@@ -36,6 +36,7 @@ import DebtCreatePage from "./pages/DebtCreatePage";
 import DebtEditPage from "./pages/DebtEditPage";
 import DebtPayPage from "./pages/DebtPayPage";
 
+import { UserProvider } from "./config/UserStore";
 const MainApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(
     localStorage.getItem("isAuthenticated") === "true"
@@ -51,10 +52,6 @@ const MainApp = () => {
     }
   }, [location, isAuthenticated]);
 
-  const handleLoginSuccess = () => {
-    setIsAuthenticated(true);
-    localStorage.setItem("isAuthenticated", "true");
-  };
   const { t, i18n } = useTranslation();
 
   const changeLanguage = (lng) => {
@@ -81,10 +78,7 @@ const MainApp = () => {
 
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
-        <Route
-          path="/login"
-          element={<Login onLoginSuccess={handleLoginSuccess} />}
-        />
+        <Route path="/login" element={<Login />} />
 
         <Route path="/account" element={<DashboardLayout />}>
           <Route index element={<AccountPage />} />
@@ -152,9 +146,11 @@ const MainApp = () => {
 
 const App = () => {
   return (
-    <Router>
-      <MainApp />
-    </Router>
+    <UserProvider>
+      <Router>
+        <MainApp />
+      </Router>
+    </UserProvider>
   );
 };
 
