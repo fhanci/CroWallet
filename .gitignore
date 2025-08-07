@@ -1,0 +1,7 @@
+api/.idea/
+api/shelf/
+api/workspace.xml
+api/mavenHomeManager.xml
+api/target/
+
+frontend/package-lock.json
