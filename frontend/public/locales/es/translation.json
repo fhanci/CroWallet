@@ -153,5 +153,15 @@
   "accountDeleted": "Cuenta eliminada.",
   "chooseLanguage": "Seleccionar Idioma",
   "exchangeRateHintTwo": "Por favor, introduce el tipo de cambio actual {{currency}}/TRY",
-  "dueDateTwo": "Fecha límite"
+  "dueDateTwo": "Fecha límite",
+  "incomeDetails": {
+    "Salario": ["Salario Mensual", "Prima", "Ingreso Adicional"],
+    "Trabajo Autónomo": [
+      "Pago por Proyecto",
+      "Consultoría",
+      "Trabajo Freelance"
+    ],
+    "Inversión": ["Ingresos por Intereses", "Acciones", "Cripto"],
+    "Otros": ["Regalo", "Reembolso", "Otro"]
+  }
 }

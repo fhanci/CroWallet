@@ -170,5 +170,12 @@
   "chooseLanguage": "Dil Seçin",
   "exchangeRateHintTwo": "Lütfen güncel {{currency}}/TRY kurunu giriniz",
 
-  "dueDateTwo": "Son Tarih"
+  "dueDateTwo": "Son Tarih",
+
+  "incomeDetails": {
+    "Maaş": ["Aylık Maaş", "Prim", "Ek Gelir"],
+    "Serbest Meslek": ["Proje Ödemesi", "Danışmanlık", "Serbest Çalışma"],
+    "Yatırım": ["Faiz Geliri", "Hisse Senedi", "Kripto"],
+    "Diğer": ["Hediye", "Geri Ödeme", "Diğer"]
+  }
 }
