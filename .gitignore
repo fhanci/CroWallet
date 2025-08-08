@@ -5,3 +5,4 @@ api/mavenHomeManager.xml
 api/target/
 
 frontend/node_modules/
+.vscode/settings.json

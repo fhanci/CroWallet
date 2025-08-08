@@ -19,7 +19,7 @@ import axios from "axios";
 
 const AccountToAccountTransferPage = () => {
   const navigate = useNavigate();
-  const {user} = useUser();
+  const { user } = useUser();
   const now = new Date();
   const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
@@ -127,7 +127,7 @@ const AccountToAccountTransferPage = () => {
     try {
       const [res1, res2, res3, res4] = await Promise.all([
         axios.post(
-          "http://localhost:8082/api/transfers",
+          "http://localhost:8082/api/transfers/create",
           outgoingTransfer,
           {
             headers: {
@@ -137,7 +137,7 @@ const AccountToAccountTransferPage = () => {
           }
         ),
         axios.post(
-          "http://localhost:8082/api/transfers",
+          "http://localhost:8082/api/transfers/create",
           incomingTransfer,
           {
             headers: {
@@ -167,13 +167,8 @@ const AccountToAccountTransferPage = () => {
           }
         ),
       ]);
-
-      if (res1.ok && res2.ok && res3.ok && res4.ok) {
-        setOpenSnackbar(true);
-        setTimeout(() => navigate("/account"), 1000);
-      } else {
-        setError(t("transferFailed"));
-      }
+      setOpenSnackbar(true);
+      setTimeout(() => navigate("/account"), 1000);
     } catch (err) {
       console.error("Transfer hatası:", err);
       setError("Bir hata oluştu, lütfen tekrar deneyin.");
