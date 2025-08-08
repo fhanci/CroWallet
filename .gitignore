@@ -4,4 +4,4 @@ api/workspace.xml
 api/mavenHomeManager.xml
 api/target/
 
-node_modules/
+frontend/node_modules/

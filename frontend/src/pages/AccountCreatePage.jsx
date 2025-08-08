@@ -12,14 +12,16 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
+import axios from "axios";
 import SaveIcon from "@mui/icons-material/Save";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useUser } from "../config/UserStore";
 
 const AccountCreatePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const userId = localStorage.getItem("userId");
+  const user = useUser();
   const now = new Date();
   const token = localStorage.getItem("token");
   // Form alanları
@@ -43,17 +45,15 @@ const AccountCreatePage = () => {
         now.getTime() + 3 * 60 * 60 * 1000
       ).toISOString();
 
-      const response = await fetch("http://localhost:8082/api/accounts", {
-        method: "POST",
+      const response = await axios.post("http://localhost:8082/api/accounts/create-account", {
         headers: {
-          "Content-Type": "application/json",
           Authorization: token ? `Bearer ${token}` : undefined,
         },
         body: JSON.stringify({
           accountName,
           balance,
           currency,
-          user: { id: parseInt(userId) },
+          user: { id: user.id },
           updateDate,
         }),
       });

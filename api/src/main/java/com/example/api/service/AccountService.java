@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 import com.example.api.comman.GeneralException;
 import com.example.api.entity.Account;
@@ -19,13 +20,20 @@ public class AccountService {
     private AccountRepository accountRepository;
 
     public AccountDTO createAccount(AccountDTO account) {
+        System.out.println("1");
         Account account1 = AccountMapper.INSTANCE.toAccount(account);
+        System.out.println("2");
         accountRepository.save(account1);
+        System.out.println("3");
         return AccountMapper.INSTANCE.toAccountDTO(account1);
     }
 
     public List<AccountDTO> getAllAccounts() {
         return AccountMapper.INSTANCE.toAccountDTOList(accountRepository.findAll());
+    }
+
+    public List<AccountDTO> getUserAccounts(Long id){
+        return AccountMapper.INSTANCE.toAccountDTOList(accountRepository.findAll().stream().filter(s -> Objects.equals(s.getUser().getId(), id)).toList());
     }
 
     public AccountDTO getAccountById(Long id) {
