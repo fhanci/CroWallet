@@ -1,7 +1,10 @@
 package com.example.api.controller;
 
 import com.example.api.dto.UserDTO;
+import com.example.api.requests.PasswordAuth;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,5 +43,16 @@ public class UserController {
     @DeleteMapping("/delete/{id}")
     public void deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
+    }
+
+    @PostMapping("/verify-password/{id}")
+    public ResponseEntity<?> verify(@RequestBody PasswordAuth psw, @PathVariable Long id){
+        boolean isValid = userService.verify(psw.getPassword(), id);
+
+        if (isValid) {
+            return ResponseEntity.ok("Password verified");
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password");
+        }
     }
 }

@@ -23,13 +23,14 @@ import {
   Save as SaveIcon,
   Close as CloseIcon,
 } from "@mui/icons-material";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useUser } from "../config/UserStore";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const userId = localStorage.getItem("userId");
-  const [user, setUser] = useState(null);
+  const { user, setUserInfo } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     name: "",
@@ -50,30 +51,30 @@ const ProfilePage = () => {
     i18n.changeLanguage(event.target.value);
   };
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const response = await fetch(
-        `http://localhost:8082/api/users/${userId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        }
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data);
-        setEditData({
-          name: data.name,
-          email: data.email,
-          password: data.password,
-        });
-      }
-    };
-    fetchUser();
-  }, [userId]);
+  // useEffect(() => {
+  //   const fetchUser = async () => {
+  //     const response = await fetch(
+  //       `http://localhost:8082/api/users/${userId}`,
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: token ? `Bearer ${token}` : undefined,
+  //         },
+  //       }
+  //     );
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       setUser(data);
+  //       setEditData({
+  //         name: data.name,
+  //         email: data.email,
+  //         password: data.password,
+  //       });
+  //     }
+  //   };
+  //   fetchUser();
+  // }, [userId]);
 
   const handleEdit = () => setIsEditing(true);
 
@@ -88,40 +89,34 @@ const ProfilePage = () => {
   };
 
   const handleSave = async () => {
-    const response = await fetch(
-      `http://localhost:8082/api/users/update/${userId}`,
+    const response = await axios.put(
+      `http://localhost:8082/api/users/update/${user.id}`,
       {
-        method: "PUT",
         headers: {
-          "Content-Type": "application/json",
           Authorization: token ? `Bearer ${token}` : undefined,
         },
         body: JSON.stringify(editData),
       }
     );
-    if (response.ok) {
-      setUser(editData);
-      setIsEditing(false);
-      setSnackbar({
-        open: true,
-        message: t("profileUpdated"),
-        severity: "success",
-      });
-    }
+    setUserInfo(response.data);
+    setIsEditing(false);
+    setSnackbar({
+      open: true,
+      message: t("profileUpdated"),
+      severity: "success",
+    });
   };
 
   const handleDelete = async () => {
-    const response = await fetch(
-      `http://localhost:8082/api/users/delete/${userId}`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : undefined,
-        },
-      }
-    );
-    if (response.ok) {
+    try {
+      const response = await axios.delete(
+        `http://localhost:8082/api/users/delete/${user.id}`,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        }
+      );
       setSnackbar({
         open: true,
         message: t("accountDeleted"),
@@ -129,6 +124,8 @@ const ProfilePage = () => {
       });
       localStorage.clear();
       navigate("/login");
+    } catch (err) {
+      console.log(err);
     }
   };
 

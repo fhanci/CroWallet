@@ -32,7 +32,7 @@ public class DebtController {
         return debtService.getDebtById(id);
     }
 
-    @PostMapping
+    @PostMapping("/create")
     public DebtDTO createDebt(@RequestBody DebtDTO debt) {
         return debtService.createDebt(debt);
     }

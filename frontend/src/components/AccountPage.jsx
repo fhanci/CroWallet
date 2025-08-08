@@ -27,18 +27,21 @@ const AccountPage = () => {
     "#A83279",
     "#6A89CC",
   ];
-  
+
   // fetch user accounts - but fetch all accounts
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await axios.get(`http://localhost:8082/api/accounts/get/${user.id}`, {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        });
+        const res = await axios.get(
+          `http://localhost:8082/api/accounts/get/${user.id}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
 
-        setAccounts(res.data)
+        setAccounts(res.data);
       } catch (error) {
         console.error("Hata:", error);
       }
@@ -50,13 +53,16 @@ const AccountPage = () => {
   useEffect(() => {
     const fetchTransfers = async () => {
       try {
-        const res = await axios.get(`http://localhost:8082/api/transfers/get/${user.id}`, {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        });
+        const res = await axios.get(
+          `http://localhost:8082/api/transfers/get/${user.id}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
 
-        setTransfers(res.data)
+        setTransfers(res.data);
       } catch (error) {
         console.error("Transfer alınamadı:", error);
       }
@@ -68,25 +74,21 @@ const AccountPage = () => {
   useEffect(() => {
     const fetchDebts = async () => {
       try {
-        const res = await axios.get(`http://localhost:8082/api/debts/get/${user.id}`, {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        });
-        setDebts(res.data)
-        if (res.ok) {
-          const data = await res.json();
-          const filtered = data.filter(
-            (d) => d.user?.id === parseInt(user.id) && d.debtAmount > 0
-          );
-          setDebts(filtered);
-          const upcoming = filtered.filter(
-            (borc) =>
-              new Date(borc.dueDate) <=
-              new Date(Date.now() + borc.warningPeriod * 24 * 60 * 60 * 1000)
-          ).length;
-          setYaklasanBorclar(upcoming);
-        }
+        const res = await axios.get(
+          `http://localhost:8082/api/debts/get/${user.id}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
+        setDebts(res.data);
+        const upcoming = res.data.filter(
+          (borc) =>
+            new Date(borc.dueDate) <=
+            new Date(Date.now() + borc.warningPeriod * 24 * 60 * 60 * 1000)
+        ).length;
+        setYaklasanBorclar(upcoming);
       } catch (error) {
         console.error("Borçlar alınırken hata:", error);
       }

@@ -15,13 +15,15 @@ import {
 import PaymentIcon from "@mui/icons-material/Payment";
 import { useNavigate } from "react-router-dom";
 import { t } from "i18next";
+import axios from 'axios';
+import { useUser } from "../config/UserStore";
+
 const DebtPayPage = () => {
   const navigate = useNavigate();
-  const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
   const [debts, setDebts] = useState([]);
-
+  const { user } = useUser();
   const [selectedTransferAccount, setSelectedTransferAccount] = useState(null);
   const [selectedPayDebt, setSelectedPayDebt] = useState(null);
   const [payAmount, setPayAmount] = useState("");
@@ -33,54 +35,37 @@ const DebtPayPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await fetch("http://localhost:8082/api/accounts", {
-          method: "GET",
+        const res = await axios.get(`http://localhost:8082/api/accounts/get/${user.id}`, {
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         });
-        if (res.ok) {
-          const data = await res.json();
-          const userAccounts = data.filter(
-            (acc) => acc.user.id === parseInt(userId)
-          );
-          setAccounts(userAccounts);
-        }
+        setAccounts(res.data)
       } catch (err) {
         console.error("Hesaplar alınamadı:", err);
       }
     };
 
     fetchAccounts();
-  }, [userId]);
+  }, [user.id]);
 
   // Borçları çek
   useEffect(() => {
     const fetchDebts = async () => {
       try {
-        const res = await fetch("http://localhost:8082/api/debts", {
-          method: "GET",
+        const res = await axios.get(`http://localhost:8082/api/debts/get/${user.id}`, {
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         });
-        if (res.ok) {
-          const data = await res.json();
-          const userDebts = data.filter(
-            (debt) =>
-              debt.user.id === parseInt(userId) && debt.status === "odenmedi"
-          );
-          setDebts(userDebts);
-        }
+        setDebts(res.data);
       } catch (err) {
         console.error("Borçlar alınamadı:", err);
       }
     };
 
     fetchDebts();
-  }, [userId]);
+  }, [user.id]);
 
   const handlePayDebt = async () => {
     setError("");
@@ -108,12 +93,10 @@ const DebtPayPage = () => {
       const createDate = new Date().toISOString();
 
       // Borcu güncelle
-      const debtResponse = await fetch(
+      const debtResponse = await axios.put(
         `http://localhost:8082/api/debts/${selectedPayDebt.id}`,
         {
-          method: "PUT",
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
           body: JSON.stringify({
@@ -124,15 +107,11 @@ const DebtPayPage = () => {
         }
       );
 
-      if (!debtResponse.ok) throw new Error("Borç ödeme işlemi başarısız!");
-
       // Hesap bakiyesini güncelle
-      const accountResponse = await fetch(
+      const accountResponse = await axios.put(
         `http://localhost:8082/api/accounts/${selectedTransferAccount.id}`,
         {
-          method: "PUT",
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
           body: JSON.stringify({
@@ -143,9 +122,6 @@ const DebtPayPage = () => {
         }
       );
 
-      if (!accountResponse.ok)
-        throw new Error("Hesap bakiyesi güncellenemedi!");
-
       // Transfer kaydı oluştur
       const transferData = {
         amount: parseFloat(payAmount),
@@ -153,7 +129,7 @@ const DebtPayPage = () => {
         details: "Borç ödeme",
         date: createDate,
         createDate,
-        user: { id: parseInt(userId) },
+        user: { id: parseInt(user.id) },
         account: { id: parseInt(selectedTransferAccount.id) },
         type: "outgoing",
         person: selectedPayDebt.toWhom,
@@ -161,20 +137,15 @@ const DebtPayPage = () => {
         outputNextBalance: updatedBalance,
       };
 
-      const transferResponse = await fetch(
+      const transferResponse = await axios.post(
         "http://localhost:8082/api/transfers",
         {
-          method: "POST",
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
           body: JSON.stringify(transferData),
         }
       );
-
-      if (!transferResponse.ok)
-        throw new Error("Transfer işlemi kaydedilemedi!");
 
       setOpenSnackbar(true);
       setTimeout(() => navigate("/debt"), 1500);

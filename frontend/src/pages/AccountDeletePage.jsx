@@ -19,15 +19,17 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useUser } from "../config/UserStore";
+import axios from "axios";
+
 const AccountDeletePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const userId = localStorage.getItem("userId");
+  const { user } = useUser();
   const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
   const [selectedAccountId, setSelectedAccountId] = useState("");
   const [password, setPassword] = useState("");
-  const [user, setUser] = useState(null);
   const [error, setError] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
@@ -35,76 +37,77 @@ const AccountDeletePage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await fetch("http://localhost:8082/api/accounts", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const filtered = data.filter((a) => a.user.id === parseInt(userId));
-          setAccounts(filtered);
-        }
+        const res = await axios.get(
+          `http://localhost:8082/api/accounts/get/${user.id}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
+        setAccounts(res.data);
       } catch (err) {
         console.error("Hesaplar alınamadı:", err);
       }
     };
     fetchAccounts();
-  }, [userId]);
+  }, [user.id]);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch(`http://localhost:8082/api/users/${userId}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        });
+  // useEffect(() => {
+  //   const fetchUser = async () => {
+  //     try {
+  //       const res = await fetch(`http://localhost:8082/api/users/${userId}`, {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: token ? `Bearer ${token}` : undefined,
+  //         },
+  //       });
 
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data);
-        }
-      } catch (err) {
-        console.error("Kullanıcı bilgileri alınamadı:", err);
-      }
-    };
-    fetchUser();
-  }, [userId]);
+  //       if (res.ok) {
+  //         const data = await res.json();
+  //         setUser(data);
+  //       }
+  //     } catch (err) {
+  //       console.error("Kullanıcı bilgileri alınamadı:", err);
+  //     }
+  //   };
+  //   fetchUser();
+  // }, [userId]);
 
-  const handleVerifyPassword = () => {
-    if (password === user?.password) {
-      setError("");
-      setConfirmOpen(true);
-    } else {
-      setError(t("wrongPassword"));
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    if (!token) {
-      navigate("/login");
-      return;
-    }
+  const handleVerifyPassword = async () => {
     try {
-      const res = await fetch(
-        `http://localhost:8082/api/accounts/delete/${selectedAccountId}`,
+      const res = await axios.post(
+        `http://localhost:8082/api/users/verify-password/${user.id}`,
+        { password },
         {
-          method: "DELETE",
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         }
       );
 
-      if (!res.ok) throw new Error("Silme başarısız");
+      if (res.status === 200) {
+        await handleDeleteAccount();
+      } else {
+        setError("Şifre yanlış, hesabınız silinmedi.");
+      }
+    } catch (err) {
+      console.error("Şifre doğrulama hatası:", err);
+      setError("Şifre doğrulanamadı.");
+    }
+  };
 
+  const handleDeleteAccount = async () => {
+    try {
+      const res = await axios.delete(
+        `http://localhost:8082/api/accounts/delete/${selectedAccountId}`,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        }
+      );
       setOpenSnackbar(true);
       setTimeout(() => navigate("/account"), 1000);
     } catch (err) {
@@ -175,7 +178,7 @@ const AccountDeletePage = () => {
             {t("confirmDeleteCancel")}
           </Button>
           <Button
-            onClick={handleDeleteAccount}
+            onClick={handleVerifyPassword}
             color="error"
             variant="contained"
             startIcon={<DeleteIcon />}

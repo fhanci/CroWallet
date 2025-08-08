@@ -8,11 +8,12 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useUser } from "../config/UserStore";
 
 const SettingPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const userId = localStorage.getItem("userId");
+  const { user } = useUser();
   const token = localStorage.getItem("token");
   const defaultIncomeOptions = t("defaultIncomeOptions", {
     returnObjects: true,
@@ -30,9 +31,9 @@ const SettingPage = () => {
 
   useEffect(() => {
     const savedIncome =
-      JSON.parse(localStorage.getItem(`incomeSources_${userId}`)) || [];
+      JSON.parse(localStorage.getItem(`incomeSources_${user.id}`)) || [];
     const savedExpense =
-      JSON.parse(localStorage.getItem(`expenseSources_${userId}`)) || [];
+      JSON.parse(localStorage.getItem(`expenseSources_${user.id}`)) || [];
 
     setIncomeSources(savedIncome);
     setExpenseSources(savedExpense);
@@ -40,7 +41,7 @@ const SettingPage = () => {
     setExpenseOptions([
       ...new Set([...defaultExpenseOptions, ...savedExpense]),
     ]);
-  }, [userId]);
+  }, [user.id]);
 
   const handleAddIncome = () => {
     if (newIncome.trim() && !incomeOptions.includes(newIncome)) {
@@ -62,11 +63,11 @@ const SettingPage = () => {
 
   const handleSave = () => {
     localStorage.setItem(
-      `incomeSources_${userId}`,
+      `incomeSources_${user.id}`,
       JSON.stringify(incomeSources)
     );
     localStorage.setItem(
-      `expenseSources_${userId}`,
+      `expenseSources_${user.id}`,
       JSON.stringify(expenseSources)
     );
     handleClose();

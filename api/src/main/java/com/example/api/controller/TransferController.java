@@ -32,7 +32,7 @@ public class TransferController {
         return transferService.getTransferById(id);
     }
 
-    @PostMapping
+    @PostMapping("/create")
     public TransferDTO createTransfer(@RequestBody TransferDTO transfer) {
         return transferService.createTransfer(transfer);
     }
