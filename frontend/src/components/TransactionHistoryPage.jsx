@@ -28,8 +28,10 @@ import SearchIcon from "@mui/icons-material/Search";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import { useTranslation } from "react-i18next";
+import { useUser } from "../config/UserStore";
 
 const TransactionHistoryPage = () => {
+  const user = useUser();
   const { t } = useTranslation();
   const { accountId } = useParams();
   const [transactions, setTransactions] = useState([]);
@@ -50,29 +52,19 @@ const TransactionHistoryPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`http://localhost:8082/api/transfers`, {
-          method: "GET",
+        const response = await axios.get(`http://localhost:8082/api/transfers/get/${user.id}`, {
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         });
 
-        if (!response.ok) throw new Error(t("errorFetchingTransactions"));
-        const data = await response.json();
-
-        const filteredData = data.filter(
-          (transaction) =>
-            transaction.account.id.toString() === accountId.toString()
-        );
-
-        if (filteredData.length > 0) {
+        if (response.data.length > 0) {
           setAccountName(
-            `${filteredData[0].account.accountName} - ${filteredData[0].account.currency}`
+            `${response.data[0].account.accountName} - ${response.data[0].account.currency}`
           );
         }
 
-        const sortedData = filteredData.sort(
+        const sortedData = response.data.sort(
           (a, b) => new Date(b.createDate) - new Date(a.createDate)
         );
 
@@ -97,21 +89,17 @@ const TransactionHistoryPage = () => {
       return;
     }
     try {
-      const res = await fetch(
+      const res = await axios.get(
         `http://localhost:8082/api/accounts/${accountId}`,
         {
-          method: "GET",
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         }
       );
 
-      if (!res.ok) throw new Error(t(errorFetchingBalance));
-      const account = await res.json();
-      setAccountBalance(account.balance);
-      setAccountCurrency(account.currency);
+      setAccountBalance(res.data.balance);
+      setAccountCurrency(res.data.currency);
     } catch (e) {
       console.error("Bakiye çekme hatası:", e);
     }

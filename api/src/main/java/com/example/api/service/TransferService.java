@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 import com.example.api.comman.GeneralException;
 import com.example.api.entity.Transfer;
@@ -61,5 +62,9 @@ public class TransferService {
             throw new GeneralException("Transfer to be deleted not found: " + id);
         }
         transferRepository.deleteById(id);
+    }
+
+    public List<TransferDTO> getUserTransfers(Long id) {
+        return TransferMapper.INSTANCE.toTransferDTOList(transferRepository.findAll().stream().filter(s -> Objects.equals(s.getUser().getId(), id)).toList());
     }
 }

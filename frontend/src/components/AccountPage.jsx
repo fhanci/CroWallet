@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import { PieChart, Pie, Tooltip, Cell, Legend } from "recharts";
 import { useTranslation } from "react-i18next";
+import { useUser } from "../config/UserStore";
+import axios from "axios";
 
 const AccountPage = () => {
   const { t } = useTranslation();
@@ -15,7 +17,7 @@ const AccountPage = () => {
   const [yaklasanBorclar, setYaklasanBorclar] = useState(0);
   const [incomeSources, setIncomeSources] = useState([]);
   const [expenseSources, setExpenseSources] = useState([]);
-  const userId = localStorage.getItem("userId");
+  const { user } = useUser();
   const token = localStorage.getItem("token");
   const COLORS = [
     "#0088FE",
@@ -25,66 +27,57 @@ const AccountPage = () => {
     "#A83279",
     "#6A89CC",
   ];
-
+  
+  // fetch user accounts - but fetch all accounts
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await fetch("http://localhost:8082/api/accounts", {
-          method: "GET",
+        const res = await axios.get(`http://localhost:8082/api/accounts/get/${user.id}`, {
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          setAccounts(data.filter((a) => a.user.id === parseInt(userId)));
-        }
+        setAccounts(res.data)
       } catch (error) {
         console.error("Hata:", error);
       }
     };
     fetchAccounts();
-  }, [userId]);
+  }, [user.id]);
 
+  //fetchs user transfers
   useEffect(() => {
     const fetchTransfers = async () => {
       try {
-        const res = await fetch("http://localhost:8082/api/transfers", {
-          method: "GET",
+        const res = await axios.get(`http://localhost:8082/api/transfers/get/${user.id}`, {
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          setTransfers(data.filter((t) => t.user?.id === parseInt(userId)));
-        }
+        setTransfers(res.data)
       } catch (error) {
         console.error("Transfer alınamadı:", error);
       }
     };
     fetchTransfers();
-  }, [userId]);
+  }, [user.id]);
 
+  //fetch user debts
   useEffect(() => {
     const fetchDebts = async () => {
       try {
-        const res = await fetch("http://localhost:8082/api/debts", {
-          method: "GET",
+        const res = await axios.get(`http://localhost:8082/api/debts/get/${user.id}`, {
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         });
-
+        setDebts(res.data)
         if (res.ok) {
           const data = await res.json();
           const filtered = data.filter(
-            (d) => d.user?.id === parseInt(userId) && d.debtAmount > 0
+            (d) => d.user?.id === parseInt(user.id) && d.debtAmount > 0
           );
           setDebts(filtered);
           const upcoming = filtered.filter(
@@ -99,16 +92,16 @@ const AccountPage = () => {
       }
     };
     fetchDebts();
-  }, [userId]);
+  }, [user.id]);
 
   useEffect(() => {
     setIncomeSources(
-      JSON.parse(localStorage.getItem(`incomeSources_${userId}`)) || []
+      JSON.parse(localStorage.getItem(`incomeSources_${user.id}`)) || []
     );
     setExpenseSources(
-      JSON.parse(localStorage.getItem(`expenseSources_${userId}`)) || []
+      JSON.parse(localStorage.getItem(`expenseSources_${user.id}`)) || []
     );
-  }, [userId]);
+  }, [user.id]);
 
   const handleOpenAccountDetails = (account) => {
     navigate(`/transactions/${account.id}`);

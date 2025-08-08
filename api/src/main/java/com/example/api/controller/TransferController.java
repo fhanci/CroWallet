@@ -22,6 +22,11 @@ public class TransferController {
         return transferService.getAllTransfers();
     }
 
+    @GetMapping("/get/{id}")
+    public List<TransferDTO> getUserTransfers(@PathVariable Long id) {
+        return transferService.getUserTransfers(id);
+    }
+
     @GetMapping("/{id}")
     public TransferDTO getTransferById(@PathVariable Long id) {
         return transferService.getTransferById(id);

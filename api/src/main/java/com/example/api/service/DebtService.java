@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 import com.example.api.comman.GeneralException;
 import com.example.api.entity.Debt;
@@ -77,5 +78,9 @@ public class DebtService {
             throw new GeneralException("Debt to be deleted not found: " + id);
         }
         debtRepository.deleteById(id);
+    }
+
+    public List<DebtDTO> getUserDebts(Long id) {
+        return DebtMapper.INSTANCE.toDebtDTOList(debtRepository.findAll().stream().filter(s -> Objects.equals(s.getUser().getId(), id)).toList());
     }
 }

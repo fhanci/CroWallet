@@ -17,18 +17,27 @@ public class AccountController {
     @Autowired
     private AccountService accountService;
 
+    // Return all accounts. Not wanted since user only wants his accounts
     @GetMapping
     public List<AccountDTO> getAllAccounts() {
         return accountService.getAllAccounts();
     }
 
+    @GetMapping("/get/{id}")
+    public List<AccountDTO> getUserAccounts(@PathVariable Long id) {
+        return accountService.getUserAccounts(id);
+    }
+
+    // return just one user's account
     @GetMapping("/{id}")
     public AccountDTO getAccountById(@PathVariable Long id) {
+        System.out.println("GET ACCOUNT BY ID");
         return accountService.getAccountById(id);
     }
 
-    @PostMapping
+    @PostMapping("create-account")
     public AccountDTO createAccount(@RequestBody AccountDTO account) {
+        System.out.println("controller");
         return accountService.createAccount(account);
     }
 

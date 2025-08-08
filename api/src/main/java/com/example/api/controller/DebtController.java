@@ -22,6 +22,11 @@ public class DebtController {
         return debtService.getAllDebts();
     }
 
+    @GetMapping("/get/{id}")
+    public List<DebtDTO> getUserDebts(@PathVariable Long id) {
+        return debtService.getUserDebts(id);
+    }
+
     @GetMapping("/{id}")
     public DebtDTO getDebtById(@PathVariable Long id) {
         return debtService.getDebtById(id);
