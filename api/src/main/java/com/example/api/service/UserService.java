@@ -84,4 +84,13 @@ public class UserService {
     public User findById(Long id) {
         return userRepository.findById(id).orElse(null);
     }
+
+    public boolean verify(String password, Long id) {
+        User user = userRepository.findById(id).orElse(null);
+        if(user != null) {
+            return password.equals(user.getPassword());
+        } else {
+            return false;
+        }
+    }
 }

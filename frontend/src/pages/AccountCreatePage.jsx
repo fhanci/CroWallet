@@ -21,7 +21,7 @@ import { useUser } from "../config/UserStore";
 const AccountCreatePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const user = useUser();
+  const { user } = useUser();
   const now = new Date();
   const token = localStorage.getItem("token");
   // Form alanları
@@ -57,8 +57,6 @@ const AccountCreatePage = () => {
           updateDate,
         }),
       });
-
-      if (!response.ok) throw new Error(t("accountAddFailed"));
 
       setOpenSnackbar(true);
       setTimeout(() => {

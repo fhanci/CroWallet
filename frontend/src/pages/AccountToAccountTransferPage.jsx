@@ -14,9 +14,12 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { t } from "i18next";
+import { useUser } from "../config/UserStore";
+import axios from "axios";
+
 const AccountToAccountTransferPage = () => {
   const navigate = useNavigate();
-  const userId = localStorage.getItem("userId");
+  const {user} = useUser();
   const now = new Date();
   const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
@@ -29,26 +32,21 @@ const AccountToAccountTransferPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const response = await fetch("http://localhost:8082/api/accounts", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        });
-
-        const data = await response.json();
-        const userAccounts = data.filter(
-          (acc) => acc.user.id === parseInt(userId)
+        const response = await axios.get(
+          `http://localhost:8082/api/accounts/get/${user.id}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
         );
-        setAccounts(userAccounts);
-      } catch (error) {
-        console.error("Hesaplar alınamadı:", error);
+        setAccounts(response.data);
+      } catch (err) {
+        console.error("Hesaplar alınamadı:", err);
       }
     };
-
     fetchAccounts();
-  }, [userId]);
+  }, [user.id]);
 
   const handleSubmit = async () => {
     if (
@@ -88,7 +86,7 @@ const AccountToAccountTransferPage = () => {
 
     const outgoingTransfer = {
       amount,
-      user: { id: parseInt(userId) },
+      user: { id: user.id },
       account: { id: selectedSenderAccount.id },
       type: "inter-account",
       createDate,
@@ -102,7 +100,7 @@ const AccountToAccountTransferPage = () => {
 
     const incomingTransfer = {
       amount: convertedAmount,
-      user: { id: parseInt(userId) },
+      user: { id: user.id },
       account: { id: selectedReceiverAccount.id },
       type: "inter-account",
       createDate,

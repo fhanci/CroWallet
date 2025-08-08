@@ -14,11 +14,14 @@ import {
   Box,
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { t } from "i18next";
+import { useUser } from "../config/UserStore";
+
 const IncomingTransferPage = () => {
   const navigate = useNavigate();
-  const userId = localStorage.getItem("userId");
+  const { user } = useUser();
   const now = new Date();
   const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
@@ -34,33 +37,30 @@ const IncomingTransferPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const response = await fetch("http://localhost:8082/api/accounts", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        });
-        const data = await response.json();
-        const userAccounts = data.filter(
-          (acc) => acc.user.id === parseInt(userId)
+        const res = await axios.get(
+          `http://localhost:8082/api/accounts/get/${user.id}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
         );
-        setAccounts(userAccounts);
-      } catch (error) {
-        console.error("Hesaplar alınamadı:", error);
+        setAccounts(res.data);
+      } catch (err) {
+        console.error("Hesaplar alınamadı:", err);
       }
     };
     fetchAccounts();
-  }, [userId]);
+  }, [user.id]);
 
   useEffect(() => {
     const defaultIncome = t("defaultIncomeOptions", { returnObjects: true });
 
     const savedIncome =
-      JSON.parse(localStorage.getItem(`incomeSources_${userId}`)) || [];
+      JSON.parse(localStorage.getItem(`incomeSources_${user.id}`)) || [];
     const merged = Array.from(new Set([...defaultIncome, ...savedIncome]));
     setIncomeSources(merged);
-  }, [userId]);
+  }, [user.id]);
 
   const handleSubmit = async () => {
     if (
@@ -88,7 +88,7 @@ const IncomingTransferPage = () => {
           : selectedTransfer.exchangeRate,
       type: "incoming",
       createDate,
-      user: { id: parseInt(userId) },
+      user: { id: user.id },
       account: { id: parseInt(selectedTransferAccount.id) },
       inputPreviousBalance: selectedTransferAccount.balance,
       inputNextBalance: selectedTransferAccount.balance + amount,
@@ -101,19 +101,19 @@ const IncomingTransferPage = () => {
     };
 
     try {
-      const response = await fetch("http://localhost:8082/api/transfers", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : undefined,
-        },
-        body: JSON.stringify(updatedTransfer),
-      });
-
-      const response2 = await fetch(
-        `http://localhost:8082/api/accounts/${selectedTransferAccount.id}`,
+      const response = await axios.post(
+        "http://localhost:8082/api/transfers/create",
         {
-          method: "PUT",
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+          body: JSON.stringify(updatedTransfer),
+        }
+      );
+
+      const response2 = await axios.put(
+        `http://localhost:8082/api/accounts/update/${selectedTransferAccount.id}`,
+        {
           headers: {
             "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
@@ -122,12 +122,8 @@ const IncomingTransferPage = () => {
         }
       );
 
-      if (response.ok && response2.ok) {
-        setOpenSnackbar(true);
-        setTimeout(() => navigate("/account"), 1000);
-      } else {
-        setError(t("transferFailed"));
-      }
+      setOpenSnackbar(true);
+      setTimeout(() => navigate("/account"), 1000);
     } catch (err) {
       console.error("Transfer hatası:", err);
       setError("Bir hata oluştu, lütfen tekrar deneyin.");

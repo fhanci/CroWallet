@@ -1,7 +1,11 @@
 package com.example.api.controller;
 
 import com.example.api.dto.AccountDTO;
+import com.example.api.requests.PasswordAuth;
+import com.example.api.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,6 +20,9 @@ public class AccountController {
 
     @Autowired
     private AccountService accountService;
+
+    @Autowired
+    private UserService userService;
 
     // Return all accounts. Not wanted since user only wants his accounts
     @GetMapping
@@ -43,7 +50,6 @@ public class AccountController {
 
     @PutMapping("/update/{id}")
     public AccountDTO updateAccount(@PathVariable Long id, @RequestBody AccountDTO account) {
-        account.setId(id);
         return accountService.updateAccount(id, account);
     }
 

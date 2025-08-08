@@ -1,32 +1,27 @@
 import React, { useEffect, useState } from "react";
 import { Container, Typography, Paper, Box } from "@mui/material";
 import { t } from "i18next";
+import axios from 'axios';
+import { useUser } from "../config/UserStore";
 const DebtPage = () => {
   const [debts, setDebts] = useState([]);
-  const userId = localStorage.getItem("userId");
+  const { user } = useUser();
   const token = localStorage.getItem("token");
   useEffect(() => {
     const fetchDebts = async () => {
       try {
-        const response = await fetch("http://localhost:8082/api/debts", {
-          method: "GET",
+        const response = await axios.get(`http://localhost:8082/api/debts/get/${user.id}`, {
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         });
-        if (!response.ok) throw new Error("Borçlar alınamadı");
-        const data = await response.json();
-        const userDebts = data.filter(
-          (debt) => debt.user?.id === parseInt(userId)
-        );
-        setDebts(userDebts);
+        setDebts(response.data);
       } catch (error) {
         console.error(error);
       }
     };
     fetchDebts();
-  }, [userId]);
+  }, [user.id]);
 
   return (
     <Container maxWidth="md" sx={{ mt: 3 }}>

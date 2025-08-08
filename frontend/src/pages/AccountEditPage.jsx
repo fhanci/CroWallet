@@ -15,10 +15,12 @@ import {
 import SaveIcon from "@mui/icons-material/Save";
 import { useNavigate } from "react-router-dom";
 import { t } from "i18next";
+import { useUser } from "../config/UserStore";
+import axios from "axios";
 
 const AccountEditPage = () => {
   const navigate = useNavigate();
-  const userId = localStorage.getItem("userId");
+  const { user } = useUser();
   const now = new Date();
   const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
@@ -29,25 +31,18 @@ const AccountEditPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const response = await fetch("http://localhost:8082/api/accounts", {
-          method: "GET",
+        const response = await axios.get(`http://localhost:8082/api/accounts/get/${user.id}`, {
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         });
-
-        if (response.ok) {
-          const data = await response.json();
-          const filtered = data.filter((a) => a.user.id === parseInt(userId));
-          setAccounts(filtered);
-        }
+        setAccounts(response.data);
       } catch (err) {
         console.error("Hesaplar alınamadı:", err);
       }
     };
     fetchAccounts();
-  }, [userId]);
+  }, [user.id]);
 
   const handleUpdateAccount = async () => {
     if (
@@ -65,19 +60,15 @@ const AccountEditPage = () => {
       ).toISOString();
       const updatedAccount = { ...selectedAccount, updateDate };
 
-      const response = await fetch(
+      const response = await axios.put(
         `http://localhost:8082/api/accounts/update/${selectedAccount.id}`,
         {
-          method: "PUT",
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
           body: JSON.stringify(updatedAccount),
         }
       );
-
-      if (!response.ok) throw new Error("Güncelleme başarısız");
 
       setOpenSnackbar(true);
       setTimeout(() => navigate("/account"), 1000);

@@ -19,13 +19,15 @@ import {
 import SaveIcon from "@mui/icons-material/Save";
 import { useNavigate } from "react-router-dom";
 import { t } from "i18next";
+import axios from "axios";
+import { useUser } from "../config/UserStore";
+
 const DebtEditPage = () => {
-  const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
   const [debts, setDebts] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [selectedDebt, setSelectedDebt] = useState(null);
-
+  const {user} = useUser();
   const [error, setError] = useState("");
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
@@ -35,50 +37,40 @@ const DebtEditPage = () => {
   useEffect(() => {
     const fetchDebts = async () => {
       try {
-        const res = await fetch("http://localhost:8082/api/debts", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        });
-
-        if (!res.ok) throw new Error("Borçlar alınamadı");
-        const data = await res.json();
-        const filtered = data.filter(
-          (d) => d.user?.id === parseInt(userId) && d.status === "odenmedi"
+        const res = await axios.get(
+          `http://localhost:8082/api/debts/get/${user.id}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
         );
-        setDebts(filtered);
+        setDebts(res.data);
       } catch (err) {
         console.error(err);
       }
     };
     fetchDebts();
-  }, [userId]);
+  }, [user.id]);
 
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await fetch("http://localhost:8082/api/accounts", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        });
-
-        if (!res.ok) throw new Error("Hesaplar alınamadı");
-        const data = await res.json();
-        const userAccounts = data.filter(
-          (acc) => acc.user?.id === parseInt(userId)
+        const response = await axios.get(
+          `http://localhost:8082/api/accounts/get/${user.id}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
         );
-        setAccounts(userAccounts);
+        setAccounts(response.data);
       } catch (err) {
-        console.error(err);
+        console.error("Hesaplar alınamadı:", err);
       }
     };
     fetchAccounts();
-  }, [userId]);
+  }, [user.id]);
 
   useEffect(() => {
     console.log("Seçilen Borç (selectedDebt):", selectedDebt);
@@ -125,40 +117,32 @@ const DebtEditPage = () => {
       if (!newAccountId) throw new Error("Hesap seçimi yapılmalı");
 
       if (oldAccountId !== newAccountId) {
-        const resOldAcc = await fetch(
+        const resOldAcc = await axios.get(
           `http://localhost:8082/api/accounts/${oldAccountId}`,
           {
-            method: "GET",
             headers: {
-              "Content-Type": "application/json",
               Authorization: token ? `Bearer ${token}` : undefined,
             },
           }
         );
-        if (!resOldAcc.ok) throw new Error("Eski hesap bilgisi alınamadı");
-        const oldAccount = await resOldAcc.json();
+        const oldAccount = await resOldAcc.data;
 
-        const resNewAcc = await fetch(
+        const resNewAcc = await axios.get(
           `http://localhost:8082/api/accounts/${newAccountId}`,
           {
-            method: "GET",
             headers: {
-              "Content-Type": "application/json",
               Authorization: token ? `Bearer ${token}` : undefined,
             },
           }
         );
-        if (!resNewAcc.ok) throw new Error("Yeni hesap bilgisi alınamadı");
-        const newAccount = await resNewAcc.json();
+        const newAccount = await resNewAcc.data;
 
         const oldAccUpdatedBalance =
           oldAccount.balance - parseFloat(oldDebt.debtAmount);
-        const oldAccUpdateRes = await fetch(
+        const oldAccUpdateRes = await axios.put(
           `http://localhost:8082/api/accounts/update/${oldAccount.id}`,
           {
-            method: "PUT",
             headers: {
-              "Content-Type": "application/json",
               Authorization: token ? `Bearer ${token}` : undefined,
             },
             body: JSON.stringify({
@@ -168,17 +152,13 @@ const DebtEditPage = () => {
             }),
           }
         );
-        if (!oldAccUpdateRes.ok)
-          throw new Error("Eski hesap bakiyesi güncellenemedi");
 
         const newAccUpdatedBalance =
           newAccount.balance + parseFloat(selectedDebt.debtAmount);
-        const newAccUpdateRes = await fetch(
+        const newAccUpdateRes = await axios.put(
           `http://localhost:8082/api/accounts/update/${newAccount.id}`,
           {
-            method: "PUT",
             headers: {
-              "Content-Type": "application/json",
               Authorization: token ? `Bearer ${token}` : undefined,
             },
             body: JSON.stringify({
@@ -188,15 +168,11 @@ const DebtEditPage = () => {
             }),
           }
         );
-        if (!newAccUpdateRes.ok)
-          throw new Error("Yeni hesap bakiyesi güncellenemedi");
 
         const createDate = new Date().toISOString();
 
-        await fetch("http://localhost:8082/api/transfers", {
-          method: "POST",
+        await axios.post("http://localhost:8082/api/transfers/create", {
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
           body: JSON.stringify({
@@ -205,7 +181,7 @@ const DebtEditPage = () => {
             details: "Borç hesap değişikliği - eski hesaptan çıkış",
             date: createDate,
             createDate,
-            user: { id: parseInt(userId) },
+            user: { id: user.id },
             account: { id: oldAccount.id },
             type: "outgoing",
             person: selectedDebt.toWhom,
@@ -214,10 +190,8 @@ const DebtEditPage = () => {
           }),
         });
 
-        await fetch("http://localhost:8082/api/transfers", {
-          method: "POST",
+        await axios.post("http://localhost:8082/api/transfers/create", {
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
           body: JSON.stringify({
@@ -226,7 +200,7 @@ const DebtEditPage = () => {
             details: "Borç hesap değişikliği - yeni hesaba giriş",
             date: createDate,
             createDate,
-            user: { id: parseInt(userId) },
+            user: { id: user.id },
             account: { id: newAccount.id },
             type: "incoming",
             person: selectedDebt.toWhom,
@@ -235,27 +209,23 @@ const DebtEditPage = () => {
           }),
         });
       } else {
-        const resAccount = await fetch(
+        const resAccount = await axios.get(
           `http://localhost:8082/api/accounts/${newAccountId}`,
           {
-            method: "GET",
             headers: {
-              "Content-Type": "application/json",
               Authorization: token ? `Bearer ${token}` : undefined,
             },
           }
         );
-        if (!resAccount.ok) throw new Error("Hesap bilgisi alınamadı");
-        const accountToUpdate = await resAccount.json();
+
+        const accountToUpdate = resAccount.data;
 
         const updatedBalance = accountToUpdate.balance + debtDifference;
 
-        const accountUpdateResponse = await fetch(
+        const accountUpdateResponse = await axios.put(
           `http://localhost:8082/api/accounts/update/${accountToUpdate.id}`,
           {
-            method: "PUT",
             headers: {
-              "Content-Type": "application/json",
               Authorization: token ? `Bearer ${token}` : undefined,
             },
             body: JSON.stringify({
@@ -265,15 +235,11 @@ const DebtEditPage = () => {
             }),
           }
         );
-        if (!accountUpdateResponse.ok)
-          throw new Error("Hesap bakiyesi güncellenemedi");
 
         const createDate = new Date().toISOString();
 
-        await fetch("http://localhost:8082/api/transfers", {
-          method: "POST",
+        await axios.post("http://localhost:8082/api/transfers/create", {
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
           body: JSON.stringify({
@@ -282,7 +248,7 @@ const DebtEditPage = () => {
             details: debtDifference > 0 ? "Borç arttı" : "Borç azaldı",
             date: createDate,
             createDate,
-            user: { id: parseInt(userId) },
+            user: { id: user.id },
             account: { id: accountToUpdate.id },
             type: debtDifference > 0 ? "incoming" : "outgoing",
             person: selectedDebt.toWhom,
@@ -292,12 +258,10 @@ const DebtEditPage = () => {
         });
       }
 
-      const response = await fetch(
+      const response = await axios.put(
         `http://localhost:8082/api/debts/update/${selectedDebt.id}`,
         {
-          method: "PUT",
           headers: {
-            "Content-Type": "application/json",
             Authorization: token ? `Bearer ${token}` : undefined,
           },
           body: JSON.stringify({
@@ -308,13 +272,11 @@ const DebtEditPage = () => {
             dueDate: selectedDebt.dueDate,
             status: selectedDebt.status,
             warningPeriod: selectedDebt.warningPeriod,
-            user: { id: parseInt(userId) },
+            user: { id: user.id },
             account: { id: selectedDebt.account.id },
           }),
         }
       );
-
-      if (!response.ok) throw new Error("Borç güncelleme başarısız!");
 
       setOpenSnackbar(true);
       setError(t("deptUpdateFailed"));

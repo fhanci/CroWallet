@@ -29,9 +29,10 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../config/UserStore";
+import axios from "axios";
 
 const TransactionHistoryPage = () => {
-  const user = useUser();
+  const { user } = useUser();
   const { t } = useTranslation();
   const { accountId } = useParams();
   const [transactions, setTransactions] = useState([]);
@@ -45,8 +46,8 @@ const TransactionHistoryPage = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [accountBalance, setAccountBalance] = useState(null); // güncel bakiye için
-  const [accountCurrency, setAccountCurrency] = useState(""); // güncel bakiye için
+  const [accountBalance, setAccountBalance] = useState(null);
+  const [accountCurrency, setAccountCurrency] = useState("");
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -84,10 +85,6 @@ const TransactionHistoryPage = () => {
 
   // güncel bakiye için
   const fetchAccountBalance = async () => {
-    if (!token) {
-      navigate("/login");
-      return;
-    }
     try {
       const res = await axios.get(
         `http://localhost:8082/api/accounts/${accountId}`,

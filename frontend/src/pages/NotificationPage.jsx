@@ -1,3 +1,4 @@
+import axios from "axios";
 import React, { useEffect, useState } from "react";
 import {
   Container,
@@ -11,40 +12,38 @@ import {
   Paper,
 } from "@mui/material";
 import { t } from "i18next";
+import { useUser } from "../config/UserStore";
 const NotificationPage = () => {
   const [debts, setDebts] = useState([]);
-  const userId = localStorage.getItem("userId");
+  const { user } = useUser();
   const token = localStorage.getItem("token");
   useEffect(() => {
     const fetchDebts = async () => {
       try {
-        const res = await fetch("http://localhost:8082/api/debts", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const filtered = data
-            .filter(
-              (d) =>
-                d.user?.id === parseInt(userId) &&
-                d.debtAmount > 0 &&
-                new Date(d.dueDate) <=
-                  new Date(Date.now() + d.warningPeriod * 24 * 60 * 60 * 1000)
-            )
-            .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-          setDebts(filtered);
-        }
+        const res = await axios.get(
+          `http://localhost:8082/api/debts/get/${user.id}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
+        const filtered = res.data
+          .filter(
+            (d) =>
+              d.debtAmount > 0 &&
+              new Date(d.dueDate) <=
+                new Date(Date.now() + d.warningPeriod * 24 * 60 * 60 * 1000)
+          )
+          .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+        setDebts(filtered);
       } catch (error) {
         console.error("Bildirimler alınamadı:", error);
       }
     };
 
     fetchDebts();
-  }, [userId]);
+  }, [user.id]);
 
   return (
     <Container sx={{ mt: 4 }}>
