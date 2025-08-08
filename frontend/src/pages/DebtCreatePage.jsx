@@ -36,7 +36,6 @@ const DebtCreatePage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        console.log(user);
         const response = await axios.get(
           `http://localhost:8082/api/accounts/get/${user.id}`,
           {
