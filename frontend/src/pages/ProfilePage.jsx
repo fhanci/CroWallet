@@ -91,11 +91,12 @@ const ProfilePage = () => {
   const handleSave = async () => {
     const response = await axios.put(
       `http://localhost:8082/api/users/update/${user.id}`,
+      editData,
       {
         headers: {
           Authorization: token ? `Bearer ${token}` : undefined,
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(editData),
       }
     );
     setUserInfo(response.data);

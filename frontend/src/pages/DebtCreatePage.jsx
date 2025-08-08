@@ -106,11 +106,12 @@ const DebtCreatePage = () => {
       // Borç kaydı oluştur
       const response = await axios.post(
         "http://localhost:8082/api/debts/create",
+        newDebt,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify(newDebt),
         }
       );
 
@@ -149,11 +150,12 @@ const DebtCreatePage = () => {
 
       const transferResponse = await axios.post(
         "http://localhost:8082/api/transfers/create",
+        transferData,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify(transferData),
         }
       );
 

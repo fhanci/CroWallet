@@ -117,21 +117,23 @@ const OutgoingTransferPage = () => {
     try {
       const response = await axios.post(
         `http://localhost:8082/api/transfers/update/${updatedAccount.id}`,
+        updatedTransfer,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify(updatedTransfer),
         }
       );
 
       const response2 = await axios.put(
         `http://localhost:8082/api/accounts/update/${selectedTransferAccount.id}`,
+        updatedAccount,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify(updatedAccount),
         }
       );
 

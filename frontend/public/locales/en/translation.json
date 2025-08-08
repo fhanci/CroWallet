@@ -170,5 +170,11 @@
   "chooseLanguage": "Choose Language",
   "exchangeRateHintTwo": "Please enter the current {{currency}}/TRY exchange rate",
 
-  "dueDateTwo": "Deadline"
+  "dueDateTwo": "Deadline",
+  "incomeDetails": {
+    "Salary": ["Monthly Salary", "Bonus", "Additional Income"],
+    "Freelance": ["Project Payment", "Consulting", "Freelance Work"],
+    "Investment": ["Interest Income", "Stock", "Crypto"],
+    "Other": ["Gift", "Refund", "Other"]
+  }
 }

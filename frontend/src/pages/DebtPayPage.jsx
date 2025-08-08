@@ -139,11 +139,12 @@ const DebtPayPage = () => {
 
       const transferResponse = await axios.post(
         "http://localhost:8082/api/transfers",
+        transferData,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify(transferData),
         }
       );
 

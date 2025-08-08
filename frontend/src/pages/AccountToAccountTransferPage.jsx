@@ -126,30 +126,44 @@ const AccountToAccountTransferPage = () => {
 
     try {
       const [res1, res2, res3, res4] = await Promise.all([
-        fetch("http://localhost:8082/api/transfers", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(outgoingTransfer),
-        }),
-        fetch("http://localhost:8082/api/transfers", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(incomingTransfer),
-        }),
-        fetch(
-          `http://localhost:8082/api/accounts/update/${selectedSenderAccount.id}`,
+        axios.post(
+          "http://localhost:8082/api/transfers",
+          outgoingTransfer,
           {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updatedSender),
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+            },
           }
         ),
-        fetch(
-          `http://localhost:8082/api/accounts/update/${selectedReceiverAccount.id}`,
+        axios.post(
+          "http://localhost:8082/api/transfers",
+          incomingTransfer,
           {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updatedReceiver),
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+            },
+          }
+        ),
+        axios.put(
+          `http://localhost:8082/api/accounts/update/${selectedSenderAccount.id}`,
+          updatedSender,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+            },
+          }
+        ),
+        axios.put(
+          `http://localhost:8082/api/accounts/update/${selectedReceiverAccount.id}`,
+          updatedReceiver,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+            },
           }
         ),
       ]);

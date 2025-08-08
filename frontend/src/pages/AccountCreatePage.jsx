@@ -45,18 +45,22 @@ const AccountCreatePage = () => {
         now.getTime() + 3 * 60 * 60 * 1000
       ).toISOString();
 
-      const response = await axios.post("http://localhost:8082/api/accounts/create-account", {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : undefined,
-        },
-        body: JSON.stringify({
+      await axios.post(
+        "http://localhost:8082/api/accounts/create-account",
+        {
           accountName,
           balance,
           currency,
           user: { id: user.id },
           updateDate,
-        }),
-      });
+        },
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       setOpenSnackbar(true);
       setTimeout(() => {

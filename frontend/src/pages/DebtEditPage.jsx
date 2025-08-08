@@ -171,11 +171,8 @@ const DebtEditPage = () => {
 
         const createDate = new Date().toISOString();
 
-        await axios.post("http://localhost:8082/api/transfers/create", {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-          body: JSON.stringify({
+        await axios.post("http://localhost:8082/api/transfers/create",
+          {
             amount: parseFloat(oldDebt.debtAmount),
             category: "Borç Güncelleme",
             details: "Borç hesap değişikliği - eski hesaptan çıkış",
@@ -187,14 +184,17 @@ const DebtEditPage = () => {
             person: selectedDebt.toWhom,
             outputPreviousBalance: oldAccount.balance,
             outputNextBalance: oldAccUpdatedBalance,
-          }),
-        });
-
-        await axios.post("http://localhost:8082/api/transfers/create", {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
           },
-          body: JSON.stringify({
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        await axios.post("http://localhost:8082/api/transfers/create",
+          {
             amount: parseFloat(selectedDebt.debtAmount),
             category: "Borç Güncelleme",
             details: "Borç hesap değişikliği - yeni hesaba giriş",
@@ -206,8 +206,14 @@ const DebtEditPage = () => {
             person: selectedDebt.toWhom,
             inputPreviousBalance: newAccount.balance,
             inputNextBalance: newAccUpdatedBalance,
-          }),
-        });
+          },
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+            },
+          }
+        );
       } else {
         const resAccount = await axios.get(
           `http://localhost:8082/api/accounts/${newAccountId}`,
@@ -238,11 +244,8 @@ const DebtEditPage = () => {
 
         const createDate = new Date().toISOString();
 
-        await axios.post("http://localhost:8082/api/transfers/create", {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-          body: JSON.stringify({
+        await axios.post("http://localhost:8082/api/transfers/create",
+          {
             amount: Math.abs(debtDifference),
             category: "Borç Güncelleme",
             details: debtDifference > 0 ? "Borç arttı" : "Borç azaldı",
@@ -254,8 +257,14 @@ const DebtEditPage = () => {
             person: selectedDebt.toWhom,
             inputPreviousBalance: accountToUpdate.balance,
             inputNextBalance: updatedBalance,
-          }),
-        });
+          },
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+            },
+          }
+        );
       }
 
       const response = await axios.put(
