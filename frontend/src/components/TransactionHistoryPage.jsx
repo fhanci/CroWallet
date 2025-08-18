@@ -412,7 +412,7 @@ const TransactionHistoryPage = () => {
               <TableRow>
                 <TableCell colSpan={4}>
                   <Typography variant="body2" color="textSecondary">
-                    Bu hesapta henüz hareket bulunmuyor.
+                    {t("noTransaction")}
                   </Typography>
                 </TableCell>
               </TableRow>

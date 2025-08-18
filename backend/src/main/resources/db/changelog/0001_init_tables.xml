@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+
+    <!-- USERS Table -->
+    <changeSet id="1" author="user">
+        <createTable tableName="users">
+            <column name="id" type="bigint">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="name" type="varchar(255)"/>
+            <column name="email" type="varchar(255)">
+                <constraints unique="true"/>
+            </column>
+            <column name="password" type="varchar(255)"/>
+        </createTable>
+    </changeSet>
+
+    <!-- ACCOUNTS Table -->
+    <changeSet id="2" author="user">
+        <createTable tableName="accounts">
+            <column name="id" type="bigint GENERATED ALWAYS AS IDENTITY">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="name" type="varchar(255)"/>
+            <column name="balance" type="numeric(15,2)"/>
+            <column name="currency" type="varchar(10)"/>
+            <column name="update_date" type="timestamp"/>
+            <column name="user_id" type="bigint"/>
+        </createTable>
+    </changeSet>
+
+    <!-- TRANSFERS Table -->
+    <changeSet id="3" author="user">
+        <createTable tableName="transfers">
+            <column name="id" type="bigint GENERATED ALWAYS AS IDENTITY">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="category" type="varchar(255)"/>
+            <column name="amount" type="numeric(15,2)"/>
+            <column name="date" type="date"/>
+            <column name="create_date" type="timestamp"/>
+            <column name="description" type="text"/>
+            <column name="person" type="varchar(255)"/>
+            <column name="type" type="varchar(50)"/>
+            <column name="details" type="text"/>
+            <column name="exchange_rate" type="numeric(10,4)"/>
+            <column name="input_next_balance" type="numeric(15,2)"/>
+            <column name="input_previous_balance" type="numeric(15,2)"/>
+            <column name="output_next_balance" type="numeric(15,2)"/>
+            <column name="output_previous_balance" type="numeric(15,2)"/>
+            <column name="user_id" type="bigint"/>
+            <column name="account_id" type="bigint"/>
+        </createTable>
+    </changeSet>
+
+    <!-- DEBTS Table -->
+    <changeSet id="7" author="user">
+        <createTable tableName="debts">
+            <column name="id" type="bigint GENERATED ALWAYS AS IDENTITY">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="numeric(15,2)"/>
+            <column name="currency" type="varchar(10)"/>
+            <column name="to_whom" type="varchar(255)"/>
+            <column name="due_date" type="date"/>
+            <column name="status" type="varchar(20)"/>
+            <column name="warning_period" type="int"/>
+        </createTable>
+    </changeSet>
+
+    <!-- Foreign Key for ACCOUNTS -->
+    <changeSet id="4" author="user">
+        <addForeignKeyConstraint baseTableName="accounts"
+                                 baseColumnNames="user_id"
+                                 constraintName="fk_accounts_users"
+                                 referencedTableName="users"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"/>
+    </changeSet>
+
+    <!-- Foreign Key for TRANSFERS (Users) -->
+    <changeSet id="5" author="user">
+        <addForeignKeyConstraint baseTableName="transfers"
+                                 baseColumnNames="user_id"
+                                 constraintName="fk_transfers_users"
+                                 referencedTableName="users"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"/>
+    </changeSet>
+
+    <!-- Foreign Key for TRANSFERS (Accounts) -->
+    <changeSet id="6" author="user">
+        <addForeignKeyConstraint baseTableName="transfers"
+                                 baseColumnNames="account_id"
+                                 constraintName="fk_transfers_accounts"
+                                 referencedTableName="accounts"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"/>
+    </changeSet>
+
+    <!-- Foreign Key for DEBTS (Users) -->
+    <changeSet id="8" author="user">
+        <addForeignKeyConstraint baseTableName="debts"
+                                 baseColumnNames="user_id"
+                                 constraintName="fk_debts_users"
+                                 referencedTableName="users"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"/>
+    </changeSet>
+
+    <!-- Add account_id to DEBTS -->
+    <changeSet id="9" author="user">
+        <addColumn tableName="debts">
+            <column name="account_id" type="bigint"/>
+        </addColumn>
+
+        <addForeignKeyConstraint
+                baseTableName="debts"
+                baseColumnNames="account_id"
+                constraintName="fk_debts_accounts"
+                referencedTableName="accounts"
+                referencedColumnNames="id"
+                onDelete="SET NULL"
+                onUpdate="CASCADE"/>
+    </changeSet>
+
+</databaseChangeLog>

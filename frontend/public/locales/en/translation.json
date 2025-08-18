@@ -171,6 +171,10 @@
   "exchangeRateHintTwo": "Please enter the current {{currency}}/TRY exchange rate",
 
   "dueDateTwo": "Deadline",
+
+  
+  "noTransaction": "There are no transactions on this account yet.",
+
   "incomeDetails": {
     "Salary": ["Monthly Salary", "Bonus", "Additional Income"],
     "Freelance": ["Project Payment", "Consulting", "Freelance Work"],

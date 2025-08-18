@@ -1,0 +1,11 @@
+services:
+  sqlite-web:
+    image: ghcr.io/coleifer/sqlite-web:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/data:/data
+    environment:
+      - SQLITE_DATABASE=wallet.db
+    stdin_open: true
+    tty: true

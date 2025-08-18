@@ -321,11 +321,11 @@ const DebtEditPage = () => {
         </Typography>
 
         <FormControl fullWidth margin="normal">
-          <InputLabel id="debt-select-label">Borç Seç</InputLabel>
+          <InputLabel id="debt-select-label">{t("selectDebt")}</InputLabel>
           <Select
             labelId="debt-select-label"
             id="debt-select"
-            label="Borç Seç"
+            label={t("selectDebt")}
             value={selectedDebt?.id || ""}
             onChange={(e) =>
               setSelectedDebt(debts.find((d) => d.id === e.target.value))

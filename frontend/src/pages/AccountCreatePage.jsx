@@ -99,13 +99,13 @@ const AccountCreatePage = () => {
           <Select
             labelId="currency-label"
             id="currency-select"
-            label={t("currency")} // ← Bu satır şart
+            label={t("currency")}
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
           >
             <MenuItem value="EUR">{t("eur")}</MenuItem>
-            <MenuItem value="USD">{t("eur")}</MenuItem>
-            <MenuItem value="TRY">{t("eur")}</MenuItem>
+            <MenuItem value="USD">{t("usd")}</MenuItem>
+            <MenuItem value="TRY">{t("try")}</MenuItem>
           </Select>
         </FormControl>
 

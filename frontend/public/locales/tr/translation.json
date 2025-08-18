@@ -172,6 +172,8 @@
 
   "dueDateTwo": "Son Tarih",
 
+  "noTransaction": "Bu hesapta henüz hareket bulunmuyor.",
+  
   "incomeDetails": {
     "Maaş": ["Aylık Maaş", "Prim", "Ek Gelir"],
     "Serbest Meslek": ["Proje Ödemesi", "Danışmanlık", "Serbest Çalışma"],
