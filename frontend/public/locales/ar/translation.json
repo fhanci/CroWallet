@@ -154,6 +154,8 @@
   "chooseLanguage": "اختر اللغة",
   "exchangeRateHintTwo": "يرجى إدخال سعر الصرف الحالي لـ {{currency}}/TRY",
 
+  "noTransaction": "لا توجد أي معاملات على هذا الحساب حتى الآن.",
+  
   "dueDateTwo": "التاريخ النهائي",
   "incomeDetails": {
     "الراتب": ["الراتب الشهري", "مكافأة", "دخل إضافي"],

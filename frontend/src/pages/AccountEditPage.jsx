@@ -31,11 +31,14 @@ const AccountEditPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const response = await axios.get(`http://localhost:8082/api/accounts/get/${user.id}`, {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        });
+        const response = await axios.get(
+          `http://localhost:8082/api/accounts/get/${user.id}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
         setAccounts(response.data);
       } catch (err) {
         console.error("Hesaplar alınamadı:", err);
@@ -62,11 +65,12 @@ const AccountEditPage = () => {
 
       const response = await axios.put(
         `http://localhost:8082/api/accounts/update/${selectedAccount.id}`,
+        updatedAccount,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify(updatedAccount),
         }
       );
 

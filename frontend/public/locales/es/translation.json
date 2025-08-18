@@ -154,6 +154,9 @@
   "chooseLanguage": "Seleccionar Idioma",
   "exchangeRateHintTwo": "Por favor, introduce el tipo de cambio actual {{currency}}/TRY",
   "dueDateTwo": "Fecha límite",
+  
+  "noTransaction": "Aún no hay movimientos en esta cuenta.",
+  
   "incomeDetails": {
     "Salario": ["Salario Mensual", "Prima", "Ingreso Adicional"],
     "Trabajo Autónomo": [

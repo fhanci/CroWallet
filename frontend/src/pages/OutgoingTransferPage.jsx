@@ -115,7 +115,7 @@ const OutgoingTransferPage = () => {
     };
 
     try {
-      const response = await axios.post(
+      const response = await axios.put(
         `http://localhost:8082/api/transfers/update/${updatedAccount.id}`,
         updatedTransfer,
         {

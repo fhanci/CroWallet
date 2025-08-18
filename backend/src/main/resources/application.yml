@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:sqlite:./data/wallet.db
+    driver-class-name: org.sqlite.JDBC
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate.format_sql: true
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+  liquibase:
+    change-log: classpath:db/changelog-master.xml
+    enabled: false
+server:
+  port: 8082
+
+
+hibernate:
+  jdbc:
+    use_get_generated_keys: true
