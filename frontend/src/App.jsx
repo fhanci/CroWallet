@@ -37,6 +37,7 @@ import DebtEditPage from "./pages/DebtEditPage";
 import DebtPayPage from "./pages/DebtPayPage";
 
 import { UserProvider } from "./config/UserStore";
+import ErrorPage from "./components/ErrorPage";
 const MainApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(
     localStorage.getItem("isAuthenticated") === "true"
@@ -139,6 +140,7 @@ const MainApp = () => {
         <Route path="/debt/pay" element={<DashboardLayout />}>
           <Route index element={<DebtPayPage />} />
         </Route>
+        <Route path="*" element={<ErrorPage />} />
       </Routes>
     </>
   );

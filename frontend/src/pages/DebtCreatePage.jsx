@@ -113,24 +113,8 @@ const DebtCreatePage = () => {
           },
         }
       );
-
-      // Hesap bakiyesini güncelle
-      const updatedBalance =
-        selectedAddAccount.balance + parseFloat(debtAmount);
-
-      const accountResponse = await axios.put(
-        `http://localhost:8082/api/accounts/update/${selectedAddAccount.id}`,
-        {
-          ...selectedAddAccount,
-          balance: updatedBalance,
-          updateDate: createDate,
-        },
-        {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        }
-      );
+      
+      const { updatedBalance, debt } = response.data;
 
       // Transfer hareketi oluştur
       const transferData = {
@@ -142,7 +126,7 @@ const DebtCreatePage = () => {
         user: { id: parseInt(user.id) },
         account: { id: selectedAddAccount.id },
         type: "incoming",
-        person: toWhom,
+        receiverId: selectedAddAccount.id,
         inputPreviousBalance: selectedAddAccount.balance,
         inputNextBalance: updatedBalance,
       };
@@ -157,7 +141,7 @@ const DebtCreatePage = () => {
           },
         }
       );
-
+      
       setOpenSnackbar(true);
       setError("");
       setTimeout(() => navigate("/debt"), 1000);
