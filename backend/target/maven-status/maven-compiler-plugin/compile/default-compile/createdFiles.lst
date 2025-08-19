@@ -1,5 +1,6 @@
 com\crowallet\backend\security\JwtUtil.class
 com\crowallet\backend\requests\PasswordAuth.class
+com\crowallet\backend\requests\TransferResponse.class
 com\crowallet\backend\controller\AuthController.class
 com\crowallet\backend\security\CustomUserDetails.class
 com\crowallet\backend\mapper\UserMapper.class
@@ -26,6 +27,7 @@ com\crowallet\backend\mapper\TransferMapper.class
 com\crowallet\backend\service\UserService.class
 com\crowallet\backend\service\AccountService.class
 com\crowallet\backend\entity\Account.class
+com\crowallet\backend\requests\DebtResponse.class
 com\crowallet\backend\repository\TransferRepository.class
 com\crowallet\backend\service\TransferService.class
 com\crowallet\backend\dto\TransferDTO.class

@@ -1,4 +1,12 @@
 package com.crowallet.backend.requests;
 
-public class AccountResponse {
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Data
+public class TransferResponse {
+    private LocalDate date;
+    private BigDecimal amount;
 }

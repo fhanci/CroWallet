@@ -26,8 +26,8 @@ const SettingPage = () => {
   const [expenseSources, setExpenseSources] = useState([]);
   const [incomeOptions, setIncomeOptions] = useState(defaultIncomeOptions);
   const [expenseOptions, setExpenseOptions] = useState(defaultExpenseOptions);
-  const [newIncome, setNewIncome] = useState("");
-  const [newExpense, setNewExpense] = useState("");
+  const [newIncome, setNewIncome] = useState();
+  const [newExpense, setNewExpense] = useState();
 
   useEffect(() => {
     const savedIncome =
@@ -47,7 +47,7 @@ const SettingPage = () => {
     if (newIncome.trim() && !incomeOptions.includes(newIncome)) {
       setIncomeOptions([...incomeOptions, newIncome]);
       setIncomeSources([...incomeSources, newIncome]);
-      setNewIncome("");
+      setNewIncome();
     }
   };
 
@@ -55,7 +55,7 @@ const SettingPage = () => {
     if (newExpense.trim() && !expenseOptions.includes(newExpense)) {
       setExpenseOptions([...expenseOptions, newExpense]);
       setExpenseSources([...expenseSources, newExpense]);
-      setNewExpense("");
+      setNewExpense();
     }
   };
 

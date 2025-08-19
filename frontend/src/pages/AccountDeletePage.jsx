@@ -28,9 +28,9 @@ const AccountDeletePage = () => {
   const { user } = useUser();
   const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
-  const [selectedAccountId, setSelectedAccountId] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [selectedAccountId, setSelectedAccountId] = useState();
+  const [password, setPassword] = useState();
+  const [error, setError] = useState();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
 

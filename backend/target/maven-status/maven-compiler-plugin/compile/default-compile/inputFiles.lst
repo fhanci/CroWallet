@@ -1,4 +1,5 @@
 C:\Users\stj.akhan\Desktop\CroWallet\CroWallet\backend\src\main\java\com\crowallet\backend\comman\GeneralException.java
+C:\Users\stj.akhan\Desktop\CroWallet\CroWallet\backend\src\main\java\com\crowallet\backend\requests\TransferResponse.java
 C:\Users\stj.akhan\Desktop\CroWallet\CroWallet\backend\src\main\java\com\crowallet\backend\entity\Debt.java
 C:\Users\stj.akhan\Desktop\CroWallet\CroWallet\backend\src\main\java\com\crowallet\backend\dto\DebtDTO.java
 C:\Users\stj.akhan\Desktop\CroWallet\CroWallet\backend\src\main\java\com\crowallet\backend\repository\TransferRepository.java
@@ -14,6 +15,7 @@ C:\Users\stj.akhan\Desktop\CroWallet\CroWallet\backend\src\main\java\com\crowall
 C:\Users\stj.akhan\Desktop\CroWallet\CroWallet\backend\src\main\java\com\crowallet\backend\dto\AccountDTO.java
 C:\Users\stj.akhan\Desktop\CroWallet\CroWallet\backend\src\main\java\com\crowallet\backend\mapper\DebtMapper.java
 C:\Users\stj.akhan\Desktop\CroWallet\CroWallet\backend\src\main\java\com\crowallet\backend\service\UserService.java
+C:\Users\stj.akhan\Desktop\CroWallet\CroWallet\backend\src\main\java\com\crowallet\backend\requests\DebtResponse.java
 C:\Users\stj.akhan\Desktop\CroWallet\CroWallet\backend\src\main\java\com\crowallet\backend\service\DebtService.java
 C:\Users\stj.akhan\Desktop\CroWallet\CroWallet\backend\src\main\java\com\crowallet\backend\mapper\AccountMapper.java
 C:\Users\stj.akhan\Desktop\CroWallet\CroWallet\backend\src\main\java\com\crowallet\backend\requests\LoginRequest.java

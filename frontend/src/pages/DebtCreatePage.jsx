@@ -23,14 +23,14 @@ const DebtCreatePage = () => {
   const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
 
-  const [debtAmount, setDebtAmount] = useState("");
-  const [debtCurrency, setDebtCurrency] = useState("");
-  const [toWhom, setToWhom] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [warningPeriod, setWarningPeriod] = useState("");
+  const [debtAmount, setDebtAmount] = useState();
+  const [debtCurrency, setDebtCurrency] = useState();
+  const [toWhom, setToWhom] = useState();
+  const [dueDate, setDueDate] = useState();
+  const [warningPeriod, setWarningPeriod] = useState();
   const [selectedAddAccount, setSelectedAddAccount] = useState(null);
 
-  const [error, setError] = useState("");
+  const [error, setError] = useState();
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
   useEffect(() => {
@@ -89,7 +89,7 @@ const DebtCreatePage = () => {
     }
 
     try {
-      const createDate = new Date().toISOString();
+      const createDate = new Date()
 
       const newDebt = {
         debtAmount: parseFloat(debtAmount),
@@ -143,7 +143,7 @@ const DebtCreatePage = () => {
       );
       
       setOpenSnackbar(true);
-      setError("");
+      setError();
       setTimeout(() => navigate("/debt"), 1000);
     } catch (err) {
       console.error(err);
@@ -232,7 +232,7 @@ const DebtCreatePage = () => {
         <Select
           labelId="account-label"
           id="account-select"
-          value={selectedAddAccount?.id || ""}
+          value={selectedAddAccount?.id || "" }
           onChange={(e) =>
             setSelectedAddAccount(accounts.find((a) => a.id === e.target.value))
           }
