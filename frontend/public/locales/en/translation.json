@@ -174,7 +174,9 @@
 
   
   "noTransaction": "There are no transactions on this account yet.",
-
+  "noPageError": "The page you are looking for does not exist or may have been moved.",
+  "pageNotFound": "404 - Page Not Found",
+  "returnMain": "Return to Home",
   "incomeDetails": {
     "Salary": ["Monthly Salary", "Bonus", "Additional Income"],
     "Freelance": ["Project Payment", "Consulting", "Freelance Work"],

@@ -1,6 +1,7 @@
 package com.crowallet.backend.controller;
 
 import com.crowallet.backend.dto.DebtDTO;
+import com.crowallet.backend.requests.DebtResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,7 +33,7 @@ public class DebtController {
     }
 
     @PostMapping("/create")
-    public DebtDTO createDebt(@RequestBody DebtDTO debt) {
+    public DebtResponse createDebt(@RequestBody DebtDTO debt) {
         return debtService.createDebt(debt);
     }
 

@@ -1,9 +1,11 @@
 package com.crowallet.backend.service;
 
 import com.crowallet.backend.dto.DebtDTO;
+import com.crowallet.backend.entity.Account;
 import com.crowallet.backend.mapper.AccountMapper;
 import com.crowallet.backend.mapper.DebtMapper;
 import com.crowallet.backend.mapper.UserMapper;
+import com.crowallet.backend.requests.DebtResponse;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,14 +31,20 @@ public class DebtService {
     @Autowired
     private UserRepository userRepository;
 
-    public DebtService(DebtRepository debtRepository) {
+    public DebtService(DebtRepository debtRepository, AccountRepository accountRepository) {
         this.debtRepository = debtRepository;
+        this.accountRepository = accountRepository;
     }
 
-    public DebtDTO createDebt(DebtDTO debt) {
+    @Transactional
+    public DebtResponse createDebt(DebtDTO debt) {
         Debt debt1 = DebtMapper.INSTANCE.toDebt(debt);
+        Account account = accountRepository.findById(debt1.getAccount().getId()).orElse(null);
+        if(account != null) {
+            account.setBalance(account.getBalance().add(debt1.getDebtAmount()));
+        }
         debtRepository.save(debt1);
-        return debt;
+        return new DebtResponse(Objects.requireNonNull(account).getBalance().add(debt1.getDebtAmount()), debt);
     }
 
     public List<DebtDTO> getAllDebts() {
@@ -50,6 +58,8 @@ public class DebtService {
 
     @Transactional
     public DebtDTO updateDebt(Long id, DebtDTO updatedDebt) {
+        System.out.println("update debt");
+        System.out.println(updatedDebt);
         Debt existingDebt = debtRepository.findById(id)
                 .orElseThrow(() -> new GeneralException("Debt to be updated not found: " + id));
 
@@ -69,6 +79,7 @@ public class DebtService {
         if (userRepository.findById(updatedDebt.getUser().getId()).isPresent() && updatedDebt.getUser().getId() != null) {
             existingDebt.setUser(UserMapper.INSTANCE.toUser(updatedDebt.getUser()));
         }
+        System.out.println(existingDebt.getAccount());
         return DebtMapper.INSTANCE.toDebtDTO(debtRepository.save(existingDebt));
 
     }

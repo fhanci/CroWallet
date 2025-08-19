@@ -104,11 +104,9 @@ public class TransferService {
     }
 
     public List<TransferDTO> getUserTransfers(Long id) {
-        System.out.println(id);
         return TransferMapper.INSTANCE.toTransferDTOList(
                 transferRepository.findAll()
                         .stream()
-                        .peek(s -> System.out.println("Account ID: " + s.getAccount().getId() + ", Receiver ID: " + s.getReceiverId()))
                         .filter(s -> Objects.equals(s.getAccount().getId(), id) || Objects.equals(s.getReceiverId(), id))
                         .toList()
         );

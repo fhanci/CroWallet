@@ -139,35 +139,38 @@ const DebtEditPage = () => {
 
         const oldAccUpdatedBalance =
           oldAccount.balance - parseFloat(oldDebt.debtAmount);
-        const oldAccUpdateRes = await axios.put(
-          `http://localhost:8082/api/accounts/update/${oldAccount.id}`,
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-            },
-            body: JSON.stringify({
-              ...oldAccount,
-              balance: oldAccUpdatedBalance,
-              updateDate: new Date().toISOString(),
-            }),
-          }
-        );
+        console.log(oldAccUpdatedBalance);
+        // const oldAccUpdateRes = await axios.put(
+        //   `http://localhost:8082/api/accounts/update/${oldAccount.id}`,
+
+        //   {
+        //     ...oldAccount,
+        //     balance: oldAccUpdatedBalance,
+        //     updateDate: new Date().toISOString(),
+        //   },
+        //   {
+        //     headers: {
+        //       Authorization: token ? `Bearer ${token}` : undefined,
+        //     },
+        //   }
+        // );
 
         const newAccUpdatedBalance =
           newAccount.balance + parseFloat(selectedDebt.debtAmount);
-        const newAccUpdateRes = await axios.put(
-          `http://localhost:8082/api/accounts/update/${newAccount.id}`,
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-            },
-            body: JSON.stringify({
-              ...newAccount,
-              balance: newAccUpdatedBalance,
-              updateDate: new Date().toISOString(),
-            }),
-          }
-        );
+        console.log(newAccUpdatedBalance)
+        // const newAccUpdateRes = await axios.put(
+        //   `http://localhost:8082/api/accounts/update/${newAccount.id}`,
+        //   {
+        //     ...newAccount,
+        //     balance: newAccUpdatedBalance,
+        //     updateDate: new Date().toISOString(),
+        //   },
+        //   {
+        //     headers: {
+        //       Authorization: token ? `Bearer ${token}` : undefined,
+        //     },
+        //   }
+        // );
 
         const createDate = new Date().toISOString();
 
@@ -258,7 +261,7 @@ const DebtEditPage = () => {
             user: { id: user.id },
             account: { id: accountToUpdate.id },
             type: debtDifference > 0 ? "incoming" : "outgoing",
-            person: selectedDebt.toWhom,
+            receiverId: user.id,
             inputPreviousBalance: accountToUpdate.balance,
             inputNextBalance: updatedBalance,
           },
@@ -292,7 +295,6 @@ const DebtEditPage = () => {
       );
 
       setOpenSnackbar(true);
-      setError(t("deptUpdateFailed"));
     } catch (err) {
       console.error(err);
       setError();
@@ -401,9 +403,9 @@ const DebtEditPage = () => {
                 autoComplete="off"
                 inputProps={{ autoComplete: "off" }}
               >
+                <MenuItem value="TRY">₺ {t("try")} </MenuItem>
                 <MenuItem value="EUR">€ {t("eur")} </MenuItem>
                 <MenuItem value="USD">$ {t("usd")} </MenuItem>
-                <MenuItem value="TRY">₺ {t("try")} </MenuItem>
               </Select>
             </FormControl>
 
