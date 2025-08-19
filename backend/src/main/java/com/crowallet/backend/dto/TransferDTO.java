@@ -14,7 +14,7 @@ public class TransferDTO {
     private LocalDate date;
     private LocalDateTime createDate;
     private String description;
-    private String person;
+    private Long receiverId;
     private String type;
     private String details;
     private BigDecimal exchangeRate;

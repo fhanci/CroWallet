@@ -12,8 +12,8 @@ import javax.annotation.processing.Generated;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-08-18T13:53:25+0300",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 24.0.2 (Oracle Corporation)"
+    date = "2025-08-19T09:05:01+0300",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.42.50.v20250729-0351, environment: Java 21.0.8 (Eclipse Adoptium)"
 )
 public class TransferMapperImpl implements TransferMapper {
 
@@ -25,22 +25,22 @@ public class TransferMapperImpl implements TransferMapper {
 
         TransferDTO transferDTO = new TransferDTO();
 
-        transferDTO.setId( transfer.getId() );
-        transferDTO.setCategory( transfer.getCategory() );
+        transferDTO.setAccount( accountToAccountDTO( transfer.getAccount() ) );
         transferDTO.setAmount( transfer.getAmount() );
-        transferDTO.setDate( transfer.getDate() );
+        transferDTO.setCategory( transfer.getCategory() );
         transferDTO.setCreateDate( transfer.getCreateDate() );
+        transferDTO.setDate( transfer.getDate() );
         transferDTO.setDescription( transfer.getDescription() );
-        transferDTO.setPerson( transfer.getPerson() );
-        transferDTO.setType( transfer.getType() );
         transferDTO.setDetails( transfer.getDetails() );
         transferDTO.setExchangeRate( transfer.getExchangeRate() );
+        transferDTO.setId( transfer.getId() );
         transferDTO.setInputNextBalance( transfer.getInputNextBalance() );
         transferDTO.setInputPreviousBalance( transfer.getInputPreviousBalance() );
         transferDTO.setOutputNextBalance( transfer.getOutputNextBalance() );
         transferDTO.setOutputPreviousBalance( transfer.getOutputPreviousBalance() );
+        transferDTO.setReceiverId( transfer.getReceiverId() );
+        transferDTO.setType( transfer.getType() );
         transferDTO.setUser( userToUserDTO( transfer.getUser() ) );
-        transferDTO.setAccount( accountToAccountDTO( transfer.getAccount() ) );
 
         return transferDTO;
     }
@@ -53,22 +53,22 @@ public class TransferMapperImpl implements TransferMapper {
 
         Transfer transfer = new Transfer();
 
-        transfer.setId( transferDTO.getId() );
-        transfer.setCategory( transferDTO.getCategory() );
+        transfer.setAccount( accountDTOToAccount( transferDTO.getAccount() ) );
         transfer.setAmount( transferDTO.getAmount() );
-        transfer.setDate( transferDTO.getDate() );
+        transfer.setCategory( transferDTO.getCategory() );
         transfer.setCreateDate( transferDTO.getCreateDate() );
+        transfer.setDate( transferDTO.getDate() );
         transfer.setDescription( transferDTO.getDescription() );
-        transfer.setPerson( transferDTO.getPerson() );
-        transfer.setType( transferDTO.getType() );
         transfer.setDetails( transferDTO.getDetails() );
         transfer.setExchangeRate( transferDTO.getExchangeRate() );
+        transfer.setId( transferDTO.getId() );
         transfer.setInputNextBalance( transferDTO.getInputNextBalance() );
         transfer.setInputPreviousBalance( transferDTO.getInputPreviousBalance() );
         transfer.setOutputNextBalance( transferDTO.getOutputNextBalance() );
         transfer.setOutputPreviousBalance( transferDTO.getOutputPreviousBalance() );
+        transfer.setReceiverId( transferDTO.getReceiverId() );
+        transfer.setType( transferDTO.getType() );
         transfer.setUser( userDTOToUser( transferDTO.getUser() ) );
-        transfer.setAccount( accountDTOToAccount( transferDTO.getAccount() ) );
 
         return transfer;
     }
@@ -108,10 +108,10 @@ public class TransferMapperImpl implements TransferMapper {
 
         UserDTO userDTO = new UserDTO();
 
-        userDTO.setId( user.getId() );
-        userDTO.setUsername( user.getUsername() );
         userDTO.setEmail( user.getEmail() );
+        userDTO.setId( user.getId() );
         userDTO.setPassword( user.getPassword() );
+        userDTO.setUsername( user.getUsername() );
 
         return userDTO;
     }
@@ -123,10 +123,10 @@ public class TransferMapperImpl implements TransferMapper {
 
         AccountDTO accountDTO = new AccountDTO();
 
-        accountDTO.setId( account.getId() );
+        accountDTO.setAccountName( account.getAccountName() );
         accountDTO.setBalance( account.getBalance() );
         accountDTO.setCurrency( account.getCurrency() );
-        accountDTO.setAccountName( account.getAccountName() );
+        accountDTO.setId( account.getId() );
         accountDTO.setUpdateDate( account.getUpdateDate() );
         accountDTO.setUser( userToUserDTO( account.getUser() ) );
 
@@ -140,10 +140,10 @@ public class TransferMapperImpl implements TransferMapper {
 
         User user = new User();
 
-        user.setId( userDTO.getId() );
-        user.setUsername( userDTO.getUsername() );
         user.setEmail( userDTO.getEmail() );
+        user.setId( userDTO.getId() );
         user.setPassword( userDTO.getPassword() );
+        user.setUsername( userDTO.getUsername() );
 
         return user;
     }
@@ -155,10 +155,10 @@ public class TransferMapperImpl implements TransferMapper {
 
         Account account = new Account();
 
-        account.setId( accountDTO.getId() );
+        account.setAccountName( accountDTO.getAccountName() );
         account.setBalance( accountDTO.getBalance() );
         account.setCurrency( accountDTO.getCurrency() );
-        account.setAccountName( accountDTO.getAccountName() );
+        account.setId( accountDTO.getId() );
         account.setUpdateDate( accountDTO.getUpdateDate() );
         account.setUser( userDTOToUser( accountDTO.getUser() ) );
 

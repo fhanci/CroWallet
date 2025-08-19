@@ -121,14 +121,14 @@ const DebtCreatePage = () => {
       const accountResponse = await axios.put(
         `http://localhost:8082/api/accounts/update/${selectedAddAccount.id}`,
         {
+          ...selectedAddAccount,
+          balance: updatedBalance,
+          updateDate: createDate,
+        },
+        {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
           },
-          body: JSON.stringify({
-            ...selectedAddAccount,
-            balance: updatedBalance,
-            updateDate: createDate,
-          }),
         }
       );
 
