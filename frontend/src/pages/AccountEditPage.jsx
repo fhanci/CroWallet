@@ -25,7 +25,7 @@ const AccountEditPage = () => {
   const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
   const [selectedAccount, setSelectedAccount] = useState(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState();
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
   useEffect(() => {
@@ -97,7 +97,7 @@ const AccountEditPage = () => {
             labelId="account-select-label"
             id="account-select"
             label={t("selectAccount")}
-            value={selectedAccount?.id || ""}
+            value={selectedAccount?.id || "" }
             onChange={(e) =>
               setSelectedAccount(accounts.find((a) => a.id === e.target.value))
             }

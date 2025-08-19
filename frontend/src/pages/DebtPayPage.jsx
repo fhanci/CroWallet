@@ -26,9 +26,9 @@ const DebtPayPage = () => {
   const { user } = useUser();
   const [selectedTransferAccount, setSelectedTransferAccount] = useState(null);
   const [selectedPayDebt, setSelectedPayDebt] = useState(null);
-  const [payAmount, setPayAmount] = useState("");
+  const [payAmount, setPayAmount] = useState();
 
-  const [error, setError] = useState("");
+  const [error, setError] = useState();
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
   // Hesapları çek
@@ -74,7 +74,7 @@ const DebtPayPage = () => {
   }, [user.id]);
 
   const handlePayDebt = async () => {
-    setError("");
+    setError();
     if (!selectedPayDebt || !selectedTransferAccount || !payAmount) {
       setError("Lütfen tüm alanları doldurun!");
       return;
@@ -96,7 +96,7 @@ const DebtPayPage = () => {
       const updatedStatus = updatedDebtAmount <= 0 ? "odendi" : "odenmedi";
       const updatedBalance =
         selectedTransferAccount.balance - parseFloat(payAmount);
-      const createDate = new Date().toISOString();
+      const createDate = new Date()
 
       // Borcu güncelle
       const debtResponse = await axios.put(
@@ -171,7 +171,7 @@ const DebtPayPage = () => {
       <FormControl fullWidth margin="normal">
         <InputLabel>{t("selectDebtToPay")}</InputLabel>
         <Select
-          value={selectedPayDebt?.id || ""}
+          value={selectedPayDebt?.id || "" }
           onChange={(e) =>
             setSelectedPayDebt(debts.find((debt) => debt.id === e.target.value))
           }
@@ -188,7 +188,7 @@ const DebtPayPage = () => {
       <FormControl fullWidth margin="normal">
         <InputLabel>Hesap Seçin</InputLabel>
         <Select
-          value={selectedTransferAccount?.id || ""}
+          value={selectedTransferAccount?.id || "" }
           onChange={(e) =>
             setSelectedTransferAccount(
               accounts.find((acc) => acc.id === e.target.value)

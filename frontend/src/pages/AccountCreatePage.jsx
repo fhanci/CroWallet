@@ -25,12 +25,12 @@ const AccountCreatePage = () => {
   const now = new Date();
   const token = localStorage.getItem("token");
   // Form alanları
-  const [accountName, setAccountName] = useState("");
-  const [balance, setBalance] = useState("");
-  const [currency, setCurrency] = useState("");
+  const [accountName, setAccountName] = useState();
+  const [balance, setBalance] = useState();
+  const [currency, setCurrency] = useState();
 
   // Uyarı ve durumlar
-  const [error, setError] = useState("");
+  const [error, setError] = useState();
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
   // Hesap ekleme işlemi

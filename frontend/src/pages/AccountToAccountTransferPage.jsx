@@ -188,7 +188,7 @@ const AccountToAccountTransferPage = () => {
         <Select
           labelId="sender-label"
           id="sender-select"
-          value={selectedSenderAccount?.id || ""}
+          value={selectedSenderAccount?.id || "" }
           label={t("senderAccount")}
           onChange={(e) =>
             setSelectedSenderAccount(
@@ -209,7 +209,7 @@ const AccountToAccountTransferPage = () => {
         <Select
           labelId="receiver-label"
           id="receiver-select"
-          value={selectedReceiverAccount?.id || ""}
+          value={selectedReceiverAccount?.id || "" }
           label={t("receiverAccount")}
           onChange={(e) =>
             setSelectedReceiverAccount(
@@ -231,7 +231,7 @@ const AccountToAccountTransferPage = () => {
         <TextField
           label={t("amount")}
           type="number"
-          value={transferData.amount || ""}
+          value={transferData.amount || "" }
           onChange={(e) =>
             setTransferData({ ...transferData, amount: e.target.value })
           }
@@ -257,7 +257,7 @@ const AccountToAccountTransferPage = () => {
             <TextField
               label={t("exchangeRate")}
               type="number"
-              value={transferData.exchangeRate || ""}
+              value={transferData.exchangeRate || "" }
               onChange={(e) =>
                 setTransferData({
                   ...transferData,
@@ -278,7 +278,7 @@ const AccountToAccountTransferPage = () => {
       <TextField
         label={t("date")}
         type="date"
-        value={transferData.date || ""}
+        value={transferData.date || "" }
         onChange={(e) =>
           setTransferData({ ...transferData, date: e.target.value })
         }
@@ -301,7 +301,7 @@ const AccountToAccountTransferPage = () => {
 
       <TextField
         label={t("description")}
-        value={transferData.description || ""}
+        value={transferData.description || "" }
         onChange={(e) =>
           setTransferData({ ...transferData, description: e.target.value })
         }

@@ -28,6 +28,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../config/UserStore";
 import axios from "axios";
+import Graph from "./Graph";
 
 const TransactionHistoryPage = () => {
   const { user } = useUser();
@@ -36,26 +37,29 @@ const TransactionHistoryPage = () => {
   const [transactions, setTransactions] = useState([]);
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [expandedTransaction, setExpandedTransaction] = useState(null);
-  const [error, setError] = useState("");
-  const [filterType, setFilterType] = useState("");
+  const [error, setError] = useState();
+  const [filterType, setFilterType] = useState();
   const [anchorEl, setAnchorEl] = useState(null);
-  const [accountName, setAccountName] = useState("");
+  const [accountName, setAccountName] = useState();
   const [dateFilterDialogOpen, setDateFilterDialogOpen] = useState(false);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [startDate, setStartDate] = useState();
+  const [endDate, setEndDate] = useState();
+  const [searchQuery, setSearchQuery] = useState();
   const [accountBalance, setAccountBalance] = useState(null);
-  const [accountCurrency, setAccountCurrency] = useState("");
+  const [accountCurrency, setAccountCurrency] = useState();
   const token = localStorage.getItem("token");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(`http://localhost:8082/api/transfers/get/${accountId}`, {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        });
+        const response = await axios.get(
+          `http://localhost:8082/api/transfers/get/${accountId}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
 
         if (response.data.length > 0) {
           setAccountName(
@@ -115,9 +119,9 @@ const TransactionHistoryPage = () => {
       const sq = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (t) =>
-          (t.details ? t.details.toLowerCase() : "").includes(sq) ||
-          (t.category ? t.category.toLowerCase() : "").includes(sq) ||
-          (t.person ? t.person.toLowerCase() : "").includes(sq)
+          (t.details ? t.details.toLowerCase() : "" ).includes(sq) ||
+          (t.category ? t.category.toLowerCase() : "" ).includes(sq) ||
+          (t.person ? t.person.toLowerCase() : "" ).includes(sq)
       );
     }
 
@@ -150,10 +154,10 @@ const TransactionHistoryPage = () => {
   const handleCloseDateFilter = () => setDateFilterDialogOpen(false);
   const applyDateFilter = () => handleCloseDateFilter();
   const clearFilter = () => {
-    setFilterType("");
-    setStartDate("");
-    setEndDate("");
-    setSearchQuery("");
+    setFilterType();
+    setStartDate();
+    setEndDate();
+    setSearchQuery();
   };
 
   const handleSearch = (event) => {
@@ -162,14 +166,10 @@ const TransactionHistoryPage = () => {
 
   const getIncomeOrExpense = (transaction) => {
     if (transaction.type === "inter-account") {
-      if (
-        transaction.account.id.toString() === accountId.toString()
-      ) {
+      if (transaction.account.id.toString() === accountId.toString()) {
         return t("expense");
       }
-      if (
-        transaction.receiverId.toString() === accountId.toString()
-      ) {
+      if (transaction.receiverId.toString() === accountId.toString()) {
         return t("income");
       }
       return "problem var";
@@ -184,7 +184,7 @@ const TransactionHistoryPage = () => {
     if (transaction.type === "inter-account") {
       const otherAccountName = transaction.person || "";
       return `${t("interAccount")} - ${incomeOrExpense}${
-        otherAccountName ? " - " + otherAccountName : ""
+        otherAccountName ? " - " + otherAccountName : "" 
       }`;
     }
 
@@ -247,6 +247,27 @@ const TransactionHistoryPage = () => {
           px: { xs: 1, sm: 3 },
         }}
       >
+        {filteredTransactions.length > 0 && (
+          <Box
+            sx={{
+              mt: 4,
+              mx: "auto",
+              px: { xs: 2, sm: 4 },
+              width: "100%",
+              maxWidth: "1000px",
+              minHeight: 400,
+              borderRadius: 2,
+              boxShadow: 3,
+              p: 3,
+            }}
+          >
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              İşlem Tutarları Grafiği
+            </Typography>
+            <Graph transactions={filteredTransactions} />
+          </Box>
+        )}
+
         <Button variant="contained" onClick={handleOpenMenu}>
           {t("filter")}
         </Button>

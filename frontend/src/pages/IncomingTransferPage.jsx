@@ -147,7 +147,7 @@ const IncomingTransferPage = () => {
         <Select
           labelId="account-label"
           id="account-select"
-          value={selectedTransferAccount?.id || ""}
+          value={selectedTransferAccount?.id || "" }
           label="Hesap Seçin*"
           onChange={(e) =>
             setSelectedTransferAccount(
@@ -168,7 +168,7 @@ const IncomingTransferPage = () => {
           <TextField
             label={t("exchangeRate")}
             type="number"
-            value={selectedTransfer.exchangeRate || ""}
+            value={selectedTransfer.exchangeRate || "" }
             onChange={(e) =>
               setSelectedTransfer({
                 ...selectedTransfer,
@@ -188,7 +188,7 @@ const IncomingTransferPage = () => {
         <TextField
           label={t("amount")}
           type="number"
-          value={selectedTransfer.amount || ""}
+          value={selectedTransfer.amount || "" }
           onChange={(e) =>
             setSelectedTransfer({ ...selectedTransfer, amount: e.target.value })
           }
@@ -210,7 +210,7 @@ const IncomingTransferPage = () => {
       <TextField
         label={t("date")}
         type="date"
-        value={selectedTransfer.date || ""}
+        value={selectedTransfer.date || "" }
         onChange={(e) =>
           setSelectedTransfer({ ...selectedTransfer, date: e.target.value })
         }
@@ -235,7 +235,7 @@ const IncomingTransferPage = () => {
         <Select
           labelId="category-label"
           id="category-select"
-          value={selectedTransfer.category || ""}
+          value={selectedTransfer.category || "" }
           label={t("category")}
           onChange={(e) =>
             setSelectedTransfer({
@@ -255,7 +255,7 @@ const IncomingTransferPage = () => {
       <Autocomplete
         freeSolo
         options={selectedDetailsOptions}
-        value={selectedTransfer.details || ""}
+        value={selectedTransfer.details || "" }
         onChange={(e, newValue) =>
           setSelectedTransfer({ ...selectedTransfer, details: newValue })
         }
@@ -280,7 +280,7 @@ const IncomingTransferPage = () => {
 
       <TextField
         label={t("description")}
-        value={selectedTransfer.description || ""}
+        value={selectedTransfer.description || "" }
         onChange={(e) =>
           setSelectedTransfer({
             ...selectedTransfer,

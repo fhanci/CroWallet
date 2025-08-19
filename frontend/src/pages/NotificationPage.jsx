@@ -95,7 +95,7 @@ const NotificationPage = () => {
                             : "inherit",
                       }}
                     >
-                      {new Date(debt.dueDate).toLocaleDateString("tr-TR")}
+                      {new Date(debt.dueDate)}
                     </TableCell>
                   </TableRow>
                 ))}

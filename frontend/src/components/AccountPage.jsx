@@ -143,7 +143,7 @@ const AccountPage = () => {
           <Typography variant="h6">{item.accountName}</Typography>
           <Typography variant="body1">
             {item.balance != null
-              ? `${item.balance} ${item.currency || ""}`
+              ? `${item.balance} ${item.currency || "" }`
               : "Bilinmiyor"}
           </Typography>
           <Typography variant="body2" color="text.secondary">

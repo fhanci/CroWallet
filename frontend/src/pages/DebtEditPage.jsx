@@ -28,7 +28,7 @@ const DebtEditPage = () => {
   const [accounts, setAccounts] = useState([]);
   const [selectedDebt, setSelectedDebt] = useState(null);
   const { user } = useUser();
-  const [error, setError] = useState("");
+  const [error, setError] = useState();
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
   const [showZeroDialog, setShowZeroDialog] = useState(false);
@@ -172,7 +172,7 @@ const DebtEditPage = () => {
         //   }
         // );
 
-        const createDate = new Date().toISOString();
+        const createDate = new Date()
 
         await axios.post(
           "http://localhost:8082/api/transfers/create",
@@ -238,7 +238,7 @@ const DebtEditPage = () => {
           {
             ...accountToUpdate,
             balance: updatedBalance,
-            updateDate: new Date().toISOString(),
+            updateDate: new Date()
           },
           {
             headers: {
@@ -248,7 +248,7 @@ const DebtEditPage = () => {
           }
         );
 
-        const createDate = new Date().toISOString();
+        const createDate = new Date()
 
         await axios.post(
           "http://localhost:8082/api/transfers/create",
@@ -332,7 +332,7 @@ const DebtEditPage = () => {
             labelId="debt-select-label"
             id="debt-select"
             label={t("selectDebt")}
-            value={selectedDebt?.id || ""}
+            value={selectedDebt?.id || "" }
             onChange={(e) =>
               setSelectedDebt(debts.find((d) => d.id === e.target.value))
             }
@@ -355,7 +355,7 @@ const DebtEditPage = () => {
             <Select
               labelId="account-select-label"
               id="account-select"
-              value={selectedDebt.account?.id || ""}
+              value={selectedDebt.account?.id || "" }
               disabled
               inputProps={{ autoComplete: "off" }}
             >

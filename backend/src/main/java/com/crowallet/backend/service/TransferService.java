@@ -48,12 +48,12 @@ public class TransferService {
         // hesaplamalar
         if (accountFrom.isPresent()){
             BigDecimal currentBalance = accountFrom.get().getBalance();
-            accountFrom.get().setBalance(currentBalance.subtract(transferAmount));
+            //accountFrom.get().setBalance(currentBalance.subtract(transferAmount));
         }
 
         if (accountTo.isPresent()){
             BigDecimal currentBalance= accountTo.get().getBalance();
-            accountTo.get().setBalance(currentBalance.add(transferAmount));
+            //accountTo.get().setBalance(currentBalance.add(transferAmount));
         }
 //        // kayıt işlemleri
 //        if (accountFrom.isPresent()){

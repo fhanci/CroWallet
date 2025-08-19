@@ -22,7 +22,12 @@ public class AccountService {
 
     public AccountDTO createAccount(AccountDTO account) {
         Account account1 = AccountMapper.INSTANCE.toAccount(account);
+
+        BigDecimal balance = account1.getBalance();
+        account1.setBalance(new BigDecimal(0));
+
         accountRepository.save(account1);
+
         return AccountMapper.INSTANCE.toAccountDTO(account1);
     }
 

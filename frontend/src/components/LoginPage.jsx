@@ -14,27 +14,27 @@ import { useUser } from "../config/UserStore";
 
 const LoginPage = () => {
   const { t } = useTranslation();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [email, setEmail] = useState();
+  const [password, setPassword] = useState();
+  const [name, setName] = useState();
+  const [confirmPassword, setConfirmPassword] = useState();
+  const [message, setMessage] = useState();
   const [isRegistering, setIsRegistering] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const navigate = useNavigate();
   const { setUserInfo } = useUser();
   const token = localStorage.getItem("token");
   const clearFields = () => {
-    setEmail("");
-    setPassword("");
-    setName("");
-    setConfirmPassword("");
-    setMessage("");
+    setEmail();
+    setPassword();
+    setName();
+    setConfirmPassword();
+    setMessage();
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setMessage("");
+    setMessage();
 
     try {
       const response = await axios.post(
@@ -64,7 +64,7 @@ const LoginPage = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setMessage("");
+    setMessage();
 
     if (!email || !password || !name || !confirmPassword) {
       setMessage(t("fillAllFields"));
@@ -245,7 +245,7 @@ const LoginPage = () => {
           <Button
             onClick={() => {
               setIsRegistering(!isRegistering);
-              setMessage("");
+              setMessage();
             }}
             fullWidth
             sx={{ mt: 2, color: "#fff", textDecoration: "underline" }}

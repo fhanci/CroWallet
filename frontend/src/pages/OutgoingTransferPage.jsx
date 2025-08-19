@@ -284,7 +284,7 @@ const OutgoingTransferPage = () => {
       <TextField
         label={t("date")}
         type="date"
-        value={selectedTransfer.date || ""}
+        value={selectedTransfer.date || "" }
         onChange={(e) =>
           setSelectedTransfer({ ...selectedTransfer, date: e.target.value })
         }
@@ -307,7 +307,7 @@ const OutgoingTransferPage = () => {
       <Autocomplete
         freeSolo
         options={selectedDetailsOptions}
-        value={selectedTransfer.details || ""}
+        value={selectedTransfer.details || "" }
         onChange={(e, newValue) =>
           setSelectedTransfer({ ...selectedTransfer, details: newValue })
         }
@@ -332,7 +332,7 @@ const OutgoingTransferPage = () => {
 
       <TextField
         label={t("description")}
-        value={selectedTransfer.description || ""}
+        value={selectedTransfer.description || "" }
         onChange={(e) =>
           setSelectedTransfer({
             ...selectedTransfer,
