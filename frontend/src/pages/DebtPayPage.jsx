@@ -15,7 +15,7 @@ import {
 import PaymentIcon from "@mui/icons-material/Payment";
 import { useNavigate } from "react-router-dom";
 import { t } from "i18next";
-import axios from 'axios';
+import axios from "axios";
 import { useUser } from "../config/UserStore";
 
 const DebtPayPage = () => {
@@ -35,12 +35,15 @@ const DebtPayPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await axios.get(`http://localhost:8082/api/accounts/get/${user.id}`, {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        });
-        setAccounts(res.data)
+        const res = await axios.get(
+          `http://localhost:8082/api/accounts/get/${user.id}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
+        setAccounts(res.data);
       } catch (err) {
         console.error("Hesaplar alınamadı:", err);
       }
@@ -53,11 +56,14 @@ const DebtPayPage = () => {
   useEffect(() => {
     const fetchDebts = async () => {
       try {
-        const res = await axios.get(`http://localhost:8082/api/debts/get/${user.id}`, {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        });
+        const res = await axios.get(
+          `http://localhost:8082/api/debts/get/${user.id}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
         setDebts(res.data);
       } catch (err) {
         console.error("Borçlar alınamadı:", err);
@@ -94,31 +100,31 @@ const DebtPayPage = () => {
 
       // Borcu güncelle
       const debtResponse = await axios.put(
-        `http://localhost:8082/api/debts/${selectedPayDebt.id}`,
+        `http://localhost:8082/api/debts/update/${selectedPayDebt.id}`,
+        {
+          ...selectedPayDebt,
+          debtAmount: updatedDebtAmount > 0 ? updatedDebtAmount : 0,
+          status: updatedStatus,
+        },
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
           },
-          body: JSON.stringify({
-            ...selectedPayDebt,
-            debtAmount: updatedDebtAmount > 0 ? updatedDebtAmount : 0,
-            status: updatedStatus,
-          }),
         }
       );
 
       // Hesap bakiyesini güncelle
       const accountResponse = await axios.put(
-        `http://localhost:8082/api/accounts/${selectedTransferAccount.id}`,
+        `http://localhost:8082/api/accounts/update/${selectedTransferAccount.id}`,
+        {
+          ...selectedTransferAccount,
+          balance: updatedBalance,
+          updateDate: createDate,
+        },
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
           },
-          body: JSON.stringify({
-            ...selectedTransferAccount,
-            balance: updatedBalance,
-            updateDate: createDate,
-          }),
         }
       );
 
@@ -138,7 +144,7 @@ const DebtPayPage = () => {
       };
 
       const transferResponse = await axios.post(
-        "http://localhost:8082/api/transfers",
+        "http://localhost:8082/api/transfers/create",
         transferData,
         {
           headers: {

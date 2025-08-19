@@ -92,10 +92,12 @@ const AccountToAccountTransferPage = () => {
       createDate,
       date: transferData.date,
       exchangeRate,
-      person: selectedReceiverAccount.accountName,
+      receiverId: selectedReceiverAccount.id,
       description: transferData.description,
       outputPreviousBalance: senderBalance,
       outputNextBalance: senderBalance - amount,
+      inputPreviousBalance: selectedReceiverAccount.balance,
+      inputNextBalance: selectedReceiverAccount.balance + convertedAmount,
     };
 
     const incomingTransfer = {
@@ -136,36 +138,36 @@ const AccountToAccountTransferPage = () => {
             },
           }
         ),
-        axios.post(
-          "http://localhost:8082/api/transfers/create",
-          incomingTransfer,
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-              "Content-Type": "application/json",
-            },
-          }
-        ),
-        axios.put(
-          `http://localhost:8082/api/accounts/update/${selectedSenderAccount.id}`,
-          updatedSender,
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-              "Content-Type": "application/json",
-            },
-          }
-        ),
-        axios.put(
-          `http://localhost:8082/api/accounts/update/${selectedReceiverAccount.id}`,
-          updatedReceiver,
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-              "Content-Type": "application/json",
-            },
-          }
-        ),
+        // axios.post(
+        //   "http://localhost:8082/api/transfers/create",
+        //   incomingTransfer,
+        //   {
+        //     headers: {
+        //       Authorization: token ? `Bearer ${token}` : undefined,
+        //       "Content-Type": "application/json",
+        //     },
+        //   }
+        // ),
+        // axios.put(
+        //   `http://localhost:8082/api/accounts/update/${selectedSenderAccount.id}`,
+        //   updatedSender,
+        //   {
+        //     headers: {
+        //       Authorization: token ? `Bearer ${token}` : undefined,
+        //       "Content-Type": "application/json",
+        //     },
+        //   }
+        // ),
+        // axios.put(
+        //   `http://localhost:8082/api/accounts/update/${selectedReceiverAccount.id}`,
+        //   updatedReceiver,
+        //   {
+        //     headers: {
+        //       Authorization: token ? `Bearer ${token}` : undefined,
+        //       "Content-Type": "application/json",
+        //     },
+        //   }
+        // ),
       ]);
       setOpenSnackbar(true);
       setTimeout(() => navigate("/account"), 1000);

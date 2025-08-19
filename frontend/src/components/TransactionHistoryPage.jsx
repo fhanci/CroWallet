@@ -53,7 +53,7 @@ const TransactionHistoryPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(`http://localhost:8082/api/transfers/get/${user.id}`, {
+        const response = await axios.get(`http://localhost:8082/api/transfers/get/${accountId}`, {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
           },
@@ -68,7 +68,6 @@ const TransactionHistoryPage = () => {
         const sortedData = response.data.sort(
           (a, b) => new Date(b.createDate) - new Date(a.createDate)
         );
-
         setTransactions(sortedData);
         setFilteredTransactions(sortedData);
       } catch (error) {
@@ -166,14 +165,12 @@ const TransactionHistoryPage = () => {
   const getIncomeOrExpense = (transaction) => {
     if (transaction.type === "inter-account") {
       if (
-        transaction.outputPreviousBalance !== null &&
         transaction.account.id.toString() === accountId.toString()
       ) {
         return t("expense");
       }
       if (
-        transaction.inputPreviousBalance !== null &&
-        transaction.account.id.toString() === accountId.toString()
+        transaction.receiverId.toString() === accountId.toString()
       ) {
         return t("income");
       }

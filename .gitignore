@@ -1,8 +1,9 @@
-api/.idea/
-api/shelf/
-api/workspace.xml
-api/mavenHomeManager.xml
-api/target/
+../backend/.idea/
+../backend/shelf/
+../backend/workspace.xml
+../backend/mavenHomeManager.xml
+../backend/target/
 
 frontend/node_modules/
 .vscode/settings.json
+../.gitignore
