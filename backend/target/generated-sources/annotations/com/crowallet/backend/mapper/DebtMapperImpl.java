@@ -12,8 +12,8 @@ import javax.annotation.processing.Generated;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-08-19T15:04:08+0300",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 24.0.2 (Oracle Corporation)"
+    date = "2025-08-19T16:21:56+0300",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.42.50.v20250729-0351, environment: Java 21.0.8 (Eclipse Adoptium)"
 )
 public class DebtMapperImpl implements DebtMapper {
 
@@ -25,15 +25,15 @@ public class DebtMapperImpl implements DebtMapper {
 
         Debt debt = new Debt();
 
-        debt.setId( debtDTO.getId() );
+        debt.setAccount( accountDTOToAccount( debtDTO.getAccount() ) );
         debt.setDebtAmount( debtDTO.getDebtAmount() );
         debt.setDebtCurrency( debtDTO.getDebtCurrency() );
-        debt.setToWhom( debtDTO.getToWhom() );
         debt.setDueDate( debtDTO.getDueDate() );
+        debt.setId( debtDTO.getId() );
         debt.setStatus( debtDTO.getStatus() );
-        debt.setWarningPeriod( debtDTO.getWarningPeriod() );
+        debt.setToWhom( debtDTO.getToWhom() );
         debt.setUser( userDTOToUser( debtDTO.getUser() ) );
-        debt.setAccount( accountDTOToAccount( debtDTO.getAccount() ) );
+        debt.setWarningPeriod( debtDTO.getWarningPeriod() );
 
         return debt;
     }
@@ -46,15 +46,15 @@ public class DebtMapperImpl implements DebtMapper {
 
         DebtDTO debtDTO = new DebtDTO();
 
-        debtDTO.setId( debt.getId() );
+        debtDTO.setAccount( accountToAccountDTO( debt.getAccount() ) );
         debtDTO.setDebtAmount( debt.getDebtAmount() );
         debtDTO.setDebtCurrency( debt.getDebtCurrency() );
-        debtDTO.setToWhom( debt.getToWhom() );
         debtDTO.setDueDate( debt.getDueDate() );
+        debtDTO.setId( debt.getId() );
         debtDTO.setStatus( debt.getStatus() );
-        debtDTO.setWarningPeriod( debt.getWarningPeriod() );
+        debtDTO.setToWhom( debt.getToWhom() );
         debtDTO.setUser( userToUserDTO( debt.getUser() ) );
-        debtDTO.setAccount( accountToAccountDTO( debt.getAccount() ) );
+        debtDTO.setWarningPeriod( debt.getWarningPeriod() );
 
         return debtDTO;
     }
@@ -94,10 +94,10 @@ public class DebtMapperImpl implements DebtMapper {
 
         User user = new User();
 
-        user.setId( userDTO.getId() );
-        user.setUsername( userDTO.getUsername() );
         user.setEmail( userDTO.getEmail() );
+        user.setId( userDTO.getId() );
         user.setPassword( userDTO.getPassword() );
+        user.setUsername( userDTO.getUsername() );
 
         return user;
     }
@@ -109,10 +109,10 @@ public class DebtMapperImpl implements DebtMapper {
 
         Account account = new Account();
 
-        account.setId( accountDTO.getId() );
+        account.setAccountName( accountDTO.getAccountName() );
         account.setBalance( accountDTO.getBalance() );
         account.setCurrency( accountDTO.getCurrency() );
-        account.setAccountName( accountDTO.getAccountName() );
+        account.setId( accountDTO.getId() );
         account.setUpdateDate( accountDTO.getUpdateDate() );
         account.setUser( userDTOToUser( accountDTO.getUser() ) );
 
@@ -126,10 +126,10 @@ public class DebtMapperImpl implements DebtMapper {
 
         UserDTO userDTO = new UserDTO();
 
-        userDTO.setId( user.getId() );
-        userDTO.setUsername( user.getUsername() );
         userDTO.setEmail( user.getEmail() );
+        userDTO.setId( user.getId() );
         userDTO.setPassword( user.getPassword() );
+        userDTO.setUsername( user.getUsername() );
 
         return userDTO;
     }
@@ -141,10 +141,10 @@ public class DebtMapperImpl implements DebtMapper {
 
         AccountDTO accountDTO = new AccountDTO();
 
-        accountDTO.setId( account.getId() );
+        accountDTO.setAccountName( account.getAccountName() );
         accountDTO.setBalance( account.getBalance() );
         accountDTO.setCurrency( account.getCurrency() );
-        accountDTO.setAccountName( account.getAccountName() );
+        accountDTO.setId( account.getId() );
         accountDTO.setUpdateDate( account.getUpdateDate() );
         accountDTO.setUser( userToUserDTO( account.getUser() ) );
 
