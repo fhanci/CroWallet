@@ -262,9 +262,9 @@ const TransactionHistoryPage = () => {
             }}
           >
             <Typography variant="h6" sx={{ mb: 2 }}>
-              İşlem Tutarları Grafiği
+              {t("AccountBalanceChart")}
             </Typography>
-            <Graph transactions={filteredTransactions} />
+            <Graph transactions={filteredTransactions} accountId={accountId} />
           </Box>
         )}
 

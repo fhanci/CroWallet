@@ -160,6 +160,7 @@
   "noPageError": "La página que estás buscando no existe o puede haber sido movida.",
   "pageNotFound": "404 - Página no encontrada",
   "returnMain": "Volver a la página principal",
+  "AccountBalanceChart": "Gráfico de Saldo de Cuenta",
   "incomeDetails": {
     "Salario": ["Salario Mensual", "Prima", "Ingreso Adicional"],
     "Trabajo Autónomo": [

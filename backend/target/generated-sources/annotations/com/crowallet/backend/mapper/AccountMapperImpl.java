@@ -10,8 +10,8 @@ import javax.annotation.processing.Generated;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-08-19T16:21:56+0300",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.42.50.v20250729-0351, environment: Java 21.0.8 (Eclipse Adoptium)"
+    date = "2025-08-20T10:10:09+0300",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 24.0.2 (Oracle Corporation)"
 )
 public class AccountMapperImpl implements AccountMapper {
 
@@ -23,10 +23,10 @@ public class AccountMapperImpl implements AccountMapper {
 
         AccountDTO accountDTO = new AccountDTO();
 
-        accountDTO.setAccountName( account.getAccountName() );
+        accountDTO.setId( account.getId() );
         accountDTO.setBalance( account.getBalance() );
         accountDTO.setCurrency( account.getCurrency() );
-        accountDTO.setId( account.getId() );
+        accountDTO.setAccountName( account.getAccountName() );
         accountDTO.setUpdateDate( account.getUpdateDate() );
         accountDTO.setUser( userToUserDTO( account.getUser() ) );
 
@@ -41,10 +41,10 @@ public class AccountMapperImpl implements AccountMapper {
 
         Account account = new Account();
 
-        account.setAccountName( accountDTO.getAccountName() );
+        account.setId( accountDTO.getId() );
         account.setBalance( accountDTO.getBalance() );
         account.setCurrency( accountDTO.getCurrency() );
-        account.setId( accountDTO.getId() );
+        account.setAccountName( accountDTO.getAccountName() );
         account.setUpdateDate( accountDTO.getUpdateDate() );
         account.setUser( userDTOToUser( accountDTO.getUser() ) );
 
@@ -86,10 +86,10 @@ public class AccountMapperImpl implements AccountMapper {
 
         UserDTO userDTO = new UserDTO();
 
-        userDTO.setEmail( user.getEmail() );
         userDTO.setId( user.getId() );
-        userDTO.setPassword( user.getPassword() );
         userDTO.setUsername( user.getUsername() );
+        userDTO.setEmail( user.getEmail() );
+        userDTO.setPassword( user.getPassword() );
 
         return userDTO;
     }
@@ -101,10 +101,10 @@ public class AccountMapperImpl implements AccountMapper {
 
         User user = new User();
 
-        user.setEmail( userDTO.getEmail() );
         user.setId( userDTO.getId() );
-        user.setPassword( userDTO.getPassword() );
         user.setUsername( userDTO.getUsername() );
+        user.setEmail( userDTO.getEmail() );
+        user.setPassword( userDTO.getPassword() );
 
         return user;
     }

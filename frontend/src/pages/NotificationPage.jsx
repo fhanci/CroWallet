@@ -95,7 +95,7 @@ const NotificationPage = () => {
                             : "inherit",
                       }}
                     >
-                      {new Date(debt.dueDate)}
+                      {new Date(debt.dueDate).toISOString()}
                     </TableCell>
                   </TableRow>
                 ))}
