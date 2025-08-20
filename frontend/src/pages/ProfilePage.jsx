@@ -1,78 +1,159 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
-  Container, Typography, Box, TextField, Button, Divider, Avatar, IconButton, Dialog, DialogTitle,
-  DialogContent, DialogActions, Snackbar, Alert
-} from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, Save as SaveIcon, Close as CloseIcon } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+  Container,
+  Typography,
+  Box,
+  TextField,
+  Button,
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Snackbar,
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
+import {
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Save as SaveIcon,
+  Close as CloseIcon,
+} from "@mui/icons-material";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useUser } from "../config/UserStore";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const userId = localStorage.getItem('userId');
-  const [user, setUser] = useState(null);
+  const { user, setUserInfo } = useUser();
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({ name: '', email: '', password: '' });
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [editData, setEditData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const token = localStorage.getItem("token");
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language;
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const response = await fetch(`http://localhost:8080/api/users/${userId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data);
-        setEditData({ name: data.name, email: data.email, password: data.password });
-      }
-    };
-    fetchUser();
-  }, [userId]);
+  const changeLanguage = (event) => {
+    i18n.changeLanguage(event.target.value);
+  };
+
+  // useEffect(() => {
+  //   const fetchUser = async () => {
+  //     const response = await fetch(
+  //       `http://localhost:8082/api/users/${userId}`,
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: token ? `Bearer ${token}` : undefined,
+  //         },
+  //       }
+  //     );
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       setUser(data);
+  //       setEditData({
+  //         name: data.name,
+  //         email: data.email,
+  //         password: data.password,
+  //       });
+  //     }
+  //   };
+  //   fetchUser();
+  // }, [userId]);
 
   const handleEdit = () => setIsEditing(true);
+
   const handleCancel = () => {
-    if (user) setEditData({ name: user.name, email: user.email, password: user.password });
+    if (user)
+      setEditData({
+        name: user.name,
+        email: user.email,
+        password: user.password,
+      });
     setIsEditing(false);
   };
 
   const handleSave = async () => {
-    const response = await fetch(`http://localhost:8080/api/users/${userId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editData)
+    const response = await axios.put(
+      `http://localhost:8082/api/users/update/${user.id}`,
+      editData,
+      {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : undefined,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    setUserInfo(response.data);
+    setIsEditing(false);
+    setSnackbar({
+      open: true,
+      message: t("profileUpdated"),
+      severity: "success",
     });
-    if (response.ok) {
-      setUser(editData);
-      setIsEditing(false);
-      setSnackbar({ open: true, message: 'Profil başarıyla güncellendi.', severity: 'success' });
-    }
   };
 
   const handleDelete = async () => {
-    const response = await fetch(`http://localhost:8080/api/users/${userId}`, { method: 'DELETE' });
-    if (response.ok) {
-      setSnackbar({ open: true, message: 'Hesap silindi.', severity: 'info' });
+    try {
+      const response = await axios.delete(
+        `http://localhost:8082/api/users/delete/${user.id}`,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        }
+      );
+      setSnackbar({
+        open: true,
+        message: t("accountDeleted"),
+        severity: "info",
+      });
       localStorage.clear();
-      navigate('/login');
+      navigate("/login");
+    } catch (err) {
+      console.log(err);
     }
   };
 
   return (
     <Container maxWidth="sm" sx={{ mt: 4 }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", p: 2 }}>
-            <Typography variant="h4">KULLANICI BİLGİLERİ</Typography>
-        </Box>
-        <Typography variant="body2" color="text.secondary" sx={{ textAlign: "left", width: "100%", mb: 4, fontSize: "1rem"}}>
-            Hesap bilgilerinizi görüntüleyin ve yönetin.
-        </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          p: 2,
+        }}
+      >
+        <Typography variant="h4">{t("profileTitle")}</Typography>
+      </Box>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+        {t("profileSubtitle")}
+      </Typography>
 
-      <Box display="flex" flexDirection="column" gap={3} mt={4}>
+      <Box display="flex" flexDirection="column" gap={3}>
         <TextField
-          label="Ad"
+          label={t("name")}
           value={editData.name}
           onChange={(e) => setEditData({ ...editData, name: e.target.value })}
           disabled={!isEditing}
           fullWidth
         />
-
         <TextField
           label="Email"
           value={editData.email}
@@ -80,12 +161,13 @@ const ProfilePage = () => {
           disabled={!isEditing}
           fullWidth
         />
-
         <TextField
-          label="Şifre"
+          label={t("password")}
           type="password"
           value={editData.password}
-          onChange={(e) => setEditData({ ...editData, password: e.target.value })}
+          onChange={(e) =>
+            setEditData({ ...editData, password: e.target.value })
+          }
           disabled={!isEditing}
           fullWidth
         />
@@ -94,41 +176,91 @@ const ProfilePage = () => {
 
         <Box display="flex" justifyContent="space-between">
           {!isEditing ? (
-            <Button variant="contained" startIcon={<EditIcon />} onClick={handleEdit}>
-              Düzenle
+            <Button
+              variant="contained"
+              startIcon={<EditIcon />}
+              onClick={handleEdit}
+            >
+              {t("edit")}
             </Button>
           ) : (
             <Box display="flex" gap={2}>
-              <Button variant="outlined" startIcon={<CloseIcon />} onClick={handleCancel}>
-                İptal
+              <Button
+                variant="outlined"
+                startIcon={<CloseIcon />}
+                onClick={handleCancel}
+              >
+                {t("cancel")}
               </Button>
-              <Button variant="contained" color="success" startIcon={<SaveIcon />} onClick={handleSave}>
-                Kaydet
+              <Button
+                variant="contained"
+                color="success"
+                startIcon={<SaveIcon />}
+                onClick={handleSave}
+              >
+                {t("save")}
               </Button>
             </Box>
           )}
 
-          <Button variant="contained" color="error" startIcon={<DeleteIcon />} onClick={() => setDeleteDialogOpen(true)}>
-            Hesabı Sil
+          <Button
+            variant="contained"
+            color="error"
+            startIcon={<DeleteIcon />}
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            {t("deleteConfirmTitle")}
           </Button>
         </Box>
       </Box>
 
       {/* Hesap Silme Onay Dialogu */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Hesabı Sil</DialogTitle>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>{t("deleteConfirmTitle")}</DialogTitle>
         <DialogContent>
-          <Typography>Hesabınızı kalıcı olarak silmek istediğinizden emin misiniz?</Typography>
+          <Typography>{t("deleteConfirmText")}</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>İptal</Button>
-          <Button onClick={handleDelete} color="error" variant="contained">Sil</Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}>
+            {t("cancel")}
+          </Button>
+          <Button onClick={handleDelete} color="error" variant="contained">
+            {t("delete")}
+          </Button>
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-        <Alert severity={snackbar.severity} variant="filled">{snackbar.message}</Alert>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert severity={snackbar.severity} variant="filled">
+          {snackbar.message}
+        </Alert>
       </Snackbar>
+
+      {/* Dil Seçici */}
+      <FormControl fullWidth sx={{ mt: 4 }}>
+        <InputLabel id="language-select-label">
+          {t("chooseLanguage")}
+        </InputLabel>
+        <Select
+          labelId="language-select-label"
+          id="language-select"
+          value={currentLang}
+          label={t("chooseLanguage")}
+          onChange={changeLanguage}
+        >
+          <MenuItem value="tr">🇹🇷 Türkçe</MenuItem>
+          <MenuItem value="en">🇬🇧 English</MenuItem>
+          <MenuItem value="ar">🇸🇦 العربية</MenuItem>
+          <MenuItem value="es">🇪🇸 Español</MenuItem>
+        </Select>
+      </FormControl>
     </Container>
   );
 };

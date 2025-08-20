@@ -1,0 +1,32 @@
+services:
+  crowallet-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: crowallet-backend:0.2.0
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./backend/data:/app/data
+    container_name: crowallet-backend-container
+
+
+  crowallet-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: crowallet-frontend:0.2.0
+    ports:
+      - "3000:3000"
+    container_name: crowallet-frontend-container
+
+  sqlite-web:
+    image: ghcr.io/coleifer/sqlite-web:latest
+    ports:
+      - "8083:8080"
+    volumes:
+      - ./backend/data:/data
+    environment:
+      - SQLITE_DATABASE=wallet.db
+    stdin_open: true
+    tty: true
