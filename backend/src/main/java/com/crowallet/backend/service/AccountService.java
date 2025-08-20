@@ -20,14 +20,16 @@ public class AccountService {
     @Autowired
     private AccountRepository accountRepository;
 
+    @Autowired
+    private TransferService transferService;
+
     public AccountDTO createAccount(AccountDTO account) {
         Account account1 = AccountMapper.INSTANCE.toAccount(account);
 
         BigDecimal balance = account1.getBalance();
-        account1.setBalance(new BigDecimal(0));
+        account1.setBalance(balance);
 
         accountRepository.save(account1);
-
         return AccountMapper.INSTANCE.toAccountDTO(account1);
     }
 

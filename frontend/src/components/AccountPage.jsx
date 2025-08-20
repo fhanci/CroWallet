@@ -147,7 +147,7 @@ const AccountPage = () => {
               : "Bilinmiyor"}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {new Date(item.updateDate).toLocaleString("tr-TR")}
+            {new Date(item.updateDate).toLocaleDateString("en-EN")}
           </Typography>
         </CardContent>
       </Box>
