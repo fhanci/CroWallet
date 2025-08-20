@@ -68,7 +68,7 @@ const TransactionHistoryPage = () => {
         }
 
         const sortedData = response.data.sort(
-          (a, b) => new Date(a.createDate) - new Date(b.createDate)
+          (a, b) => new Date(b.createDate) - new Date(a.createDate)
         );
         setTransactions(sortedData);
         setFilteredTransactions(sortedData);
