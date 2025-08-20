@@ -1,64 +1,94 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Typography, FormControl, InputLabel, Select, MenuItem, TextField, Autocomplete, Button, Snackbar, Alert, Box } from '@mui/material';
-import SaveIcon from '@mui/icons-material/Save';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import {
+  Container,
+  Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+  Autocomplete,
+  Button,
+  Snackbar,
+  Alert,
+  Box,
+} from "@mui/material";
+import SaveIcon from "@mui/icons-material/Save";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { t } from "i18next";
+import { useUser } from "../config/UserStore";
 
 const IncomingTransferPage = () => {
   const navigate = useNavigate();
-  const userId = localStorage.getItem('userId');
+  const { user } = useUser();
   const now = new Date();
-
+  const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
   const [selectedTransferAccount, setSelectedTransferAccount] = useState(null);
   const [selectedTransfer, setSelectedTransfer] = useState({});
   const [incomeSources, setIncomeSources] = useState([]);
   const [error, setError] = useState(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
-
+  const currency = selectedTransferAccount?.currency || "USD";
+  const hintText = t("exchangeRateHintTwo", {
+    currency: currency,
+  });
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const response = await fetch('http://localhost:8082/api/accounts');
-        const data = await response.json();
-        const userAccounts = data.filter(acc => acc.user.id === parseInt(userId));
-        setAccounts(userAccounts);
-      } catch (error) {
-        console.error("Hesaplar alınamadı:", error);
+        const res = await axios.get(
+          `http://localhost:8082/api/accounts/get/${user.id}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
+        setAccounts(res.data);
+      } catch (err) {
+        console.error("Hesaplar alınamadı:", err);
       }
     };
     fetchAccounts();
-  }, [userId]);
+  }, [user.id]);
 
   useEffect(() => {
-    const defaultIncome = [
-      "Maaş",
-      "Serbest Çalışma Geliri",
-      "Yatırım Geliri",
-      "Kira Geliri",
-      "Burs",
-      "Ek İş"
-    ];
+    const defaultIncome = t("defaultIncomeOptions", { returnObjects: true });
 
-    const savedIncome = JSON.parse(localStorage.getItem(`incomeSources_${userId}`)) || [];
+    const savedIncome =
+      JSON.parse(localStorage.getItem(`incomeSources_${user.id}`)) || [];
     const merged = Array.from(new Set([...defaultIncome, ...savedIncome]));
     setIncomeSources(merged);
-  }, [userId]);
+  }, [user.id]);
 
   const handleSubmit = async () => {
-    if (!selectedTransferAccount || !selectedTransfer.amount || !selectedTransfer.category || !selectedTransfer.date || (selectedTransferAccount.currency !== "TRY" && !selectedTransfer.exchangeRate)) {
-      setError("Zorunlu alanları doldurmanız gerekiyor!");
+    if (
+      !selectedTransferAccount ||
+      !selectedTransfer.amount ||
+      !selectedTransfer.category ||
+      !selectedTransfer.date ||
+      (selectedTransferAccount.currency !== "TRY" &&
+        !selectedTransfer.exchangeRate)
+    ) {
+      setError(t("requiredFieldsError"));
       return;
     }
 
     const amount = parseFloat(selectedTransfer.amount);
-    const createDate = new Date(now.getTime() + (3 * 60 * 60 * 1000)).toISOString();
+    const createDate = new Date(
+      now.getTime() + 3 * 60 * 60 * 1000
+    ).toISOString();
 
     const updatedTransfer = {
       ...selectedTransfer,
-      exchangeRate: selectedTransferAccount.currency === "TRY" ? 1 : selectedTransfer.exchangeRate,
+      exchangeRate:
+        selectedTransferAccount.currency === "TRY"
+          ? 1
+          : selectedTransfer.exchangeRate,
       type: "incoming",
       createDate,
-      user: { id: parseInt(userId) },
+      user: { id: user.id },
       account: { id: parseInt(selectedTransferAccount.id) },
       inputPreviousBalance: selectedTransferAccount.balance,
       inputNextBalance: selectedTransferAccount.balance + amount,
@@ -71,56 +101,61 @@ const IncomingTransferPage = () => {
     };
 
     try {
-      const response = await fetch("http://localhost:8082/api/transfers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedTransfer),
-      });
+      const response = await axios.post(
+        "http://localhost:8082/api/transfers/create",
+        updatedTransfer,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      const response2 = await fetch(`http://localhost:8082/api/accounts/${selectedTransferAccount.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedAccount),
-      });
+      const response2 = await axios.put(
+        `http://localhost:8082/api/accounts/update/${selectedTransferAccount.id}`,
+        updatedAccount,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      if (response.ok && response2.ok) {
-        setOpenSnackbar(true);
-        setTimeout(() => navigate("/account"), 1000);
-      } else {
-        setError("Transfer başarısız oldu.");
-      }
+      setOpenSnackbar(true);
+      setTimeout(() => navigate("/account"), 1000);
     } catch (err) {
       console.error("Transfer hatası:", err);
       setError("Bir hata oluştu, lütfen tekrar deneyin.");
     }
   };
 
-  const detailsOptions = {
-    "Maaş": ["Aylık Maaş", "Prim Ödemesi", "Performans Bonusu", "İkramiye", "Fazla Mesai Ücreti"],
-    "Serbest Çalışma Geliri": ["Freelance Proje", "Danışmanlık Geliri", "Yazılım Geliştirme", "Grafik Tasarım", "Çeviri Hizmeti"],
-    "Yatırım Geliri": ["Borsa Kazancı", "Kripto Para Geliri", "Gayrimenkul Getirisi", "Altın ve Değerli Metaller", "Startup Yatırımları"],
-    "Kira Geliri": ["Ev Kirası", "Ofis Kirası", "Dükkan Kirası", "Depo Kirası", "Sezonluk Kiralama"],
-    "Burs": ["Akademik Burs", "Sporcu Bursu", "Şirket Sponsoru Bursu", "Devlet Bursu"],
-    "Ek İş": ["Online Satış Geliri", "İçerik Üretimi (YouTube, Blog)", "Telif Hakkı Geliri", "Affiliate Marketing", "El Sanatları Satışı"]
-  };
+  const detailsOptions = t("incomeDetails", { returnObjects: true });
 
   const selectedCategory = selectedTransfer?.category || "";
   const selectedDetailsOptions = detailsOptions[selectedCategory] || [];
 
   return (
     <Container maxWidth="sm">
-      <Typography variant="h5" align="center" gutterBottom>Para Ekle</Typography>
+      <Typography variant="h5" align="center" gutterBottom>
+        {t("addMoney")}
+      </Typography>
 
       <FormControl fullWidth margin="normal">
-        <InputLabel id="account-label">Hesap Seçin*</InputLabel>
+        <InputLabel id="account-label">{t("selectAccount")}</InputLabel>
         <Select
           labelId="account-label"
           id="account-select"
-          value={selectedTransferAccount?.id || ""}
+          value={selectedTransferAccount?.id || "" }
           label="Hesap Seçin*"
-          onChange={(e) => setSelectedTransferAccount(accounts.find(acc => acc.id === e.target.value))}
+          onChange={(e) =>
+            setSelectedTransferAccount(
+              accounts.find((acc) => acc.id === e.target.value)
+            )
+          }
         >
-          {accounts.map(account => (
+          {accounts.map((account) => (
             <MenuItem key={account.id} value={account.id}>
               {account.accountName} - {account.balance} {account.currency}
             </MenuItem>
@@ -131,72 +166,88 @@ const IncomingTransferPage = () => {
       {selectedTransferAccount?.currency !== "TRY" && (
         <>
           <TextField
-            label="Kur*"
+            label={t("exchangeRate")}
             type="number"
-            value={selectedTransfer.exchangeRate || ""}
-            onChange={(e) => setSelectedTransfer({ ...selectedTransfer, exchangeRate: e.target.value })}
+            value={selectedTransfer.exchangeRate || "" }
+            onChange={(e) =>
+              setSelectedTransfer({
+                ...selectedTransfer,
+                exchangeRate: e.target.value,
+              })
+            }
             fullWidth
             margin="normal"
           />
-          <Typography variant="caption" sx={{ color: 'gray', mt: 0.5 }}>
-            Lütfen güncel {selectedTransferAccount?.currency}/TRY kurunu giriniz (örneğin: 35)
+          <Typography variant="caption" sx={{ color: "gray", mt: 0.5 }}>
+            {hintText}
           </Typography>
         </>
       )}
 
-    <Box display="flex" alignItems="center" marginTop={2} marginBottom={1}>
+      <Box display="flex" alignItems="center" marginTop={2} marginBottom={1}>
         <TextField
-            label="Miktar*"
-            type="number"
-            value={selectedTransfer.amount || ""}
-            onChange={(e) => setSelectedTransfer({ ...selectedTransfer, amount: e.target.value })}
-            fullWidth
+          label={t("amount")}
+          type="number"
+          value={selectedTransfer.amount || "" }
+          onChange={(e) =>
+            setSelectedTransfer({ ...selectedTransfer, amount: e.target.value })
+          }
+          fullWidth
         />
         <Typography
-            sx={{
+          sx={{
             marginLeft: 1,
-            whiteSpace: 'nowrap',
-            lineHeight: '40px', 
-            fontSize: '1rem',
-            color: 'gray',
-            }}
+            whiteSpace: "nowrap",
+            lineHeight: "40px",
+            fontSize: "1rem",
+            color: "gray",
+          }}
         >
-            {selectedTransferAccount?.currency}
+          {selectedTransferAccount?.currency}
         </Typography>
-        </Box>
+      </Box>
 
-        <TextField
-        label="Tarih*"
+      <TextField
+        label={t("date")}
         type="date"
-        value={selectedTransfer.date || ""}
-        onChange={(e) => setSelectedTransfer({ ...selectedTransfer, date: e.target.value })}
+        value={selectedTransfer.date || "" }
+        onChange={(e) =>
+          setSelectedTransfer({ ...selectedTransfer, date: e.target.value })
+        }
         fullWidth
         margin="normal"
         InputLabelProps={{ shrink: true }}
         InputProps={{
-            sx: {
+          sx: {
             "& input::-webkit-calendar-picker-indicator": {
-                cursor: 'pointer',
-                display: 'block',
-                position: 'relative',
-                right: 0,
-                filter: 'none', 
+              cursor: "pointer",
+              display: "block",
+              position: "relative",
+              right: 0,
+              filter: "none",
             },
-            }
+          },
         }}
-        />
+      />
 
       <FormControl fullWidth margin="normal">
-        <InputLabel id="category-label">Kategori*</InputLabel>
+        <InputLabel id="category-label">{t("category")}</InputLabel>
         <Select
           labelId="category-label"
           id="category-select"
-          value={selectedTransfer.category || ""}
-          label="Kategori*"
-          onChange={(e) => setSelectedTransfer({ ...selectedTransfer, category: e.target.value })}
+          value={selectedTransfer.category || "" }
+          label={t("category")}
+          onChange={(e) =>
+            setSelectedTransfer({
+              ...selectedTransfer,
+              category: e.target.value,
+            })
+          }
         >
           {incomeSources.map((source) => (
-            <MenuItem key={source} value={source}>{source}</MenuItem>
+            <MenuItem key={source} value={source}>
+              {source}
+            </MenuItem>
           ))}
         </Select>
       </FormControl>
@@ -204,15 +255,22 @@ const IncomingTransferPage = () => {
       <Autocomplete
         freeSolo
         options={selectedDetailsOptions}
-        value={selectedTransfer.details || ""}
-        onChange={(e, newValue) => setSelectedTransfer({ ...selectedTransfer, details: newValue })}
+        value={selectedTransfer.details || "" }
+        onChange={(e, newValue) =>
+          setSelectedTransfer({ ...selectedTransfer, details: newValue })
+        }
         renderInput={(params) => (
-          <TextField {...params} label="Detay" fullWidth margin="normal" />
+          <TextField
+            {...params}
+            label={t("addMoney")}
+            fullWidth
+            margin="normal"
+          />
         )}
       />
-        <Typography variant="caption" sx={{ color: 'gray', mt: 0.5 }}>
-            Kategoriye bağlı olarak detayları da seçebilirsiniz.
-        </Typography>
+      <Typography variant="caption" sx={{ color: "gray", mt: 0.5 }}>
+        {t("detailsHint")}
+      </Typography>
 
       {error && (
         <Typography color="error" align="center" mt={1}>
@@ -221,16 +279,18 @@ const IncomingTransferPage = () => {
       )}
 
       <TextField
-        label="Açıklama"
-        value={selectedTransfer.description || ""}
-        onChange={(e) => setSelectedTransfer({ ...selectedTransfer, description: e.target.value })}
+        label={t("description")}
+        value={selectedTransfer.description || "" }
+        onChange={(e) =>
+          setSelectedTransfer({
+            ...selectedTransfer,
+            description: e.target.value,
+          })
+        }
         fullWidth
         margin="normal"
       />
 
-        
-
-      
       <Box textAlign="center" mt={2}>
         <Button
           variant="contained"
@@ -238,7 +298,7 @@ const IncomingTransferPage = () => {
           startIcon={<SaveIcon />}
           onClick={handleSubmit}
         >
-          Kaydet
+          {t("save")}
         </Button>
       </Box>
 
@@ -249,7 +309,7 @@ const IncomingTransferPage = () => {
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Alert onClose={() => setOpenSnackbar(false)} severity="success">
-          Para eklendi!
+          {t("moneyAddedSuccess")}
         </Alert>
       </Snackbar>
     </Container>

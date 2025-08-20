@@ -1,58 +1,77 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { Box } from '@mui/material';
+import React, { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+import { Box } from "@mui/material";
+import "./il8n";
+import { useTranslation } from "react-i18next";
 
-import Login from './components/LoginPage';
-import DashboardLayout from './components/DashboardLayout';
+import Login from "./components/LoginPage";
+import DashboardLayout from "./components/DashboardLayout";
 
-import SettingPage from './components/SettingPage';
+import SettingPage from "./components/SettingPage";
 
-import ProfileButton from './components/ProfileButton';
-import NotificationButton from './components/NotificationButton';
+import ProfileButton from "./components/ProfileButton";
+import NotificationButton from "./components/NotificationButton";
 
-import ProfilePage from './pages/ProfilePage';
-import NotificationPage from './pages/NotificationPage';
+import ProfilePage from "./pages/ProfilePage";
+import NotificationPage from "./pages/NotificationPage";
 
-import AccountPage from './components/AccountPage';
-import AccountCreatePage from './pages/AccountCreatePage';
-import AccountEditPage from './pages/AccountEditPage';
-import AccountDeletePage from './pages/AccountDeletePage';
+import AccountPage from "./components/AccountPage";
+import AccountCreatePage from "./pages/AccountCreatePage";
+import AccountEditPage from "./pages/AccountEditPage";
+import AccountDeletePage from "./pages/AccountDeletePage";
 
-import TransactionHistoryPage from './components/TransactionHistoryPage';
-import IncomingTransferPage from './pages/IncomingTransferPage';
-import OutgoingTransferPage from './pages/OutgoingTransferPage';
-import AccountToAccountTransferPage from './pages/AccountToAccountTransferPage';
+import TransactionHistoryPage from "./components/TransactionHistoryPage";
+import IncomingTransferPage from "./pages/IncomingTransferPage";
+import OutgoingTransferPage from "./pages/OutgoingTransferPage";
+import AccountToAccountTransferPage from "./pages/AccountToAccountTransferPage";
 
 import DebtPage from "./pages/DebtsPage";
 import DebtCreatePage from "./pages/DebtCreatePage";
 import DebtEditPage from "./pages/DebtEditPage";
 import DebtPayPage from "./pages/DebtPayPage";
 
+import { UserProvider } from "./config/UserStore";
+import ErrorPage from "./components/ErrorPage";
 const MainApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(
-    localStorage.getItem('isAuthenticated') === 'true'
+    localStorage.getItem("isAuthenticated") === "true"
   );
   const location = useLocation();
-  const isLoginPage = location.pathname === '/login';
+  const isLoginPage = location.pathname === "/login";
 
   useEffect(() => {
-    if (location.pathname === '/login') {
-      document.body.className = 'unauthenticated';
-    } else if (location.pathname === '/account' && isAuthenticated) {
-      document.body.className = 'authenticated';
+    if (location.pathname === "/login") {
+      document.body.className = "unauthenticated";
+    } else if (location.pathname === "/account" && isAuthenticated) {
+      document.body.className = "authenticated";
     }
   }, [location, isAuthenticated]);
 
-  const handleLoginSuccess = () => {
-    setIsAuthenticated(true);
-    localStorage.setItem('isAuthenticated', 'true');
-  };
+  const { t, i18n } = useTranslation();
 
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+  };
   return (
     <>
       {/* Sadece login dışında butonları göster */}
       {!isLoginPage && (
-        <Box sx={{ position: 'fixed', top: 16, right: 16, zIndex: 9999, display: 'flex', gap: 3 }}>
+        <Box
+          sx={{
+            position: "fixed",
+            top: 16,
+            right: 16,
+            zIndex: 9999,
+            display: "flex",
+            gap: 3,
+          }}
+        >
           <NotificationButton />
           <ProfileButton />
         </Box>
@@ -60,7 +79,7 @@ const MainApp = () => {
 
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
-        <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
+        <Route path="/login" element={<Login />} />
 
         <Route path="/account" element={<DashboardLayout />}>
           <Route index element={<AccountPage />} />
@@ -121,6 +140,7 @@ const MainApp = () => {
         <Route path="/debt/pay" element={<DashboardLayout />}>
           <Route index element={<DebtPayPage />} />
         </Route>
+        <Route path="*" element={<ErrorPage />} />
       </Routes>
     </>
   );
@@ -128,9 +148,11 @@ const MainApp = () => {
 
 const App = () => {
   return (
-    <Router>
-      <MainApp />
-    </Router>
+    <UserProvider>
+      <Router>
+        <MainApp />
+      </Router>
+    </UserProvider>
   );
 };
 

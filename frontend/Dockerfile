@@ -1,21 +1,27 @@
-# Use the latest LTS version of Node.js
-FROM node:18-alpine
+# Stage 1: Build the app
+FROM node:18-alpine AS builder
 
-# Set the working directory inside the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package*.json .
-
-# Install dependencies
+# Install dependencies and build
+COPY package*.json ./
 RUN npm install
 
-# Copy the rest of your application files
 COPY . .
+RUN npm run build
 
-# Expose the port your app runs on
+# Stage 2: Serve with Nginx
+FROM nginx:stable-alpine
+
+# Remove default Nginx config
+RUN rm /etc/nginx/conf.d/default.conf
+
+# Copy custom Nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy built assets from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
+
 EXPOSE 3000
 
-# Define the command to run your app
-CMD ["npm", "run", "dev"]
-
+CMD ["nginx", "-g", "daemon off;"]

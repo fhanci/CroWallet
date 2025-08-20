@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import axios from "axios";
+import React, { useEffect, useState } from "react";
 import {
   Container,
   Typography,
@@ -9,54 +10,58 @@ import {
   TableCell,
   TableBody,
   Paper,
-} from '@mui/material';
-
+} from "@mui/material";
+import { t } from "i18next";
+import { useUser } from "../config/UserStore";
 const NotificationPage = () => {
   const [debts, setDebts] = useState([]);
-  const userId = localStorage.getItem('userId');
-
+  const { user } = useUser();
+  const token = localStorage.getItem("token");
   useEffect(() => {
     const fetchDebts = async () => {
       try {
-        const res = await fetch('http://localhost:8082/api/debts');
-        if (res.ok) {
-          const data = await res.json();
-          const filtered = data
-            .filter(
-              (d) =>
-                d.user?.id === parseInt(userId) &&
-                d.debtAmount > 0 &&
-                new Date(d.dueDate) <=
-                  new Date(Date.now() + d.warningPeriod * 24 * 60 * 60 * 1000)
-            )
-            .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-          setDebts(filtered);
-        }
+        const res = await axios.get(
+          `http://localhost:8082/api/debts/get/${user.id}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
+        const filtered = res.data
+          .filter(
+            (d) =>
+              d.debtAmount > 0 &&
+              new Date(d.dueDate) <=
+                new Date(Date.now() + d.warningPeriod * 24 * 60 * 60 * 1000)
+          )
+          .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+        setDebts(filtered);
       } catch (error) {
-        console.error('Bildirimler alınamadı:', error);
+        console.error("Bildirimler alınamadı:", error);
       }
     };
 
     fetchDebts();
-  }, [userId]);
+  }, [user.id]);
 
   return (
     <Container sx={{ mt: 4 }}>
       {/* Başlık */}
       <Typography variant="h4" align="center" gutterBottom>
-        YAKLAŞAN BORÇLAR
+        {t("upcomingDebts")}
       </Typography>
 
       {/* Borçlar Tablosu */}
       {debts.length > 0 ? (
         <Box display="flex" justifyContent="center">
-          <Paper sx={{ width: '100%', maxWidth: 700 }}>
+          <Paper sx={{ width: "100%", maxWidth: 700 }}>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Kime</TableCell>
-                  <TableCell>Tutar</TableCell>
-                  <TableCell>Son Tarih</TableCell>
+                  <TableCell>{t("toWhom")}</TableCell>
+                  <TableCell>{t("amount")} </TableCell>
+                  <TableCell>{t("dueDateTwo")}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -66,8 +71,8 @@ const NotificationPage = () => {
                       sx={{
                         color:
                           new Date(debt.dueDate) < new Date()
-                            ? 'error.main'
-                            : 'inherit',
+                            ? "error.main"
+                            : "inherit",
                       }}
                     >
                       {debt.toWhom}
@@ -76,8 +81,8 @@ const NotificationPage = () => {
                       sx={{
                         color:
                           new Date(debt.dueDate) < new Date()
-                            ? 'error.main'
-                            : 'inherit',
+                            ? "error.main"
+                            : "inherit",
                       }}
                     >
                       {debt.debtAmount} {debt.debtCurrency}
@@ -86,11 +91,11 @@ const NotificationPage = () => {
                       sx={{
                         color:
                           new Date(debt.dueDate) < new Date()
-                            ? 'error.main'
-                            : 'inherit',
+                            ? "error.main"
+                            : "inherit",
                       }}
                     >
-                      {new Date(debt.dueDate).toLocaleDateString('tr-TR')}
+                      {new Date(debt.dueDate)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -98,11 +103,15 @@ const NotificationPage = () => {
             </Table>
           </Paper>
         </Box>
-        ) : (
-        <Typography align="center" color="text.secondary" sx={{ fontSize: "1rem" }}>
-            Henüz tarihi yaklaşan bir borç yok.
+      ) : (
+        <Typography
+          align="center"
+          color="text.secondary"
+          sx={{ fontSize: "1rem" }}
+        >
+          {t("noUpcomingDebts")}
         </Typography>
-        )}
+      )}
     </Container>
   );
 };
