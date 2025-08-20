@@ -72,10 +72,6 @@ const DebtEditPage = () => {
     fetchAccounts();
   }, [user.id]);
 
-  // useEffect(() => {
-  //   console.log("Seçilen Borç (selectedDebt):", selectedDebt);
-  // }, [selectedDebt]);
-
   const handleUpdateDebt = async () => {
     if (!selectedDebt) return;
 
@@ -102,204 +98,215 @@ const DebtEditPage = () => {
       setError("Lütfen tüm alanları doldurun!");
       return;
     }
-
     try {
-      const oldDebt = debts.find((d) => d.id === selectedDebt.id);
-      if (!oldDebt) throw new Error("Eski borç bulunamadı");
-      if (!oldDebt.account?.id)
-        throw new Error("Eski borca bağlı hesap bilgisi eksik!");
-
-      const debtDifference =
-        parseFloat(selectedDebt.debtAmount) - parseFloat(oldDebt.debtAmount);
-      const oldAccountId = oldDebt.account.id;
-      const newAccountId = selectedDebt.account.id;
-
-      if (!newAccountId) throw new Error("Hesap seçimi yapılmalı");
-
-      if (oldAccountId !== newAccountId) {
-        const resOldAcc = await axios.get(
-          `http://localhost:8082/api/accounts/${oldAccountId}`,
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-            },
-          }
-        );
-        const oldAccount = await resOldAcc.data;
-
-        const resNewAcc = await axios.get(
-          `http://localhost:8082/api/accounts/${newAccountId}`,
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-            },
-          }
-        );
-        const newAccount = await resNewAcc.data;
-
-        const oldAccUpdatedBalance =
-          oldAccount.balance - parseFloat(oldDebt.debtAmount);
-        console.log(oldAccUpdatedBalance);
-        // const oldAccUpdateRes = await axios.put(
-        //   `http://localhost:8082/api/accounts/update/${oldAccount.id}`,
-
-        //   {
-        //     ...oldAccount,
-        //     balance: oldAccUpdatedBalance,
-        //     updateDate: new Date().toISOString(),
-        //   },
-        //   {
-        //     headers: {
-        //       Authorization: token ? `Bearer ${token}` : undefined,
-        //     },
-        //   }
-        // );
-
-        const newAccUpdatedBalance =
-          newAccount.balance + parseFloat(selectedDebt.debtAmount);
-        console.log(newAccUpdatedBalance)
-        // const newAccUpdateRes = await axios.put(
-        //   `http://localhost:8082/api/accounts/update/${newAccount.id}`,
-        //   {
-        //     ...newAccount,
-        //     balance: newAccUpdatedBalance,
-        //     updateDate: new Date().toISOString(),
-        //   },
-        //   {
-        //     headers: {
-        //       Authorization: token ? `Bearer ${token}` : undefined,
-        //     },
-        //   }
-        // );
-
-        const createDate = new Date()
-
-        await axios.post(
-          "http://localhost:8082/api/transfers/create",
-          {
-            amount: parseFloat(oldDebt.debtAmount),
-            category: "Borç Güncelleme",
-            details: "Borç hesap değişikliği - eski hesaptan çıkış",
-            date: createDate,
-            createDate,
-            user: { id: user.id },
-            account: { id: oldAccount.id },
-            type: "outgoing",
-            person: selectedDebt.toWhom,
-            outputPreviousBalance: oldAccount.balance,
-            outputNextBalance: oldAccUpdatedBalance,
-          },
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        await axios.post(
-          "http://localhost:8082/api/transfers/create",
-          {
-            amount: parseFloat(selectedDebt.debtAmount),
-            category: "Borç Güncelleme",
-            details: "Borç hesap değişikliği - yeni hesaba giriş",
-            date: createDate,
-            createDate,
-            user: { id: user.id },
-            account: { id: newAccount.id },
-            type: "incoming",
-            person: selectedDebt.toWhom,
-            inputPreviousBalance: newAccount.balance,
-            inputNextBalance: newAccUpdatedBalance,
-          },
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      } else {
-        const resAccount = await axios.get(
-          `http://localhost:8082/api/accounts/${newAccountId}`,
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-            },
-          }
-        );
-
-        const accountToUpdate = resAccount.data;
-
-        const updatedBalance = accountToUpdate.balance + debtDifference;
-
-        const accountUpdateResponse = await axios.put(
-          `http://localhost:8082/api/accounts/update/${accountToUpdate.id}`,
-          {
-            ...accountToUpdate,
-            balance: updatedBalance,
-            updateDate: new Date()
-          },
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        const createDate = new Date()
-
-        await axios.post(
-          "http://localhost:8082/api/transfers/create",
-          {
-            amount: Math.abs(debtDifference),
-            category: "Borç Güncelleme",
-            details: debtDifference > 0 ? "Borç arttı" : "Borç azaldı",
-            date: createDate,
-            createDate,
-            user: { id: user.id },
-            account: { id: accountToUpdate.id },
-            type: debtDifference > 0 ? "incoming" : "outgoing",
-            receiverId: user.id,
-            inputPreviousBalance: accountToUpdate.balance,
-            inputNextBalance: updatedBalance,
-          },
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      }
-
-      const response = await axios.put(
+      await axios.put(
         `http://localhost:8082/api/debts/update/${selectedDebt.id}`,
-        {
-          id: selectedDebt.id,
-          debtAmount: parseFloat(selectedDebt.debtAmount),
-          debtCurrency: selectedDebt.debtCurrency,
-          toWhom: selectedDebt.toWhom,
-          dueDate: selectedDebt.dueDate,
-          status: selectedDebt.status,
-          warningPeriod: selectedDebt.warningPeriod,
-          user: { id: user.id },
-          account: { id: selectedDebt.account.id },
-        },
+        selectedDebt,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
           },
         }
       );
 
       setOpenSnackbar(true);
     } catch (err) {
-      console.error(err);
-      setError();
+      console.error("Borç güncelleme hatası:", err);
+      setError("Güncelleme sırasında bir hata oluştu.");
     }
   };
+
+  //   try {
+  //     // güncellenmeden önceki hali
+  //     const oldDebt = debts.find((d) => d.id === selectedDebt.id);
+  //     if (!oldDebt) throw new Error("Eski borç bulunamadı");
+  //     if (!oldDebt.account?.id)
+  //       throw new Error("Eski borca bağlı hesap bilgisi eksik!");
+  //     const debtDifference =
+  //       parseFloat(selectedDebt.debtAmount) - parseFloat(oldDebt.debtAmount);
+  //     const oldAccountId = oldDebt.account.id;
+  //     const newAccountId = selectedDebt.account.id;
+
+  //     if (!newAccountId) throw new Error("Hesap seçimi yapılmalı");
+
+  //     // ödenen hesap değiştiyse
+  //     if (oldAccountId !== newAccountId) {
+  //       const resOldAcc = await axios.get(
+  //         `http://localhost:8082/api/accounts/${oldAccountId}`,
+  //         {
+  //           headers: {
+  //             Authorization: token ? `Bearer ${token}` : undefined,
+  //           },
+  //         }
+  //       );
+  //       const oldAccount = await resOldAcc.data;
+
+  //       const resNewAcc = await axios.get(
+  //         `http://localhost:8082/api/accounts/${newAccountId}`,
+  //         {
+  //           headers: {
+  //             Authorization: token ? `Bearer ${token}` : undefined,
+  //           },
+  //         }
+  //       );
+  //       const newAccount = await resNewAcc.data;
+
+  //       const oldAccUpdatedBalance =
+  //         oldAccount.balance - parseFloat(oldDebt.debtAmount);
+  //       console.log(oldAccUpdatedBalance);
+  //       // const oldAccUpdateRes = await axios.put(
+  //       //   `http://localhost:8082/api/accounts/update/${oldAccount.id}`,
+
+  //       //   {
+  //       //     ...oldAccount,
+  //       //     balance: oldAccUpdatedBalance,
+  //       //     updateDate: new Date().toISOString(),
+  //       //   },
+  //       //   {
+  //       //     headers: {
+  //       //       Authorization: token ? `Bearer ${token}` : undefined,
+  //       //     },
+  //       //   }
+  //       // );
+
+  //       const newAccUpdatedBalance =
+  //         newAccount.balance + parseFloat(selectedDebt.debtAmount);
+  //       console.log(newAccUpdatedBalance);
+  //       // const newAccUpdateRes = await axios.put(
+  //       //   `http://localhost:8082/api/accounts/update/${newAccount.id}`,
+  //       //   {
+  //       //     ...newAccount,
+  //       //     balance: newAccUpdatedBalance,
+  //       //     updateDate: new Date().toISOString(),
+  //       //   },
+  //       //   {
+  //       //     headers: {
+  //       //       Authorization: token ? `Bearer ${token}` : undefined,
+  //       //     },
+  //       //   }
+  //       // );
+
+  //       const createDate = new Date();
+
+  //       await axios.post(
+  //         "http://localhost:8082/api/transfers/create",
+  //         {
+  //           amount: parseFloat(oldDebt.debtAmount),
+  //           category: "Borç Güncelleme",
+  //           details: "Borç hesap değişikliği - eski hesaptan çıkış",
+  //           date: createDate,
+  //           createDate,
+  //           user: { id: user.id },
+  //           account: { id: oldAccount.id },
+  //           type: "outgoing",
+  //           person: selectedDebt.toWhom,
+  //           outputPreviousBalance: oldAccount.balance,
+  //           outputNextBalance: oldAccUpdatedBalance,
+  //         },
+  //         {
+  //           headers: {
+  //             Authorization: token ? `Bearer ${token}` : undefined,
+  //             "Content-Type": "application/json",
+  //           },
+  //         }
+  //       );
+
+  //       await axios.post(
+  //         "http://localhost:8082/api/transfers/create",
+  //         {
+  //           amount: parseFloat(selectedDebt.debtAmount),
+  //           category: "Borç Güncelleme",
+  //           details: "Borç hesap değişikliği - yeni hesaba giriş",
+  //           date: createDate,
+  //           createDate,
+  //           user: { id: user.id },
+  //           account: { id: newAccount.id },
+  //           type: "incoming",
+  //           person: selectedDebt.toWhom,
+  //           inputPreviousBalance: newAccount.balance,
+  //           inputNextBalance: newAccUpdatedBalance,
+  //         },
+  //         {
+  //           headers: {
+  //             Authorization: token ? `Bearer ${token}` : undefined,
+  //             "Content-Type": "application/json",
+  //           },
+  //         }
+  //       );
+  //       // ödenen hesap değişmediyse
+  //     } else {
+  //       const resAccount = await axios.get(
+  //         `http://localhost:8082/api/accounts/${newAccountId}`,
+  //         {
+  //           headers: {
+  //             Authorization: token ? `Bearer ${token}` : undefined,
+  //           },
+  //         }
+  //       );
+
+  //       const accountToUpdate = resAccount.data;
+
+  //       const updatedBalance = accountToUpdate.balance + debtDifference;
+
+  //       const accountUpdateResponse = await axios.put(
+  //         `http://localhost:8082/api/accounts/update/${accountToUpdate.id}`,
+  //         {
+  //           ...accountToUpdate,
+  //           balance: updatedBalance,
+  //           updateDate: new Date(),
+  //         },
+  //         {
+  //           headers: {
+  //             Authorization: token ? `Bearer ${token}` : undefined,
+  //             "Content-Type": "application/json",
+  //           },
+  //         }
+  //       );
+
+  //       const createDate = new Date();
+
+  //       await axios.post(
+  //         "http://localhost:8082/api/transfers/create",
+  //         {
+  //           amount: Math.abs(debtDifference),
+  //           category: "Borç Güncelleme",
+  //           details: debtDifference > 0 ? "Borç arttı" : "Borç azaldı",
+  //           date: createDate,
+  //           createDate,
+  //           user: { id: user.id },
+  //           account: { id: accountToUpdate.id },
+  //           type: debtDifference > 0 ? "incoming" : "outgoing",
+  //           receiverId: user.id,
+  //           inputPreviousBalance: accountToUpdate.balance,
+  //           inputNextBalance: updatedBalance,
+  //         },
+  //         {
+  //           headers: {
+  //             Authorization: token ? `Bearer ${token}` : undefined,
+  //             "Content-Type": "application/json",
+  //           },
+  //         }
+  //       );
+  //     }
+
+  //     await axios.put(
+  //       `http://localhost:8082/api/debts/update/${selectedDebt.id}`,
+  //       selectedDebt,
+  //       {
+  //         headers: {
+  //           Authorization: token ? `Bearer ${token}` : undefined,
+  //           "Content-Type": "application/json",
+  //         },
+  //       }
+  //     );
+
+  //     setOpenSnackbar(true);
+  //   } catch (err) {
+  //     console.error(err);
+  //     setError();
+  //   }
+  // };
 
   useEffect(() => {
     if (
@@ -332,7 +339,7 @@ const DebtEditPage = () => {
             labelId="debt-select-label"
             id="debt-select"
             label={t("selectDebt")}
-            value={selectedDebt?.id || "" }
+            value={selectedDebt?.id || ""}
             onChange={(e) =>
               setSelectedDebt(debts.find((d) => d.id === e.target.value))
             }
@@ -355,7 +362,7 @@ const DebtEditPage = () => {
             <Select
               labelId="account-select-label"
               id="account-select"
-              value={selectedDebt.account?.id || "" }
+              value={selectedDebt.account?.id || ""}
               disabled
               inputProps={{ autoComplete: "off" }}
             >

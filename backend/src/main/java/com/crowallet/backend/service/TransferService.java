@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -33,40 +35,53 @@ public class TransferService {
     }
 
     @Transactional
-    public TransferDTO createTransfer(TransferDTO transfer) {
-        Optional<Account> accountFrom= Optional.empty();
-        Optional<Account> accountTo= Optional.empty();
-        Transfer transfer1 = TransferMapper.INSTANCE.toTransfer(transfer);
-        // form
-        if (transfer1.getAccount().getId() != null){
-            accountFrom = accountRepository.findById(transfer1.getAccount().getId());
-        }
-        if (transfer1.getReceiverId() != null) {
-            accountTo = accountRepository.findById(transfer1.getReceiverId());
-        }
-            BigDecimal transferAmount = transfer1.getAmount();
-        // hesaplamalar
-        if (accountFrom.isPresent()){
-            BigDecimal currentBalance = accountFrom.get().getBalance();
-            //accountFrom.get().setBalance(currentBalance.subtract(transferAmount));
+    public TransferDTO createTransfer(TransferDTO transferDTO) {
+        Transfer transfer = TransferMapper.INSTANCE.toTransfer(transferDTO);
+
+        Optional<Account> accountFromOpt = Optional.empty();
+        Optional<Account> accountToOpt = Optional.empty();
+
+        if (transfer.getAccount() != null && transfer.getAccount().getId() != null) {
+            accountFromOpt = accountRepository.findById(transfer.getAccount().getId());
         }
 
-        if (accountTo.isPresent()){
-            BigDecimal currentBalance= accountTo.get().getBalance();
-            //accountTo.get().setBalance(currentBalance.add(transferAmount));
+        if (transfer.getReceiverId() != null) {
+            accountToOpt = accountRepository.findById(transfer.getReceiverId());
         }
-//        // kayıt işlemleri
-//        if (accountFrom.isPresent()){
-//
-//        }
-//
-//        if (accountTo.isPresent()){
-//
-//        }
 
-        transferRepository.save(transfer1);
-        return transfer;
+        BigDecimal transferAmount = transfer.getAmount();
+        LocalDateTime now = LocalDateTime.now();
+        transfer.setCreateDate(now);
+        transfer.setDate(now.toLocalDate());
+
+        if (transfer.getType().equalsIgnoreCase("outgoing") && accountFromOpt.isPresent()) {
+            Account accountFrom = accountFromOpt.get();
+            BigDecimal previousBalance = accountFrom.getBalance();
+            BigDecimal newBalance = previousBalance.subtract(transferAmount);
+
+            accountFrom.setBalance(newBalance);
+            transfer.setOutputPreviousBalance(previousBalance);
+            transfer.setOutputNextBalance(newBalance);
+
+            accountRepository.save(accountFrom);
+        }
+
+        if (transfer.getType().equalsIgnoreCase("incoming") && accountToOpt.isPresent()) {
+            Account accountTo = accountToOpt.get();
+            BigDecimal previousBalance = accountTo.getBalance();
+            BigDecimal newBalance = previousBalance.add(transferAmount);
+
+            accountTo.setBalance(newBalance);
+            transfer.setInputPreviousBalance(previousBalance);
+            transfer.setInputNextBalance(newBalance);
+
+            accountRepository.save(accountTo);
+        }
+
+        transferRepository.save(transfer);
+        return TransferMapper.INSTANCE.toTransferDTO(transfer);
     }
+
 
     public List<TransferDTO> getAllTransfers() {
         return TransferMapper.INSTANCE.toTransferDTOList(transferRepository.findAll());
@@ -101,6 +116,31 @@ public class TransferService {
             throw new GeneralException("Transfer to be deleted not found: " + id);
         }
         transferRepository.deleteById(id);
+    }
+
+    @Transactional
+    public TransferDTO addMoney(TransferDTO transferDTO) {
+        Account account = accountRepository.findById(transferDTO.getAccount().getId())
+                .orElseThrow(() -> new GeneralException("Hesap bulunamadı"));
+
+        BigDecimal amount = transferDTO.getAmount();
+        BigDecimal previousBalance = account.getBalance();
+        BigDecimal newBalance = previousBalance.add(amount);
+
+        account.setBalance(newBalance);
+        account.setUpdateDate(LocalDateTime.now());
+        accountRepository.save(account);
+
+        transferDTO.setType("incoming");
+        transferDTO.setCreateDate(LocalDateTime.now());
+        transferDTO.setDate(LocalDate.now());
+        transferDTO.setInputPreviousBalance(previousBalance);
+        transferDTO.setInputNextBalance(newBalance);
+
+        Transfer transfer = TransferMapper.INSTANCE.toTransfer(transferDTO);
+        transferRepository.save(transfer);
+
+        return TransferMapper.INSTANCE.toTransferDTO(transfer);
     }
 
     public List<TransferDTO> getUserTransfers(Long id) {

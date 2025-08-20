@@ -84,60 +84,60 @@ const AccountToAccountTransferPage = () => {
 
     const convertedAmount = amount * exchangeRate;
 
-    const outgoingTransfer = {
-      amount,
-      user: { id: user.id },
-      account: { id: selectedSenderAccount.id },
-      type: "inter-account",
-      createDate,
-      date: transferData.date,
-      exchangeRate,
-      receiverId: selectedReceiverAccount.id,
-      description: transferData.description,
-      outputPreviousBalance: senderBalance,
-      outputNextBalance: senderBalance - amount,
-      inputPreviousBalance: selectedReceiverAccount.balance,
-      inputNextBalance: selectedReceiverAccount.balance + convertedAmount,
-    };
-
-    const incomingTransfer = {
-      amount: convertedAmount,
-      user: { id: user.id },
-      account: { id: selectedReceiverAccount.id },
-      type: "inter-account",
-      createDate,
-      date: transferData.date,
-      exchangeRate,
-      person: selectedSenderAccount.accountName,
-      description: transferData.description,
-      inputPreviousBalance: selectedReceiverAccount.balance,
-      inputNextBalance: selectedReceiverAccount.balance + convertedAmount,
-    };
-
-    const updatedSender = {
-      ...selectedSenderAccount,
-      balance: senderBalance - amount,
-      updateDate: createDate,
-    };
-
-    const updatedReceiver = {
-      ...selectedReceiverAccount,
-      balance: selectedReceiverAccount.balance + convertedAmount,
-      updateDate: createDate,
-    };
-
-    try {
-      const [res1, res2, res3, res4] = await Promise.all([
-        axios.post(
-          "http://localhost:8082/api/transfers/create",
-          outgoingTransfer,
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-              "Content-Type": "application/json",
-            },
-          }
-        ),
+    
+    // const incomingTransfer = {
+      //   amount: convertedAmount,
+      //   user: { id: user.id },
+      //   account: { id: selectedReceiverAccount.id },
+      //   type: "inter-account",
+      //   createDate,
+      //   date: transferData.date,
+      //   exchangeRate,
+      //   person: selectedSenderAccount.accountName,
+      //   description: transferData.description,
+      //   inputPreviousBalance: selectedReceiverAccount.balance,
+    //   inputNextBalance: selectedReceiverAccount.balance + convertedAmount,
+    // };
+    
+    // const updatedSender = {
+      //   ...selectedSenderAccount,
+      //   balance: senderBalance - amount,
+      //   updateDate: createDate,
+      // };
+      
+      // const updatedReceiver = {
+        //   ...selectedReceiverAccount,
+        //   balance: selectedReceiverAccount.balance + convertedAmount,
+        //   updateDate: createDate,
+        // };
+        const outgoingTransfer = {
+          amount,
+          user: { id: user.id },
+          account: { id: selectedSenderAccount.id },
+          type: "inter-account",
+          createDate,
+          date: transferData.date,
+          exchangeRate,
+          receiverId: selectedReceiverAccount.id,
+          description: transferData.description,
+          outputPreviousBalance: senderBalance,
+          outputNextBalance: senderBalance - amount,
+          inputPreviousBalance: selectedReceiverAccount.balance,
+          inputNextBalance: selectedReceiverAccount.balance + convertedAmount,
+        };
+        
+        try {
+          const [res1, res2, res3, res4] = await Promise.all([
+            axios.post(
+              "http://localhost:8082/api/transfers/create",
+              outgoingTransfer,
+              {
+                headers: {
+                  Authorization: token ? `Bearer ${token}` : undefined,
+                  "Content-Type": "application/json",
+                },
+              }
+            ),
         // axios.post(
         //   "http://localhost:8082/api/transfers/create",
         //   incomingTransfer,

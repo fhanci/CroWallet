@@ -75,6 +75,7 @@ const DebtPayPage = () => {
 
   const handlePayDebt = async () => {
     setError();
+
     if (!selectedPayDebt || !selectedTransferAccount || !payAmount) {
       setError("Lütfen tüm alanları doldurun!");
       return;
@@ -91,61 +92,13 @@ const DebtPayPage = () => {
     }
 
     try {
-      const updatedDebtAmount =
-        selectedPayDebt.debtAmount - parseFloat(payAmount);
-      const updatedStatus = updatedDebtAmount <= 0 ? "odendi" : "odenmedi";
-      const updatedBalance =
-        selectedTransferAccount.balance - parseFloat(payAmount);
-      const createDate = new Date()
-
-      // Borcu güncelle
-      const debtResponse = await axios.put(
-        `http://localhost:8082/api/debts/update/${selectedPayDebt.id}`,
+      await axios.put(
+        `http://localhost:8082/api/debts/pay/${selectedPayDebt.id}`,
         {
-          ...selectedPayDebt,
-          debtAmount: updatedDebtAmount > 0 ? updatedDebtAmount : 0,
-          status: updatedStatus,
+          accountId: selectedTransferAccount.id,
+          amount: parseFloat(payAmount),
+          userId: user.id,
         },
-        {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        }
-      );
-
-      // Hesap bakiyesini güncelle
-      const accountResponse = await axios.put(
-        `http://localhost:8082/api/accounts/update/${selectedTransferAccount.id}`,
-        {
-          ...selectedTransferAccount,
-          balance: updatedBalance,
-          updateDate: createDate,
-        },
-        {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        }
-      );
-
-      // Transfer kaydı oluştur
-      const transferData = {
-        amount: parseFloat(payAmount),
-        category: "Borç Ödeme",
-        details: "Borç ödeme",
-        date: createDate,
-        createDate,
-        user: { id: parseInt(user.id) },
-        account: { id: parseInt(selectedTransferAccount.id) },
-        type: "outgoing",
-        person: selectedPayDebt.toWhom,
-        outputPreviousBalance: selectedTransferAccount.balance,
-        outputNextBalance: updatedBalance,
-      };
-
-      const transferResponse = await axios.post(
-        "http://localhost:8082/api/transfers/create",
-        transferData,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
@@ -162,6 +115,95 @@ const DebtPayPage = () => {
     }
   };
 
+  // const handlePayDebt = async () => {
+  //   setError();
+  //   if (!selectedPayDebt || !selectedTransferAccount || !payAmount) {
+  //     setError("Lütfen tüm alanları doldurun!");
+  //     return;
+  //   }
+
+  //   if (selectedTransferAccount.currency !== selectedPayDebt.debtCurrency) {
+  //     setError(t("currencyMismatch"));
+  //     return;
+  //   }
+
+  //   if (parseFloat(selectedTransferAccount.balance) < parseFloat(payAmount)) {
+  //     setError(t("balanceTooLow"));
+  //     return;
+  //   }
+
+  //   try {
+  //     const updatedDebtAmount =
+  //       selectedPayDebt.debtAmount - parseFloat(payAmount);
+  //     const updatedStatus = updatedDebtAmount <= 0 ? "odendi" : "odenmedi";
+  //     const updatedBalance =
+  //       selectedTransferAccount.balance - parseFloat(payAmount);
+  //     const createDate = new Date()
+
+  //     // Borcu güncelle
+  //     const debtResponse = await axios.put(
+  //       `http://localhost:8082/api/debts/update/${selectedPayDebt.id}`,
+  //       {
+  //         ...selectedPayDebt,
+  //         debtAmount: updatedDebtAmount > 0 ? updatedDebtAmount : 0,
+  //         status: updatedStatus,
+  //       },
+  //       {
+  //         headers: {
+  //           Authorization: token ? `Bearer ${token}` : undefined,
+  //         },
+  //       }
+  //     );
+
+  //     // Hesap bakiyesini güncelle
+  //     const accountResponse = await axios.put(
+  //       `http://localhost:8082/api/accounts/update/${selectedTransferAccount.id}`,
+  //       {
+  //         ...selectedTransferAccount,
+  //         balance: updatedBalance,
+  //         updateDate: createDate,
+  //       },
+  //       {
+  //         headers: {
+  //           Authorization: token ? `Bearer ${token}` : undefined,
+  //         },
+  //       }
+  //     );
+
+  //     // Transfer kaydı oluştur
+  //     const transferData = {
+  //       amount: parseFloat(payAmount),
+  //       category: "Borç Ödeme",
+  //       details: "Borç ödeme",
+  //       date: createDate,
+  //       createDate,
+  //       user: { id: parseInt(user.id) },
+  //       account: { id: parseInt(selectedTransferAccount.id) },
+  //       type: "outgoing",
+  //       person: selectedPayDebt.toWhom,
+  //       outputPreviousBalance: selectedTransferAccount.balance,
+  //       outputNextBalance: updatedBalance,
+  //     };
+
+  //     const transferResponse = await axios.post(
+  //       "http://localhost:8082/api/transfers/create",
+  //       transferData,
+  //       {
+  //         headers: {
+  //           Authorization: token ? `Bearer ${token}` : undefined,
+  //           "Content-Type": "application/json",
+  //         },
+  //       }
+  //     );
+
+  //     setOpenSnackbar(true);
+  //     setTimeout(() => navigate("/debt"), 1500);
+  //   } catch (error) {
+  //     console.error("Borç ödeme sırasında hata:", error);
+  //     setError("Bir hata oluştu, lütfen tekrar deneyiniz.");
+  //   }
+  // };
+
   return (
     <Container maxWidth="sm" sx={{ mt: 4 }}>
       <Typography variant="h5" align="center" gutterBottom>
@@ -171,7 +213,7 @@ const DebtPayPage = () => {
       <FormControl fullWidth margin="normal">
         <InputLabel>{t("selectDebtToPay")}</InputLabel>
         <Select
-          value={selectedPayDebt?.id || "" }
+          value={selectedPayDebt?.id || ""}
           onChange={(e) =>
             setSelectedPayDebt(debts.find((debt) => debt.id === e.target.value))
           }
@@ -188,7 +230,7 @@ const DebtPayPage = () => {
       <FormControl fullWidth margin="normal">
         <InputLabel>Hesap Seçin</InputLabel>
         <Select
-          value={selectedTransferAccount?.id || "" }
+          value={selectedTransferAccount?.id || ""}
           onChange={(e) =>
             setSelectedTransferAccount(
               accounts.find((acc) => acc.id === e.target.value)

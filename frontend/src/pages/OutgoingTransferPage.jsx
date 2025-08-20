@@ -69,7 +69,6 @@ const OutgoingTransferPage = () => {
   }, [user.id]);
 
   const handleSubmit = async () => {
-    // Detay zorunluluğunu kaldırdık, o yüzden details kontrolü kaldırıldı
     if (
       !selectedTransferAccount ||
       !selectedTransfer.amount ||
@@ -94,7 +93,7 @@ const OutgoingTransferPage = () => {
       now.getTime() + 3 * 60 * 60 * 1000
     ).toISOString();
 
-    const updatedTransfer = {
+    const transferPayload = {
       ...selectedTransfer,
       exchangeRate:
         selectedTransferAccount.currency === "TRY"
@@ -104,31 +103,16 @@ const OutgoingTransferPage = () => {
       createDate,
       user: { id: parseInt(user.id) },
       account: { id: parseInt(selectedTransferAccount.id) },
+      amount,
+      date: selectedTransfer.date,
       outputPreviousBalance: currentBalance,
       outputNextBalance: currentBalance - amount,
     };
 
-    const updatedAccount = {
-      ...selectedTransferAccount,
-      balance: currentBalance - amount,
-      updateDate: createDate,
-    };
-
     try {
-      const response = await axios.post(
-        `http://localhost:8082/api/transfers/create`,
-        updatedTransfer,
-        {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const response2 = await axios.put(
-        `http://localhost:8082/api/accounts/update/${selectedTransferAccount.id}`,
-        updatedAccount,
+      await axios.post(
+        "http://localhost:8082/api/accounts/withdraw-money",
+        transferPayload,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
@@ -144,6 +128,83 @@ const OutgoingTransferPage = () => {
       setError("Bir hata oluştu, lütfen tekrar deneyin.");
     }
   };
+
+  // const handleSubmit = async () => {
+  //   // Detay zorunluluğunu kaldırdık, o yüzden details kontrolü kaldırıldı
+  //   if (
+  //     !selectedTransferAccount ||
+  //     !selectedTransfer.amount ||
+  //     !selectedTransfer.category ||
+  //     !selectedTransfer.date ||
+  //     (selectedTransferAccount.currency !== "TRY" &&
+  //       !selectedTransfer.exchangeRate)
+  //   ) {
+  //     setError(t("requiredFieldsError"));
+  //     return;
+  //   }
+
+  //   const amount = parseFloat(selectedTransfer.amount);
+  //   const currentBalance = parseFloat(selectedTransferAccount.balance);
+
+  //   if (currentBalance < amount) {
+  //     setError(t("insufficientBalance"));
+  //     return;
+  //   }
+
+  //   const createDate = new Date(
+  //     now.getTime() + 3 * 60 * 60 * 1000
+  //   ).toISOString();
+
+  //   const updatedTransfer = {
+  //     ...selectedTransfer,
+  //     exchangeRate:
+  //       selectedTransferAccount.currency === "TRY"
+  //         ? 1
+  //         : selectedTransfer.exchangeRate,
+  //     type: "outgoing",
+  //     createDate,
+  //     user: { id: parseInt(user.id) },
+  //     account: { id: parseInt(selectedTransferAccount.id) },
+  //     outputPreviousBalance: currentBalance,
+  //     outputNextBalance: currentBalance - amount,
+  //   };
+
+  //   const updatedAccount = {
+  //     ...selectedTransferAccount,
+  //     balance: currentBalance - amount,
+  //     updateDate: createDate,
+  //   };
+
+  //   try {
+  //     const response = await axios.post(
+  //       `http://localhost:8082/api/transfers/create`,
+  //       updatedTransfer,
+  //       {
+  //         headers: {
+  //           Authorization: token ? `Bearer ${token}` : undefined,
+  //           "Content-Type": "application/json",
+  //         },
+  //       }
+  //     );
+
+  //     const response2 = await axios.put(
+  //       `http://localhost:8082/api/accounts/update/${selectedTransferAccount.id}`,
+  //       updatedAccount,
+  //       {
+  //         headers: {
+  //           Authorization: token ? `Bearer ${token}` : undefined,
+  //           "Content-Type": "application/json",
+  //         },
+  //       }
+  //     );
+
+  //     setOpenSnackbar(true);
+  //     setTimeout(() => navigate("/account"), 1000);
+  //   } catch (err) {
+  //     console.error("Transfer hatası:", err);
+  //     setError("Bir hata oluştu, lütfen tekrar deneyin.");
+  //   }
+  // };
 
   const detailsOptions = {
     Kira: ["Ev Kirası", "Ofis Kirası", "Dükkan Kirası", "Depo Kirası"],
@@ -284,7 +345,7 @@ const OutgoingTransferPage = () => {
       <TextField
         label={t("date")}
         type="date"
-        value={selectedTransfer.date || "" }
+        value={selectedTransfer.date || ""}
         onChange={(e) =>
           setSelectedTransfer({ ...selectedTransfer, date: e.target.value })
         }
@@ -307,7 +368,7 @@ const OutgoingTransferPage = () => {
       <Autocomplete
         freeSolo
         options={selectedDetailsOptions}
-        value={selectedTransfer.details || "" }
+        value={selectedTransfer.details || ""}
         onChange={(e, newValue) =>
           setSelectedTransfer({ ...selectedTransfer, details: newValue })
         }
@@ -332,7 +393,7 @@ const OutgoingTransferPage = () => {
 
       <TextField
         label={t("description")}
-        value={selectedTransfer.description || "" }
+        value={selectedTransfer.description || ""}
         onChange={(e) =>
           setSelectedTransfer({
             ...selectedTransfer,

@@ -114,34 +114,6 @@ const DebtCreatePage = () => {
         }
       );
       
-      const { updatedBalance, debt } = response.data;
-
-      // Transfer hareketi oluştur
-      const transferData = {
-        amount: parseFloat(debtAmount),
-        category: "Borç Alma",
-        details: "Borç alma",
-        date: createDate,
-        createDate,
-        user: { id: parseInt(user.id) },
-        account: { id: selectedAddAccount.id },
-        type: "incoming",
-        receiverId: selectedAddAccount.id,
-        inputPreviousBalance: selectedAddAccount.balance,
-        inputNextBalance: updatedBalance,
-      };
-
-      const transferResponse = await axios.post(
-        "http://localhost:8082/api/transfers/create",
-        transferData,
-        {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      
       setOpenSnackbar(true);
       setError();
       setTimeout(() => navigate("/debt"), 1000);

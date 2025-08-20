@@ -1,24 +1,35 @@
 package com.crowallet.backend.service;
 
 import com.crowallet.backend.dto.AccountDTO;
+import com.crowallet.backend.dto.TransferDTO;
+import com.crowallet.backend.entity.Transfer;
 import com.crowallet.backend.mapper.AccountMapper;
+import com.crowallet.backend.mapper.TransferMapper;
 import com.crowallet.backend.mapper.UserMapper;
+import com.crowallet.backend.repository.TransferRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
 import com.crowallet.backend.comman.GeneralException;
 import com.crowallet.backend.entity.Account;
 import com.crowallet.backend.repository.AccountRepository;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @Service
 public class AccountService {
     @Autowired
     private AccountRepository accountRepository;
+
+    @Autowired
+    private TransferRepository transferRepository;
 
     @Autowired
     private TransferService transferService;
@@ -66,4 +77,34 @@ public class AccountService {
         }
         accountRepository.deleteById(id);
     }
+
+    @Transactional
+    public TransferDTO withdrawMoney(TransferDTO transferDTO) {
+        Account account = accountRepository.findById(transferDTO.getAccount().getId())
+                .orElseThrow(() -> new GeneralException("Hesap bulunamadı"));
+
+        BigDecimal amount = transferDTO.getAmount();
+        BigDecimal currentBalance = account.getBalance();
+
+        if (currentBalance.compareTo(amount) < 0) {
+            throw new GeneralException("Yetersiz bakiye");
+        }
+
+        BigDecimal newBalance = currentBalance.subtract(amount);
+        account.setBalance(newBalance);
+        account.setUpdateDate(LocalDateTime.now());
+        accountRepository.save(account);
+
+        transferDTO.setType("outgoing");
+        transferDTO.setCreateDate(LocalDateTime.now());
+        transferDTO.setDate(LocalDate.now());
+        transferDTO.setOutputPreviousBalance(currentBalance);
+        transferDTO.setOutputNextBalance(newBalance);
+
+        Transfer transfer = TransferMapper.INSTANCE.toTransfer(transferDTO);
+        transferRepository.save(transfer);
+
+        return TransferMapper.INSTANCE.toTransferDTO(transfer);
+    }
+
 }
