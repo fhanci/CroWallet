@@ -1,6 +1,7 @@
 package com.crowallet.backend.controller;
 
 import com.crowallet.backend.dto.AccountDTO;
+import com.crowallet.backend.dto.TransferDTO;
 import com.crowallet.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -37,7 +38,7 @@ public class AccountController {
         return accountService.getAccountById(id);
     }
 
-    @PostMapping("create-account")
+    @PostMapping("/create-account")
     public AccountDTO createAccount(@RequestBody AccountDTO account) {
         return accountService.createAccount(account);
     }
@@ -45,6 +46,11 @@ public class AccountController {
     @PutMapping("/update/{id}")
     public AccountDTO updateAccount(@PathVariable Long id, @RequestBody AccountDTO account) {
         return accountService.updateAccount(id, account);
+    }
+
+    @PostMapping("/withdraw-money")
+    public TransferDTO withdrawMoney(@RequestBody TransferDTO transferDTO) {
+        return accountService.withdrawMoney(transferDTO);
     }
 
     @DeleteMapping("/delete/{id}")
