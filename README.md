@@ -101,7 +101,7 @@ CroWallet follows a modular architecture:
 
 - **Frontend:** React + Vite SPA served via Docker
 - **Backend:** Java Spring Boot REST API
-- **Database:** PostgreSQL with JPA/Hibernate
+- **Database:** SQLite with JPA/Hibernate
 - **Deployment:** Docker Compose orchestrates all services
 
 <h2 id="contributors">👥 Contributors</h2>
