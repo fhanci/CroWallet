@@ -14,37 +14,61 @@ import {
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import { useNavigate } from "react-router-dom";
-
+import { t } from "i18next";
+import { useUser } from "../config/UserStore";
+import axios from "axios";
 const DebtCreatePage = () => {
   const navigate = useNavigate();
-  const userId = localStorage.getItem("userId");
-
+  const { user } = useUser();
+  const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
 
-  const [debtAmount, setDebtAmount] = useState("");
-  const [debtCurrency, setDebtCurrency] = useState("");
-  const [toWhom, setToWhom] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [warningPeriod, setWarningPeriod] = useState("");
+  const [debtAmount, setDebtAmount] = useState();
+  const [debtCurrency, setDebtCurrency] = useState();
+  const [toWhom, setToWhom] = useState();
+  const [dueDate, setDueDate] = useState();
+  const [warningPeriod, setWarningPeriod] = useState();
   const [selectedAddAccount, setSelectedAddAccount] = useState(null);
 
-  const [error, setError] = useState("");
+  const [error, setError] = useState();
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await fetch("http://localhost:8082/api/accounts");
-        if (!res.ok) throw new Error("Hesaplar alınamadı");
-        const data = await res.json();
-        const userAccounts = data.filter((a) => a.user?.id === parseInt(userId));
-        setAccounts(userAccounts);
+        const response = await axios.get(
+          `http://localhost:8082/api/accounts/get/${user.id}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
+        setAccounts(response.data);
       } catch (err) {
-        console.error(err);
+        console.error("Hesaplar alınamadı:", err);
       }
     };
     fetchAccounts();
-  }, [userId]);
+  }, [user.id]);
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:8082/api/accounts/get/${user.id}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
+        setAccounts(response.data);
+      } catch (err) {
+        console.error("Hesaplar alınamadı:", err);
+      }
+    };
+    fetchAccounts();
+  }, [user.id]);
 
   const handleAddDebt = async () => {
     if (
@@ -60,12 +84,12 @@ const DebtCreatePage = () => {
     }
 
     if (selectedAddAccount.currency !== debtCurrency) {
-      setError("Seçilen hesabın para birimi ile borcun para birimi uyuşmuyor!");
+      setError(t("currencyMismatch"));
       return;
     }
 
     try {
-      const createDate = new Date().toISOString();
+      const createDate = new Date()
 
       const newDebt = {
         debtAmount: parseFloat(debtAmount),
@@ -74,36 +98,23 @@ const DebtCreatePage = () => {
         dueDate,
         warningPeriod,
         status: "odenmedi",
-        user: { id: parseInt(userId) },
+        user: { id: user.id },
         account: { id: selectedAddAccount.id }, // Borca bağlı hesap burada atanıyor
       };
 
       // Borç kaydı oluştur
-      const response = await fetch("http://localhost:8082/api/debts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newDebt),
-      });
-
-      if (!response.ok) throw new Error("Borç işlemi başarısız!");
-
-      // Hesap bakiyesini güncelle
-      const updatedBalance = selectedAddAccount.balance + parseFloat(debtAmount);
-
-      const accountResponse = await fetch(
-        `http://localhost:8082/api/accounts/update/${selectedAddAccount.id}`,
+      const response = await axios.post(
+        "http://localhost:8082/api/debts/create",
+        newDebt,
         {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...selectedAddAccount,
-            balance: updatedBalance,
-            updateDate: createDate,
-          }),
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
+          },
         }
       );
-
-      if (!accountResponse.ok) throw new Error("Hesap bakiyesi güncellenemedi!");
+      
+      const { updatedBalance, debt } = response.data;
 
       // Transfer hareketi oluştur
       const transferData = {
@@ -112,24 +123,27 @@ const DebtCreatePage = () => {
         details: "Borç alma",
         date: createDate,
         createDate,
-        user: { id: parseInt(userId) },
+        user: { id: parseInt(user.id) },
         account: { id: selectedAddAccount.id },
         type: "incoming",
-        person: toWhom,
+        receiverId: selectedAddAccount.id,
         inputPreviousBalance: selectedAddAccount.balance,
         inputNextBalance: updatedBalance,
       };
 
-      const transferResponse = await fetch("http://localhost:8082/api/transfers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(transferData),
-      });
-
-      if (!transferResponse.ok) throw new Error("Transfer işlemi kaydedilemedi!");
-
+      const transferResponse = await axios.post(
+        "http://localhost:8082/api/transfers/create",
+        transferData,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      
       setOpenSnackbar(true);
-      setError("");
+      setError();
       setTimeout(() => navigate("/debt"), 1000);
     } catch (err) {
       console.error(err);
@@ -140,12 +154,12 @@ const DebtCreatePage = () => {
   return (
     <Container maxWidth="sm" sx={{ mt: 4 }}>
       <Typography variant="h5" align="center" gutterBottom>
-        Borç Ekle
+        {t("addDebt")}
       </Typography>
 
       <TextField
-        label="Kime"
-        placeholder="Borçlu olduğunuz kişiyi girin"
+        label={t("toWhom")}
+        placeholder={t("toWhomPlaceholder")}
         value={toWhom}
         onChange={(e) => setToWhom(e.target.value)}
         fullWidth
@@ -157,7 +171,7 @@ const DebtCreatePage = () => {
       />
 
       <TextField
-        label="Miktar"
+        label={t("amount")}
         type="number"
         value={debtAmount}
         onChange={(e) => setDebtAmount(e.target.value)}
@@ -170,23 +184,23 @@ const DebtCreatePage = () => {
       />
 
       <FormControl fullWidth margin="normal" required>
-        <InputLabel id="currency-label">Para Birimi</InputLabel>
+        <InputLabel id="currency-label">{t("currency")}</InputLabel>
         <Select
           labelId="currency-label"
           id="currency-select"
           value={debtCurrency}
           onChange={(e) => setDebtCurrency(e.target.value)}
-          label="Para Birimi"
+          label={t("currency")}
           required
         >
-          <MenuItem value="EUR">€ EUR</MenuItem>
-          <MenuItem value="USD">$ USD</MenuItem>
-          <MenuItem value="TRY">₺ TRY</MenuItem>
+          <MenuItem value="EUR">{t("eur")}</MenuItem>
+          <MenuItem value="USD">{t("usd")}</MenuItem>
+          <MenuItem value="TRY">{t("try")}</MenuItem>
         </Select>
       </FormControl>
 
       <TextField
-        label="Son Ödeme Tarihi"
+        label={t("dueDate")}
         type="date"
         value={dueDate}
         onChange={(e) => setDueDate(e.target.value)}
@@ -200,9 +214,9 @@ const DebtCreatePage = () => {
       />
 
       <TextField
-        label="Uyarılma Süresi (Gün)"
+        label={t("warningPeriod")}
         type="number"
-        placeholder="Son ödeme tarihinden kaç gün önce size hatırlatalım?"
+        placeholder={t("warningPeriodPlaceholder")}
         value={warningPeriod}
         onChange={(e) => setWarningPeriod(e.target.value)}
         fullWidth
@@ -214,12 +228,14 @@ const DebtCreatePage = () => {
       />
 
       <FormControl fullWidth margin="normal" required>
-        <InputLabel id="account-label">Hesap Seçin</InputLabel>
+        <InputLabel id="account-label">{t("selectAccount")}</InputLabel>
         <Select
           labelId="account-label"
           id="account-select"
-          value={selectedAddAccount?.id || ""}
-          onChange={(e) => setSelectedAddAccount(accounts.find((a) => a.id === e.target.value))}
+          value={selectedAddAccount?.id || "" }
+          onChange={(e) =>
+            setSelectedAddAccount(accounts.find((a) => a.id === e.target.value))
+          }
           label="Hesap Seçin"
           required
         >
@@ -230,10 +246,13 @@ const DebtCreatePage = () => {
           ))}
         </Select>
 
-        <Typography variant="caption" color="textSecondary" sx={{ mt: 0.5, ml: 1 }}>
-          Borcunuz seçtiğiniz hesaba gelir olarak eklenecektir.
+        <Typography
+          variant="caption"
+          color="textSecondary"
+          sx={{ mt: 0.5, ml: 1 }}
+        >
+          {t("accountNote")}
         </Typography>
-
       </FormControl>
 
       {error && (
@@ -257,7 +276,7 @@ const DebtCreatePage = () => {
             !selectedAddAccount
           }
         >
-          Kaydet
+          {t("save")}
         </Button>
       </Box>
 
@@ -268,7 +287,7 @@ const DebtCreatePage = () => {
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Alert onClose={() => setOpenSnackbar(false)} severity="success">
-          Borç başarıyla eklendi!
+          {t("debtAddedSuccess")}
         </Alert>
       </Snackbar>
     </Container>

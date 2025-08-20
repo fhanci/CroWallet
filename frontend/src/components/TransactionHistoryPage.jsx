@@ -1,54 +1,75 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
-  Container, Typography, Box, Table, TableBody, TableCell, TableContainer,
-  TextField, TableHead, Dialog, DialogTitle, DialogContent, DialogActions,
-  TableRow, IconButton, Collapse, Paper, Button, Menu, MenuItem, InputAdornment
+  Container,
+  Typography,
+  Box,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TextField,
+  TableHead,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TableRow,
+  IconButton,
+  Collapse,
+  Paper,
+  Button,
+  Menu,
+  MenuItem,
+  InputAdornment,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SearchIcon from "@mui/icons-material/Search";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import TrendingDownIcon from "@mui/icons-material/TrendingDown";
+import { useTranslation } from "react-i18next";
+import { useUser } from "../config/UserStore";
+import axios from "axios";
+import Graph from "./Graph";
 
 const TransactionHistoryPage = () => {
+  const { user } = useUser();
+  const { t } = useTranslation();
   const { accountId } = useParams();
   const [transactions, setTransactions] = useState([]);
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [expandedTransaction, setExpandedTransaction] = useState(null);
-  const [error, setError] = useState("");
-  const [filterType, setFilterType] = useState("");
+  const [error, setError] = useState();
+  const [filterType, setFilterType] = useState();
   const [anchorEl, setAnchorEl] = useState(null);
-  const [accountName, setAccountName] = useState("");
+  const [accountName, setAccountName] = useState();
   const [dateFilterDialogOpen, setDateFilterDialogOpen] = useState(false);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [accountBalance, setAccountBalance] = useState(null); // güncel bakiye için
-  const [accountCurrency, setAccountCurrency] = useState("");// güncel bakiye için
-
-
-  
+  const [startDate, setStartDate] = useState();
+  const [endDate, setEndDate] = useState();
+  const [searchQuery, setSearchQuery] = useState();
+  const [accountBalance, setAccountBalance] = useState(null);
+  const [accountCurrency, setAccountCurrency] = useState();
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`http://localhost:8082/api/transfers`);
-        if (!response.ok) throw new Error("Hesap hareketleri getirilemedi.");
-        const data = await response.json();
-
-        const filteredData = data.filter(
-          (transaction) => transaction.account.id.toString() === accountId.toString()
+        const response = await axios.get(
+          `http://localhost:8082/api/transfers/get/${accountId}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
         );
-        
 
-        if (filteredData.length > 0) {
-          setAccountName(`${filteredData[0].account.accountName} - ${filteredData[0].account.currency}`);
+        if (response.data.length > 0) {
+          setAccountName(
+            `${response.data[0].account.accountName} - ${response.data[0].account.currency}`
+          );
         }
 
-        const sortedData = filteredData.sort(
+        const sortedData = response.data.sort(
           (a, b) => new Date(b.createDate) - new Date(a.createDate)
         );
-
         setTransactions(sortedData);
         setFilteredTransactions(sortedData);
       } catch (error) {
@@ -66,17 +87,22 @@ const TransactionHistoryPage = () => {
   // güncel bakiye için
   const fetchAccountBalance = async () => {
     try {
-      const res = await fetch(`http://localhost:8082/api/accounts/${accountId}`);
-      if (!res.ok) throw new Error("Hesap bilgileri getirilemedi.");
-      const account = await res.json();
-      setAccountBalance(account.balance);
-      setAccountCurrency(account.currency);
+      const res = await axios.get(
+        `http://localhost:8082/api/accounts/${accountId}`,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        }
+      );
+
+      setAccountBalance(res.data.balance);
+      setAccountCurrency(res.data.currency);
     } catch (e) {
       console.error("Bakiye çekme hatası:", e);
     }
   };
 
-  
   const applyFilters = () => {
     let filtered = [...transactions];
 
@@ -93,9 +119,9 @@ const TransactionHistoryPage = () => {
       const sq = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (t) =>
-          (t.details ? t.details.toLowerCase() : "").includes(sq) ||
-          (t.category ? t.category.toLowerCase() : "").includes(sq) ||
-          (t.person ? t.person.toLowerCase() : "").includes(sq)
+          (t.details ? t.details.toLowerCase() : "" ).includes(sq) ||
+          (t.category ? t.category.toLowerCase() : "" ).includes(sq) ||
+          (t.person ? t.person.toLowerCase() : "" ).includes(sq)
       );
     }
 
@@ -108,7 +134,9 @@ const TransactionHistoryPage = () => {
   }, [transactions, filterType, startDate, endDate, searchQuery]);
 
   const handleExpandTransaction = (transactionId) => {
-    setExpandedTransaction((prev) => (prev === transactionId ? null : transactionId));
+    setExpandedTransaction((prev) =>
+      prev === transactionId ? null : transactionId
+    );
   };
 
   const handleOpenMenu = (event) => setAnchorEl(event.currentTarget);
@@ -126,51 +154,54 @@ const TransactionHistoryPage = () => {
   const handleCloseDateFilter = () => setDateFilterDialogOpen(false);
   const applyDateFilter = () => handleCloseDateFilter();
   const clearFilter = () => {
-    setFilterType("");
-    setStartDate("");
-    setEndDate("");
-    setSearchQuery("");
+    setFilterType();
+    setStartDate();
+    setEndDate();
+    setSearchQuery();
   };
 
   const handleSearch = (event) => {
     setSearchQuery(event.target.value.toLowerCase());
   };
 
-  const getIncomeOrExpense = (transaction) => {  
+  const getIncomeOrExpense = (transaction) => {
     if (transaction.type === "inter-account") {
-      if (transaction.outputPreviousBalance !== null && transaction.account.id.toString() === accountId.toString()) {
-        return "Gider";
+      if (transaction.account.id.toString() === accountId.toString()) {
+        return t("expense");
       }
-      if (transaction.inputPreviousBalance !== null && transaction.account.id.toString() === accountId.toString()) {
-        return "Gelir";
+      if (transaction.receiverId.toString() === accountId.toString()) {
+        return t("income");
       }
       return "problem var";
     }
-  
-    return transaction.type === "incoming" ? "Gelir" : "Gider";
+
+    return transaction.type === "incoming" ? t("income") : t("expense");
   };
-  
+
   const getTransactionTypeLabel = (transaction) => {
     const incomeOrExpense = getIncomeOrExpense(transaction);
-  
+
     if (transaction.type === "inter-account") {
       const otherAccountName = transaction.person || "";
-      return `Hesaplar Arası - ${incomeOrExpense}${otherAccountName ? " - " + otherAccountName : ""}`;
+      return `${t("interAccount")} - ${incomeOrExpense}${
+        otherAccountName ? " - " + otherAccountName : "" 
+      }`;
     }
-  
+
     const kategori = transaction.category || "";
     const detay = transaction.details || "";
     return `${kategori} - ${incomeOrExpense}${detay ? " - " + detay : ""}`;
   };
 
-  
   return (
     <Container sx={{ px: { xs: 1, sm: 2, md: 4 }, mt: 2 }}>
       <Typography
         variant="h5"
         sx={{ mb: 3, textAlign: { xs: "center", sm: "left" } }}
       >
-        {accountName ? `${accountName} - Hesap Hareketleri` : "Hesap Hareketleri"}
+        {accountName
+          ? `${accountName} - ${t("transactionHistoryTitle")}`
+          : t("transactionHistoryTitle")}
       </Typography>
 
       {/* güncel bakiye için */}
@@ -198,7 +229,7 @@ const TransactionHistoryPage = () => {
               justifyContent: "center",
             }}
           >
-            Güncel Bakiye: {accountBalance} {accountCurrency}
+            {t("currentBalance")}: {accountBalance} {accountCurrency}
           </Typography>
         </Box>
       )}
@@ -216,15 +247,36 @@ const TransactionHistoryPage = () => {
           px: { xs: 1, sm: 3 },
         }}
       >
+        {filteredTransactions.length > 0 && (
+          <Box
+            sx={{
+              mt: 4,
+              mx: "auto",
+              px: { xs: 2, sm: 4 },
+              width: "100%",
+              maxWidth: "1000px",
+              minHeight: 400,
+              borderRadius: 2,
+              boxShadow: 3,
+              p: 3,
+            }}
+          >
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              İşlem Tutarları Grafiği
+            </Typography>
+            <Graph transactions={filteredTransactions} />
+          </Box>
+        )}
+
         <Button variant="contained" onClick={handleOpenMenu}>
-          Filtrele
+          {t("filter")}
         </Button>
         <Button
           variant="contained"
           onClick={clearFilter}
           disabled={!filterType && !startDate && !endDate && !searchQuery}
         >
-          Kaldır
+          {t("clear")}
         </Button>
 
         <Box sx={{ minWidth: 200, maxWidth: 300 }}>
@@ -232,7 +284,7 @@ const TransactionHistoryPage = () => {
             variant="outlined"
             size="small"
             onChange={handleSearch}
-            placeholder="Ara..."
+            placeholder={t("searchPlaceholder")}
             fullWidth
             InputProps={{
               startAdornment: (
@@ -245,28 +297,47 @@ const TransactionHistoryPage = () => {
         </Box>
       </Box>
 
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleCloseMenu}>
-        <MenuItem onClick={() => applyFilter("incoming")}>Gelen İşlem</MenuItem>
-        <MenuItem onClick={() => applyFilter("outgoing")}>Giden İşlem</MenuItem>
-        <MenuItem onClick={() => applyFilter("inter-account")}>Hesaplar Arası</MenuItem>
-        <MenuItem onClick={handleOpenDateFilter}>Tarihe Göre Filtrele</MenuItem>
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleCloseMenu}
+      >
+        <MenuItem onClick={() => applyFilter("incoming")}>
+          {t("incomingTransaction")}
+        </MenuItem>
+        <MenuItem onClick={() => applyFilter("outgoing")}>
+          {t("outgoingTransaction")}
+        </MenuItem>
+        <MenuItem onClick={() => applyFilter("inter-account")}>
+          {t("interAccount")}
+        </MenuItem>
+        <MenuItem onClick={handleOpenDateFilter}>{t("filterByDate")}</MenuItem>
       </Menu>
 
-      <TableContainer component={Paper} sx={{ mt: 4, mx: { xs: 0, sm: 2, md: 6 } }}>
+      <TableContainer
+        component={Paper}
+        sx={{ mt: 4, mx: { xs: 0, sm: 2, md: 6 } }}
+      >
         <Table size="small">
           <TableHead>
             <TableRow>
               <TableCell></TableCell>
-              <TableCell><strong>İşlem Türü</strong></TableCell>
-              <TableCell align="right"><strong>Miktar</strong></TableCell>
-              <TableCell align="center"><strong>Girilen Tarih</strong></TableCell>
+              <TableCell>
+                <strong>{t("transactionType")}</strong>
+              </TableCell>
+              <TableCell align="right">
+                <strong>{t("amount")} </strong>
+              </TableCell>
+              <TableCell align="center">
+                <strong>{t("enteredDate")} </strong>
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredTransactions.length > 0 ? (
               filteredTransactions.map((transaction, idx) => {
                 const incomeOrExpense = getIncomeOrExpense(transaction);
-                const isIncome = incomeOrExpense === "Gelir";
+                const isIncome = incomeOrExpense === t("income");
                 const textColor = isIncome ? "#0f5132" : "#842029";
 
                 return (
@@ -286,9 +357,14 @@ const TransactionHistoryPage = () => {
                           <ExpandMoreIcon />
                         </IconButton>
                       </TableCell>
-                      <TableCell sx={{ color: textColor }}>{getTransactionTypeLabel(transaction)}</TableCell>
+                      <TableCell sx={{ color: textColor }}>
+                        {getTransactionTypeLabel(transaction)}
+                      </TableCell>
                       <TableCell align="right" sx={{ color: textColor }}>
-                        {(isIncome ? "+ " : "- ") + Math.abs(transaction.amount) + " " + transaction.account.currency}
+                        {(isIncome ? "+ " : "- ") +
+                          Math.abs(transaction.amount) +
+                          " " +
+                          transaction.account.currency}
                       </TableCell>
                       <TableCell align="center" sx={{ color: textColor }}>
                         {transaction.date}
@@ -296,25 +372,50 @@ const TransactionHistoryPage = () => {
                     </TableRow>
                     <TableRow>
                       <TableCell colSpan={4}>
-                        <Collapse in={expandedTransaction === transaction.id} timeout="auto" unmountOnExit>
+                        <Collapse
+                          in={expandedTransaction === transaction.id}
+                          timeout="auto"
+                          unmountOnExit
+                        >
                           <Box sx={{ mt: 2, pl: 2 }}>
-                            <Typography variant="body2">Kategori: {transaction.category}</Typography>
-                            <Typography variant="body2">Açıklama: {transaction.description}</Typography>
                             <Typography variant="body2">
-                              İşlem Tarihi: {new Date(transaction.createDate).toLocaleString("tr-TR")}
+                              {t("category")}: {transaction.category}
                             </Typography>
-                            <Typography variant="body2">Girilen Tarih: {transaction.date}</Typography>
+                            <Typography variant="body2">
+                              {t("description")}: {transaction.description}
+                            </Typography>
+                            <Typography variant="body2">
+                              {t("transactionDate")}:{" "}
+                              {new Date(transaction.createDate).toLocaleString(
+                                "tr-TR"
+                              )}
+                            </Typography>
+                            <Typography variant="body2">
+                              {t("enteredDate")}: {transaction.date}
+                            </Typography>
                             {transaction.inputPreviousBalance !== null && (
-                              <Typography variant="body2">Önceki Bakiye: {transaction.inputPreviousBalance}</Typography>
+                              <Typography variant="body2">
+                                {t("previousBalance")}:{" "}
+                                {transaction.inputPreviousBalance}
+                              </Typography>
                             )}
                             {transaction.inputNextBalance !== null && (
-                              <Typography variant="body2">Sonraki Bakiye: {transaction.inputNextBalance}</Typography>
+                              <Typography variant="body2">
+                                {t("nextBalance")}:{" "}
+                                {transaction.inputNextBalance}
+                              </Typography>
                             )}
                             {transaction.outputPreviousBalance !== null && (
-                              <Typography variant="body2">Önceki Bakiye: {transaction.outputPreviousBalance}</Typography>
+                              <Typography variant="body2">
+                                {t("previousBalance")}:{" "}
+                                {transaction.outputPreviousBalance}
+                              </Typography>
                             )}
                             {transaction.outputNextBalance !== null && (
-                              <Typography variant="body2">Sonraki Bakiye: {transaction.outputNextBalance}</Typography>
+                              <Typography variant="body2">
+                                {t("nextBalance")}:{" "}
+                                {transaction.outputNextBalance}
+                              </Typography>
                             )}
                           </Box>
                         </Collapse>
@@ -327,7 +428,7 @@ const TransactionHistoryPage = () => {
               <TableRow>
                 <TableCell colSpan={4}>
                   <Typography variant="body2" color="textSecondary">
-                    Bu hesapta henüz hareket bulunmuyor.
+                    {t("noTransaction")}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -337,10 +438,10 @@ const TransactionHistoryPage = () => {
       </TableContainer>
 
       <Dialog open={dateFilterDialogOpen}>
-        <DialogTitle>Tarihe Göre Filtrele</DialogTitle>
+        <DialogTitle>{t("filterByDate")}</DialogTitle>
         <DialogContent>
           <TextField
-            label="Başlangıç Tarihi ve Saati"
+            label={t("startDateLabel")}
             type="datetime-local"
             fullWidth
             value={startDate}
@@ -349,7 +450,7 @@ const TransactionHistoryPage = () => {
             InputLabelProps={{ shrink: true }}
           />
           <TextField
-            label="Bitiş Tarihi ve Saati"
+            label={t("endDateLabel")}
             type="datetime-local"
             fullWidth
             value={endDate}
@@ -359,8 +460,12 @@ const TransactionHistoryPage = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button variant="outlined" onClick={handleCloseDateFilter}>İptal</Button>
-          <Button onClick={applyDateFilter} variant="contained" color="success">Filtrele</Button>
+          <Button variant="outlined" onClick={handleCloseDateFilter}>
+            {t("cancel")}
+          </Button>
+          <Button onClick={applyDateFilter} variant="contained" color="success">
+            {t("filter")}
+          </Button>
         </DialogActions>
       </Dialog>
     </Container>
