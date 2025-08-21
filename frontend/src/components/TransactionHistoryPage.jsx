@@ -48,6 +48,7 @@ const TransactionHistoryPage = () => {
   const [accountBalance, setAccountBalance] = useState(null);
   const [accountCurrency, setAccountCurrency] = useState();
   const token = localStorage.getItem("token");
+  const [graphTransactions, setGraphTransactions] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -72,6 +73,7 @@ const TransactionHistoryPage = () => {
         );
         setTransactions(sortedData);
         setFilteredTransactions(sortedData);
+        setGraphTransactions(sortedData);
       } catch (error) {
         console.error("Hata:", error);
         setError("Bir hata oluştu, lütfen tekrar deneyin.");
@@ -108,20 +110,22 @@ const TransactionHistoryPage = () => {
 
     if (filterType) {
       filtered = filtered.filter((t) => t.type === filterType);
+      console.log(filterTyp)
     }
     if (startDate && endDate) {
       filtered = filtered.filter((t) => {
         const date = new Date(t.createDate);
         return date >= new Date(startDate) && date <= new Date(endDate);
       });
+      setGraphTransactions(filtered);
     }
     if (searchQuery) {
       const sq = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (t) =>
-          (t.details ? t.details.toLowerCase() : "" ).includes(sq) ||
-          (t.category ? t.category.toLowerCase() : "" ).includes(sq) ||
-          (t.person ? t.person.toLowerCase() : "" ).includes(sq)
+          (t.details ? t.details.toLowerCase() : "").includes(sq) ||
+          (t.category ? t.category.toLowerCase() : "").includes(sq) ||
+          (t.person ? t.person.toLowerCase() : "").includes(sq)
       );
     }
 
@@ -184,7 +188,7 @@ const TransactionHistoryPage = () => {
     if (transaction.type === "inter-account") {
       const otherAccountName = transaction.person || "";
       return `${t("interAccount")} - ${incomeOrExpense}${
-        otherAccountName ? " - " + otherAccountName : "" 
+        otherAccountName ? " - " + otherAccountName : ""
       }`;
     }
 
@@ -247,27 +251,6 @@ const TransactionHistoryPage = () => {
           px: { xs: 1, sm: 3 },
         }}
       >
-        {filteredTransactions.length > 0 && (
-          <Box
-            sx={{
-              mt: 4,
-              mx: "auto",
-              px: { xs: 2, sm: 4 },
-              width: "100%",
-              maxWidth: "1000px",
-              minHeight: 400,
-              borderRadius: 2,
-              boxShadow: 3,
-              p: 3,
-            }}
-          >
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              {t("AccountBalanceChart")}
-            </Typography>
-            <Graph transactions={filteredTransactions} accountId={accountId} />
-          </Box>
-        )}
-
         <Button variant="contained" onClick={handleOpenMenu}>
           {t("filter")}
         </Button>
@@ -296,7 +279,26 @@ const TransactionHistoryPage = () => {
           />
         </Box>
       </Box>
-
+      {filteredTransactions.length > 0 && (
+        <Box
+          sx={{
+            mt: 4,
+            mx: "auto",
+            px: { xs: 2, sm: 4 },
+            width: "100%",
+            maxWidth: "1000px",
+            minHeight: 400,
+            borderRadius: 2,
+            boxShadow: 3,
+            p: 3,
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            {t("AccountBalanceChart")}
+          </Typography>
+          <Graph transactions={graphTransactions} accountId={accountId} />
+        </Box>
+      )}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}

@@ -8,7 +8,6 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-// Yardımcı fonksiyon
 const getIncomeOrExpense = (transaction, accountId) => {
   if (transaction.type === "inter-account") {
     if (transaction.account.id.toString() === accountId.toString()) {

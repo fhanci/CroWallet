@@ -65,12 +65,6 @@ const MenuPage = ({ isDrawerOpen, setIsDrawerOpen }) => {
     setLogoutDialogOpen(true);
   };
 
-  // const handleLogout = () => {
-  //   localStorage.clear(); // Tüm kullanıcı verilerini sil
-  //   navigate("/login"); // Login sayfasına yönlendir
-  //   // window.location.reload(); // Sayfa tamamen sıfırlansın
-  // };
-
   const itemStyle = {
     cursor: "pointer",
     backgroundColor: "rgba(230, 240, 230)",
@@ -289,7 +283,6 @@ const MenuPage = ({ isDrawerOpen, setIsDrawerOpen }) => {
                 onClick={() => {
                   navigate("/debt");
                   setIsDrawerOpen(false);
-                  // window.location.reload();
                 }}
                 sx={itemStyle}
               >
@@ -303,7 +296,6 @@ const MenuPage = ({ isDrawerOpen, setIsDrawerOpen }) => {
                 onClick={() => {
                   navigate("/debt/create");
                   setIsDrawerOpen(false);
-                  // window.location.reload();
                 }}
                 sx={itemStyle}
               >
@@ -317,7 +309,6 @@ const MenuPage = ({ isDrawerOpen, setIsDrawerOpen }) => {
                 onClick={() => {
                   navigate("/debt/edit");
                   setIsDrawerOpen(false);
-                  // window.location.reload();
                 }}
                 sx={itemStyle}
               >
@@ -331,7 +322,6 @@ const MenuPage = ({ isDrawerOpen, setIsDrawerOpen }) => {
                 onClick={() => {
                   navigate("/debt/pay");
                   setIsDrawerOpen(false);
-                  // window.location.reload();
                 }}
                 sx={itemStyle}
               >

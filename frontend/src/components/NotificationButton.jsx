@@ -6,7 +6,6 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 import { useTranslation } from "react-i18next";
 
-// ⛳️ Burada eksikti:
 const NotificationButton = ({
   isDrawerOpen,
   setIsDrawerOpen,
@@ -21,7 +20,7 @@ const NotificationButton = ({
   const handleClick = () => {
     navigate("/notification");
     if (isMobile && setIsDrawerOpen) {
-      setIsDrawerOpen(false); // ✅ Mobilde menüyü kapat
+      setIsDrawerOpen(false);
     }
   };
 

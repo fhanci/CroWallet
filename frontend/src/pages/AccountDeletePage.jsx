@@ -53,28 +53,6 @@ const AccountDeletePage = () => {
     fetchAccounts();
   }, [user.id]);
 
-  // useEffect(() => {
-  //   const fetchUser = async () => {
-  //     try {
-  //       const res = await fetch(`http://localhost:8082/api/users/${userId}`, {
-  //         method: "GET",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: token ? `Bearer ${token}` : undefined,
-  //         },
-  //       });
-
-  //       if (res.ok) {
-  //         const data = await res.json();
-  //         setUser(data);
-  //       }
-  //     } catch (err) {
-  //       console.error("Kullanıcı bilgileri alınamadı:", err);
-  //     }
-  //   };
-  //   fetchUser();
-  // }, [userId]);
-
   const handleVerifyPassword = async () => {
     try {
       const res = await axios.post(

@@ -173,14 +173,21 @@
   "dueDateTwo": "Son Tarih",
 
   "noTransaction": "Bu hesapta henüz hareket bulunmuyor.",
-  
+
   "noPageError": "Aradığınız sayfa mevcut değil veya taşınmış olabilir.",
-  
-  "pageNotFound" : "404 - Sayfa Bulunamadı",
+
+  "pageNotFound": "404 - Sayfa Bulunamadı",
   "returnMain": "Ana Sayfaya Dön",
   "AccountBalanceChart": "Hesap Bakiyesi Grafiği",
   "confirmLogoutTitle": "Çıkış Yap",
   "confirmLogoutText": "Oturumunuzu kapatmak istediğinizden emin misiniz?",
+  "chooseAccount": "Hesap Seçin",
+  "helperText": "Bu borcun TL karşılığını manuel olarak girin",
+  "verifyPasswordTitle": "Şifre Doğrulama",
+  "currentPassword": "Mevcut Şifre",
+  "invalidCurrentPassword": "Mevcut şifre yanlış",
+  "deleteFailed": "Hesap silinemedi",
+  "updateFailed": "Güncelleme başarısız oldu",
   "incomeDetails": {
     "Maaş": ["Aylık Maaş", "Prim", "Ek Gelir"],
     "Serbest Meslek": ["Proje Ödemesi", "Danışmanlık", "Serbest Çalışma"],

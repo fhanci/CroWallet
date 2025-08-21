@@ -113,75 +113,6 @@ const IncomingTransferPage = () => {
     }
   };
 
-  // const handleSubmit = async () => {
-  //   if (
-  //     !selectedTransferAccount ||
-  //     !selectedTransfer.amount ||
-  //     !selectedTransfer.category ||
-  //     !selectedTransfer.date ||
-  //     (selectedTransferAccount.currency !== "TRY" &&
-  //       !selectedTransfer.exchangeRate)
-  //   ) {
-  //     setError(t("requiredFieldsError"));
-  //     return;
-  //   }
-
-  //   const amount = parseFloat(selectedTransfer.amount);
-  //   const createDate = new Date(
-  //     now.getTime() + 3 * 60 * 60 * 1000
-  //   ).toISOString();
-
-  //   const updatedTransfer = {
-  //     ...selectedTransfer,
-  //     exchangeRate:
-  //       selectedTransferAccount.currency === "TRY"
-  //         ? 1
-  //         : selectedTransfer.exchangeRate,
-  //     type: "incoming",
-  //     createDate,
-  //     user: { id: user.id },
-  //     account: { id: parseInt(selectedTransferAccount.id) },
-  //     inputPreviousBalance: selectedTransferAccount.balance,
-  //     inputNextBalance: selectedTransferAccount.balance + amount,
-  //   };
-
-  //   const updatedAccount = {
-  //     ...selectedTransferAccount,
-  //     balance: selectedTransferAccount.balance + amount,
-  //     updateDate: createDate,
-  //   };
-
-  //   try {
-  //     const response = await axios.post(
-  //       "http://localhost:8082/api/transfers/create",
-  //       updatedTransfer,
-  //       {
-  //         headers: {
-  //           Authorization: token ? `Bearer ${token}` : undefined,
-  //           "Content-Type": "application/json",
-  //         },
-  //       }
-  //     );
-
-  //     const response2 = await axios.put(
-  //       `http://localhost:8082/api/accounts/update/${selectedTransferAccount.id}`,
-  //       updatedAccount,
-  //       {
-  //         headers: {
-  //           Authorization: token ? `Bearer ${token}` : undefined,
-  //           "Content-Type": "application/json",
-  //         },
-  //       }
-  //     );
-
-  //     setOpenSnackbar(true);
-  //     setTimeout(() => navigate("/account"), 1000);
-  //   } catch (err) {
-  //     console.error("Transfer hatası:", err);
-  //     setError("Bir hata oluştu, lütfen tekrar deneyin.");
-  //   }
-  // };
-
   const detailsOptions = t("incomeDetails", { returnObjects: true });
 
   const selectedCategory = selectedTransfer?.category || "";
@@ -199,7 +130,7 @@ const IncomingTransferPage = () => {
           labelId="account-label"
           id="account-select"
           value={selectedTransferAccount?.id || ""}
-          label="Hesap Seçin*"
+          label={t("chooseAccount")}
           onChange={(e) =>
             setSelectedTransferAccount(
               accounts.find((acc) => acc.id === e.target.value)

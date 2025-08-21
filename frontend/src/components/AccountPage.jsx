@@ -28,7 +28,6 @@ const AccountPage = () => {
     "#6A89CC",
   ];
 
-  // fetch user accounts - but fetch all accounts
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
@@ -49,7 +48,6 @@ const AccountPage = () => {
     fetchAccounts();
   }, [user.id]);
 
-  //fetchs user transfers
   useEffect(() => {
     const fetchTransfers = async () => {
       try {
@@ -70,7 +68,6 @@ const AccountPage = () => {
     fetchTransfers();
   }, [user.id]);
 
-  //fetch user debts
   useEffect(() => {
     const fetchDebts = async () => {
       try {
