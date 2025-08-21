@@ -46,6 +46,7 @@
   "cancel": "Cancelar",
   "deleteFailed": "No se pudo eliminar la cuenta",
   "apply": "Aplicar",
+  "actions": "Acciones",
   "defaultIncomeOptions": [
     "Salario",
     "Trabajo Freelance",

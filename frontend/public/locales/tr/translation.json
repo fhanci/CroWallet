@@ -188,6 +188,7 @@
   "invalidCurrentPassword": "Mevcut şifre yanlış",
   "deleteFailed": "Hesap silinemedi",
   "updateFailed": "Güncelleme başarısız oldu",
+  "actions": "Aksiyonlar",
   "incomeDetails": {
     "Maaş": ["Aylık Maaş", "Prim", "Ek Gelir"],
     "Serbest Meslek": ["Proje Ödemesi", "Danışmanlık", "Serbest Çalışma"],
