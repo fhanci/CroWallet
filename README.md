@@ -62,13 +62,13 @@ This method is ideal for quickly starting and testing the application.
 ### 🛠️ Development Setup (Recommended for Contributors)
 However, if you plan to contribute or develop features, it's recommended to set up the environment manually:
 
-#### Start the SQLite web interface
+Start the SQLite web interface:
 
 ```
 docker run --name sqlite-web -p 8080:8080 -v $(pwd)/data:/data ghcr.io/coleifer/sqlite-web:latest /data/database.db
 ```
 
-#### Then,
+Then,
 
 - Run `ApiApplication.java` from your IDE
 - Launch the frontend:
