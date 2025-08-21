@@ -39,6 +39,10 @@ CroWallet is a modular full-stack personal finance manager built with React + Vi
 
 **Docker-Ready**: Easily deployable with Docker Compose for local development and production.
 
+<h3> Todo </h3>
+
+<a href="./todo.md">Todo Details</a>
+
 <br/>
 
 <h2 id="system-startup">🚀 System Startup</h2>
