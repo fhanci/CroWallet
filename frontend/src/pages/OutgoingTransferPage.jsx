@@ -129,83 +129,6 @@ const OutgoingTransferPage = () => {
     }
   };
 
-  // const handleSubmit = async () => {
-  //   // Detay zorunluluğunu kaldırdık, o yüzden details kontrolü kaldırıldı
-  //   if (
-  //     !selectedTransferAccount ||
-  //     !selectedTransfer.amount ||
-  //     !selectedTransfer.category ||
-  //     !selectedTransfer.date ||
-  //     (selectedTransferAccount.currency !== "TRY" &&
-  //       !selectedTransfer.exchangeRate)
-  //   ) {
-  //     setError(t("requiredFieldsError"));
-  //     return;
-  //   }
-
-  //   const amount = parseFloat(selectedTransfer.amount);
-  //   const currentBalance = parseFloat(selectedTransferAccount.balance);
-
-  //   if (currentBalance < amount) {
-  //     setError(t("insufficientBalance"));
-  //     return;
-  //   }
-
-  //   const createDate = new Date(
-  //     now.getTime() + 3 * 60 * 60 * 1000
-  //   ).toISOString();
-
-  //   const updatedTransfer = {
-  //     ...selectedTransfer,
-  //     exchangeRate:
-  //       selectedTransferAccount.currency === "TRY"
-  //         ? 1
-  //         : selectedTransfer.exchangeRate,
-  //     type: "outgoing",
-  //     createDate,
-  //     user: { id: parseInt(user.id) },
-  //     account: { id: parseInt(selectedTransferAccount.id) },
-  //     outputPreviousBalance: currentBalance,
-  //     outputNextBalance: currentBalance - amount,
-  //   };
-
-  //   const updatedAccount = {
-  //     ...selectedTransferAccount,
-  //     balance: currentBalance - amount,
-  //     updateDate: createDate,
-  //   };
-
-  //   try {
-  //     const response = await axios.post(
-  //       `http://localhost:8082/api/transfers/create`,
-  //       updatedTransfer,
-  //       {
-  //         headers: {
-  //           Authorization: token ? `Bearer ${token}` : undefined,
-  //           "Content-Type": "application/json",
-  //         },
-  //       }
-  //     );
-
-  //     const response2 = await axios.put(
-  //       `http://localhost:8082/api/accounts/update/${selectedTransferAccount.id}`,
-  //       updatedAccount,
-  //       {
-  //         headers: {
-  //           Authorization: token ? `Bearer ${token}` : undefined,
-  //           "Content-Type": "application/json",
-  //         },
-  //       }
-  //     );
-
-  //     setOpenSnackbar(true);
-  //     setTimeout(() => navigate("/account"), 1000);
-  //   } catch (err) {
-  //     console.error("Transfer hatası:", err);
-  //     setError("Bir hata oluştu, lütfen tekrar deneyin.");
-  //   }
-  // };
-
   const detailsOptions = {
     Kira: ["Ev Kirası", "Ofis Kirası", "Dükkan Kirası", "Depo Kirası"],
     Fatura: [
@@ -264,7 +187,7 @@ const OutgoingTransferPage = () => {
           labelId="account-label"
           id="account-select"
           value={selectedTransferAccount?.id || ""}
-          label="Hesap Seçin*"
+          label={t("chooseAccount")}
           onChange={(e) =>
             setSelectedTransferAccount(
               accounts.find((acc) => acc.id === e.target.value)

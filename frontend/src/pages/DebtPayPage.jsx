@@ -27,7 +27,7 @@ const DebtPayPage = () => {
   const [selectedTransferAccount, setSelectedTransferAccount] = useState(null);
   const [selectedPayDebt, setSelectedPayDebt] = useState(null);
   const [payAmount, setPayAmount] = useState();
-
+  const [convertedAmount, setConvertedAmount] = useState("");
   const [error, setError] = useState();
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
@@ -115,95 +115,6 @@ const DebtPayPage = () => {
     }
   };
 
-  // const handlePayDebt = async () => {
-  //   setError();
-  //   if (!selectedPayDebt || !selectedTransferAccount || !payAmount) {
-  //     setError("Lütfen tüm alanları doldurun!");
-  //     return;
-  //   }
-
-  //   if (selectedTransferAccount.currency !== selectedPayDebt.debtCurrency) {
-  //     setError(t("currencyMismatch"));
-  //     return;
-  //   }
-
-  //   if (parseFloat(selectedTransferAccount.balance) < parseFloat(payAmount)) {
-  //     setError(t("balanceTooLow"));
-  //     return;
-  //   }
-
-  //   try {
-  //     const updatedDebtAmount =
-  //       selectedPayDebt.debtAmount - parseFloat(payAmount);
-  //     const updatedStatus = updatedDebtAmount <= 0 ? "odendi" : "odenmedi";
-  //     const updatedBalance =
-  //       selectedTransferAccount.balance - parseFloat(payAmount);
-  //     const createDate = new Date()
-
-  //     // Borcu güncelle
-  //     const debtResponse = await axios.put(
-  //       `http://localhost:8082/api/debts/update/${selectedPayDebt.id}`,
-  //       {
-  //         ...selectedPayDebt,
-  //         debtAmount: updatedDebtAmount > 0 ? updatedDebtAmount : 0,
-  //         status: updatedStatus,
-  //       },
-  //       {
-  //         headers: {
-  //           Authorization: token ? `Bearer ${token}` : undefined,
-  //         },
-  //       }
-  //     );
-
-  //     // Hesap bakiyesini güncelle
-  //     const accountResponse = await axios.put(
-  //       `http://localhost:8082/api/accounts/update/${selectedTransferAccount.id}`,
-  //       {
-  //         ...selectedTransferAccount,
-  //         balance: updatedBalance,
-  //         updateDate: createDate,
-  //       },
-  //       {
-  //         headers: {
-  //           Authorization: token ? `Bearer ${token}` : undefined,
-  //         },
-  //       }
-  //     );
-
-  //     // Transfer kaydı oluştur
-  //     const transferData = {
-  //       amount: parseFloat(payAmount),
-  //       category: "Borç Ödeme",
-  //       details: "Borç ödeme",
-  //       date: createDate,
-  //       createDate,
-  //       user: { id: parseInt(user.id) },
-  //       account: { id: parseInt(selectedTransferAccount.id) },
-  //       type: "outgoing",
-  //       person: selectedPayDebt.toWhom,
-  //       outputPreviousBalance: selectedTransferAccount.balance,
-  //       outputNextBalance: updatedBalance,
-  //     };
-
-  //     const transferResponse = await axios.post(
-  //       "http://localhost:8082/api/transfers/create",
-  //       transferData,
-  //       {
-  //         headers: {
-  //           Authorization: token ? `Bearer ${token}` : undefined,
-  //           "Content-Type": "application/json",
-  //         },
-  //       }
-  //     );
-
-  //     setOpenSnackbar(true);
-  //     setTimeout(() => navigate("/debt"), 1500);
-  //   } catch (error) {
-  //     console.error("Borç ödeme sırasında hata:", error);
-  //     setError("Bir hata oluştu, lütfen tekrar deneyiniz.");
-  //   }
-  // };
-
   return (
     <Container maxWidth="sm" sx={{ mt: 4 }}>
       <Typography variant="h5" align="center" gutterBottom>
@@ -228,7 +139,7 @@ const DebtPayPage = () => {
       </FormControl>
 
       <FormControl fullWidth margin="normal">
-        <InputLabel>Hesap Seçin</InputLabel>
+        <InputLabel>{t("chooseAccount")} </InputLabel>
         <Select
           value={selectedTransferAccount?.id || ""}
           onChange={(e) =>
@@ -254,6 +165,17 @@ const DebtPayPage = () => {
         fullWidth
         margin="normal"
       />
+      {selectedPayDebt && selectedPayDebt.debtCurrency !== "TRY" && (
+        <TextField
+          label={`TL Karşılığı (${selectedPayDebt.debtCurrency})`}
+          type="number"
+          value={convertedAmount}
+          onChange={(e) => setConvertedAmount(e.target.value)}
+          fullWidth
+          margin="normal"
+          helperText={t("helperText")}
+        />
+      )}
 
       {error && (
         <Box sx={{ bgcolor: "#ffdddd", p: 2, borderRadius: 1, mb: 2 }}>

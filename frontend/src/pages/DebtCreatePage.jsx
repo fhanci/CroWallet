@@ -208,7 +208,7 @@ const DebtCreatePage = () => {
           onChange={(e) =>
             setSelectedAddAccount(accounts.find((a) => a.id === e.target.value))
           }
-          label="Hesap Seçin"
+          label={t("chooseAccount")}
           required
         >
           {accounts.map((account) => (

@@ -86,7 +86,7 @@ const LoginPage = () => {
         }
       );
 
-      if (!response.ok) throw new Error(t(registrationFailed));
+      if (!response.ok) throw new Error(t("registrationFailed"));
       setOpenSnackbar(true);
       setTimeout(() => {
         setIsRegistering(false);
