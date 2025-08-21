@@ -14,10 +14,10 @@ import { useUser } from "../config/UserStore";
 
 const LoginPage = () => {
   const { t } = useTranslation();
-  const [email, setEmail] = useState();
-  const [password, setPassword] = useState();
-  const [name, setName] = useState();
-  const [confirmPassword, setConfirmPassword] = useState();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState();
   const [isRegistering, setIsRegistering] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
@@ -25,11 +25,11 @@ const LoginPage = () => {
   const { setUserInfo } = useUser();
   const token = localStorage.getItem("token");
   const clearFields = () => {
-    setEmail();
-    setPassword();
-    setName();
-    setConfirmPassword();
-    setMessage();
+    setEmail("");
+    setPassword("");
+    setName("");
+    setConfirmPassword("");
+    setMessage("");
   };
 
   const handleLogin = async (e) => {
@@ -85,12 +85,9 @@ const LoginPage = () => {
           password: password,
         }
       );
-
-      if (!response.ok) throw new Error(t("registrationFailed"));
       setOpenSnackbar(true);
       setTimeout(() => {
         setIsRegistering(false);
-        clearFields();
       }, 1000);
     } catch (error) {
       setMessage(t("genericError"));
@@ -246,6 +243,7 @@ const LoginPage = () => {
             onClick={() => {
               setIsRegistering(!isRegistering);
               setMessage();
+              clearFields();
             }}
             fullWidth
             sx={{ mt: 2, color: "#fff", textDecoration: "underline" }}

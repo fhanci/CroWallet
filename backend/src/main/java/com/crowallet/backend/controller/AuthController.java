@@ -57,7 +57,6 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletResponse response) {
         CustomUserDetails userDetails;
         UserDTO user = userService.findByEmail(loginRequest.getEmail());
-
         try {
             userDetails = userDetailsService.loadUserById(user.getId());
         } catch (UsernameNotFoundException e) {
