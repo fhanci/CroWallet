@@ -34,15 +34,30 @@ public class AccountService {
     @Autowired
     private TransferService transferService;
 
-    public AccountDTO createAccount(AccountDTO account) {
-        Account account1 = AccountMapper.INSTANCE.toAccount(account);
+    @Transactional
+    public AccountDTO createAccount(AccountDTO accountDTO) {
+        Account account = AccountMapper.INSTANCE.toAccount(accountDTO);
+        account.setUpdateDate(LocalDateTime.now());
 
-        BigDecimal balance = account1.getBalance();
-        account1.setBalance(balance);
+        accountRepository.save(account);
 
-        accountRepository.save(account1);
-        return AccountMapper.INSTANCE.toAccountDTO(account1);
+        Transfer transfer = new Transfer();
+        transfer.setAmount(account.getBalance());
+        transfer.setCategory("Başlangıç Bütçesi");
+        transfer.setDetails("Hesap oluşturulurken girilen bakiye");
+        transfer.setType("incoming");
+        transfer.setDate(LocalDate.now());
+        transfer.setCreateDate(LocalDateTime.now());
+        transfer.setUser(account.getUser());
+        transfer.setAccount(account);
+        transfer.setInputPreviousBalance(BigDecimal.ZERO);
+        transfer.setInputNextBalance(account.getBalance());
+
+        transferRepository.save(transfer);
+
+        return AccountMapper.INSTANCE.toAccountDTO(account);
     }
+
 
     public List<AccountDTO> getAllAccounts() {
         return AccountMapper.INSTANCE.toAccountDTOList(accountRepository.findAll());
@@ -62,21 +77,48 @@ public class AccountService {
         Account existingAccount = accountRepository.findById(id)
                 .orElseThrow(() -> new GeneralException("Account to be updated not found: " + id));
 
+        BigDecimal oldBalance = existingAccount.getBalance();
+        BigDecimal newBalance = updatedAccount.getBalance();
+        BigDecimal difference = newBalance.subtract(oldBalance);
+
         existingAccount.setUpdateDate(updatedAccount.getUpdateDate());
         existingAccount.setAccountName(updatedAccount.getAccountName());
-        existingAccount.setBalance(updatedAccount.getBalance());
+        existingAccount.setBalance(newBalance);
         existingAccount.setCurrency(updatedAccount.getCurrency());
         existingAccount.setUser(UserMapper.INSTANCE.toUser(updatedAccount.getUser()));
 
-        return AccountMapper.INSTANCE.toAccountDTO(accountRepository.save(existingAccount));
+        Account savedAccount = accountRepository.save(existingAccount);
+
+        if (difference.compareTo(BigDecimal.ZERO) != 0) {
+            Transfer transfer = new Transfer();
+            transfer.setAmount(difference.abs());
+            transfer.setType(difference.compareTo(BigDecimal.ZERO) > 0 ? "incoming" : "outgoing");
+            transfer.setCategory("Bakiye Güncellemesi");
+            transfer.setDetails("Hesap güncellemesi sonucu bakiye farkı");
+            transfer.setDate(LocalDate.now());
+            transfer.setCreateDate(LocalDateTime.now());
+            transfer.setUser(savedAccount.getUser());
+            transfer.setAccount(savedAccount);
+            transfer.setInputPreviousBalance(oldBalance);
+            transfer.setInputNextBalance(newBalance);
+
+            transferRepository.save(transfer);
+        }
+
+        return AccountMapper.INSTANCE.toAccountDTO(savedAccount);
     }
 
+
+    @Transactional
     public void deleteAccount(Long id) {
-        if (!accountRepository.existsById(id)) {
-            throw new GeneralException("Account to be deleted not found: " + id);
-        }
-        accountRepository.deleteById(id);
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new GeneralException("Account to be deleted not found: " + id));
+
+        transferRepository.deleteByAccountId(account.getId());
+
+        accountRepository.delete(account);
     }
+
 
     @Transactional
     public TransferDTO withdrawMoney(TransferDTO transferDTO) {

@@ -82,7 +82,6 @@ public class TransferService {
         return TransferMapper.INSTANCE.toTransferDTO(transfer);
     }
 
-
     public List<TransferDTO> getAllTransfers() {
         return TransferMapper.INSTANCE.toTransferDTOList(transferRepository.findAll());
     }

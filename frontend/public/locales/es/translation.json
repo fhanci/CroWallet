@@ -154,13 +154,15 @@
   "chooseLanguage": "Seleccionar Idioma",
   "exchangeRateHintTwo": "Por favor, introduce el tipo de cambio actual {{currency}}/TRY",
   "dueDateTwo": "Fecha límite",
-  
+
   "noTransaction": "Aún no hay movimientos en esta cuenta.",
-  
+
   "noPageError": "La página que estás buscando no existe o puede haber sido movida.",
   "pageNotFound": "404 - Página no encontrada",
   "returnMain": "Volver a la página principal",
   "AccountBalanceChart": "Gráfico de Saldo de Cuenta",
+  "confirmLogoutTitle": "Cerrar sesión",
+  "confirmLogoutText": "¿Estás seguro de que deseas cerrar sesión?",
   "incomeDetails": {
     "Salario": ["Salario Mensual", "Prima", "Ingreso Adicional"],
     "Trabajo Autónomo": [

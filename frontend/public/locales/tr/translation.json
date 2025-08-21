@@ -179,6 +179,8 @@
   "pageNotFound" : "404 - Sayfa Bulunamadı",
   "returnMain": "Ana Sayfaya Dön",
   "AccountBalanceChart": "Hesap Bakiyesi Grafiği",
+  "confirmLogoutTitle": "Çıkış Yap",
+  "confirmLogoutText": "Oturumunuzu kapatmak istediğinizden emin misiniz?",
   "incomeDetails": {
     "Maaş": ["Aylık Maaş", "Prim", "Ek Gelir"],
     "Serbest Meslek": ["Proje Ödemesi", "Danışmanlık", "Serbest Çalışma"],

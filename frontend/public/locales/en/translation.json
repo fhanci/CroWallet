@@ -172,12 +172,13 @@
 
   "dueDateTwo": "Deadline",
 
-  
   "noTransaction": "There are no transactions on this account yet.",
   "noPageError": "The page you are looking for does not exist or may have been moved.",
   "pageNotFound": "404 - Page Not Found",
   "returnMain": "Return to Home",
   "AccountBalanceChart": "Account Balance Chart",
+  "confirmLogoutTitle": "Log Out",
+  "confirmLogoutText": "Are you sure you want to log out?",
   "incomeDetails": {
     "Salary": ["Monthly Salary", "Bonus", "Additional Income"],
     "Freelance": ["Project Payment", "Consulting", "Freelance Work"],
