@@ -46,6 +46,7 @@
   "newIncomeSource": "New Income Source",
   "newExpenseSource": "New Expense Source",
   "cancel": "Cancel",
+  "actions": "Actions",
   "apply": "Apply",
   "defaultIncomeOptions": [
     "Salary",
