@@ -28,6 +28,14 @@ import CreditCardIcon from "@mui/icons-material/CreditCard";
 import MenuIcon from "@mui/icons-material/Menu";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
+} from "@mui/material";
 
 import NotificationButton from "./NotificationButton";
 import ProfileButton from "./ProfileButton";
@@ -35,7 +43,7 @@ import { useTranslation } from "react-i18next";
 
 const MenuPage = ({ isDrawerOpen, setIsDrawerOpen }) => {
   const { t } = useTranslation();
-
+  const [logoutDialogOpen, setLogoutDialogOpen] = React.useState(false);
   const navigate = useNavigate();
   const [transferMenuOpen, setTransferMenuOpen] = React.useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = React.useState(false);
@@ -48,12 +56,20 @@ const MenuPage = ({ isDrawerOpen, setIsDrawerOpen }) => {
     navigate("/account");
   };
 
-  // ✅ Güncellenmiş çıkış işlemi:
-  const handleLogout = () => {
-    localStorage.clear(); // Tüm kullanıcı verilerini sil
-    navigate("/login"); // Login sayfasına yönlendir
-    // window.location.reload(); // Sayfa tamamen sıfırlansın
+  const confirmLogout = () => {
+    localStorage.clear();
+    navigate("/login");
   };
+
+  const handleLogoutClick = () => {
+    setLogoutDialogOpen(true);
+  };
+
+  // const handleLogout = () => {
+  //   localStorage.clear(); // Tüm kullanıcı verilerini sil
+  //   navigate("/login"); // Login sayfasına yönlendir
+  //   // window.location.reload(); // Sayfa tamamen sıfırlansın
+  // };
 
   const itemStyle = {
     cursor: "pointer",
@@ -341,7 +357,11 @@ const MenuPage = ({ isDrawerOpen, setIsDrawerOpen }) => {
             <ListItemText primary={t("settings")} />
           </ListItem>
 
-          <ListItem component="button" onClick={handleLogout} sx={itemStyle}>
+          <ListItem
+            component="button"
+            onClick={handleLogoutClick}
+            sx={itemStyle}
+          >
             <ListItemIcon>
               <ExitToAppIcon />
             </ListItemIcon>
@@ -349,6 +369,26 @@ const MenuPage = ({ isDrawerOpen, setIsDrawerOpen }) => {
           </ListItem>
         </List>
       </Drawer>
+      <Dialog
+        open={logoutDialogOpen}
+        onClose={() => setLogoutDialogOpen(false)}
+      >
+        <DialogTitle>{t("confirmLogoutTitle") || "Çıkış Yap"}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t("confirmLogoutText") ||
+              "Oturumunuzu kapatmak istediğinizden emin misiniz?"}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLogoutDialogOpen(false)} color="primary">
+            {t("cancel") || "İptal"}
+          </Button>
+          <Button onClick={confirmLogout} color="error">
+            {t("confirm") || "Çıkış Yap"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
