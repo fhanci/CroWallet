@@ -1,0 +1,22 @@
+Login:
+    - Sent to sign in page
+    - Throw exceptions
+
+Sign In:
+    - Throw exceptions
+
+Transaction (add-remove): 
+    - Remove enter currency box after real time currency fetching
+    - Continuous income/ based on category
+    - Add default date as today
+    - Remove "para ekle" box
+
+Transaction (Between Accounts):
+    - Remove sent money to same account
+    - Add default date as today
+
+Settings:
+    - Do from scratch
+
+Profile:
+    - Do from scratch

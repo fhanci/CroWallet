@@ -218,6 +218,7 @@ const ProfilePage = () => {
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
+        disableScrollLock
       >
         <DialogTitle>{t("deleteConfirmTitle")}</DialogTitle>
         <DialogContent>

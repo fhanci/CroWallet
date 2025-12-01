@@ -1,8 +1,9 @@
 package com.crowallet.backend.mapper;
 
 import com.crowallet.backend.dto.AccountDTO;
-import com.crowallet.backend.dto.UserDTO;
+import com.crowallet.backend.dto.InvestmentHoldingDTO;
 import com.crowallet.backend.entity.Account;
+import com.crowallet.backend.entity.InvestmentHolding;
 import com.crowallet.backend.entity.User;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,8 +11,8 @@ import javax.annotation.processing.Generated;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-08-18T13:53:25+0300",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 24.0.2 (Oracle Corporation)"
+    date = "2025-12-01T15:56:31+0300",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.44.0.v20251118-1623, environment: Java 21.0.9 (Eclipse Adoptium)"
 )
 public class AccountMapperImpl implements AccountMapper {
 
@@ -23,12 +24,24 @@ public class AccountMapperImpl implements AccountMapper {
 
         AccountDTO accountDTO = new AccountDTO();
 
-        accountDTO.setId( account.getId() );
+        accountDTO.setUserId( accountUserId( account ) );
+        accountDTO.setAccountType( accountTypeToString( account.getAccountType() ) );
+        accountDTO.setHoldingType( holdingTypeToString( account.getHoldingType() ) );
+        accountDTO.setAssetType( assetTypeToString( account.getAssetType() ) );
+        accountDTO.setHoldings( toHoldingDTOList( account.getHoldings() ) );
+        accountDTO.setAccountName( account.getAccountName() );
+        accountDTO.setAssetSymbol( account.getAssetSymbol() );
+        accountDTO.setAverageCost( account.getAverageCost() );
         accountDTO.setBalance( account.getBalance() );
         accountDTO.setCurrency( account.getCurrency() );
-        accountDTO.setAccountName( account.getAccountName() );
+        accountDTO.setCurrentPrice( account.getCurrentPrice() );
+        accountDTO.setId( account.getId() );
+        accountDTO.setQuantity( account.getQuantity() );
         accountDTO.setUpdateDate( account.getUpdateDate() );
-        accountDTO.setUser( userToUserDTO( account.getUser() ) );
+
+        accountDTO.setTotalValue( account.getTotalValue() );
+        accountDTO.setProfitLoss( account.getProfitLoss() );
+        accountDTO.setHoldingCount( account.getHoldingCount() );
 
         return accountDTO;
     }
@@ -41,12 +54,18 @@ public class AccountMapperImpl implements AccountMapper {
 
         Account account = new Account();
 
-        account.setId( accountDTO.getId() );
+        account.setAccountType( stringToAccountType( accountDTO.getAccountType() ) );
+        account.setHoldingType( stringToHoldingType( accountDTO.getHoldingType() ) );
+        account.setAssetType( stringToAssetType( accountDTO.getAssetType() ) );
+        account.setAccountName( accountDTO.getAccountName() );
+        account.setAssetSymbol( accountDTO.getAssetSymbol() );
+        account.setAverageCost( accountDTO.getAverageCost() );
         account.setBalance( accountDTO.getBalance() );
         account.setCurrency( accountDTO.getCurrency() );
-        account.setAccountName( accountDTO.getAccountName() );
+        account.setCurrentPrice( accountDTO.getCurrentPrice() );
+        account.setId( accountDTO.getId() );
+        account.setQuantity( accountDTO.getQuantity() );
         account.setUpdateDate( accountDTO.getUpdateDate() );
-        account.setUser( userDTOToUser( accountDTO.getUser() ) );
 
         return account;
     }
@@ -79,33 +98,75 @@ public class AccountMapperImpl implements AccountMapper {
         return list;
     }
 
-    protected UserDTO userToUserDTO(User user) {
+    @Override
+    public InvestmentHoldingDTO toHoldingDTO(InvestmentHolding holding) {
+        if ( holding == null ) {
+            return null;
+        }
+
+        InvestmentHoldingDTO investmentHoldingDTO = new InvestmentHoldingDTO();
+
+        investmentHoldingDTO.setAccountId( holdingAccountId( holding ) );
+        investmentHoldingDTO.setAssetName( holding.getAssetName() );
+        investmentHoldingDTO.setAssetSymbol( holding.getAssetSymbol() );
+        investmentHoldingDTO.setAssetType( holding.getAssetType() );
+        investmentHoldingDTO.setCurrentPrice( holding.getCurrentPrice() );
+        investmentHoldingDTO.setId( holding.getId() );
+        investmentHoldingDTO.setPurchasePrice( holding.getPurchasePrice() );
+        investmentHoldingDTO.setQuantity( holding.getQuantity() );
+
+        investmentHoldingDTO.setTotalValue( holding.getTotalValue() );
+        investmentHoldingDTO.setProfitLoss( holding.getProfitLoss() );
+
+        return investmentHoldingDTO;
+    }
+
+    @Override
+    public InvestmentHolding toHolding(InvestmentHoldingDTO dto) {
+        if ( dto == null ) {
+            return null;
+        }
+
+        InvestmentHolding investmentHolding = new InvestmentHolding();
+
+        investmentHolding.setAssetName( dto.getAssetName() );
+        investmentHolding.setAssetSymbol( dto.getAssetSymbol() );
+        investmentHolding.setAssetType( dto.getAssetType() );
+        investmentHolding.setCurrentPrice( dto.getCurrentPrice() );
+        investmentHolding.setId( dto.getId() );
+        investmentHolding.setPurchasePrice( dto.getPurchasePrice() );
+        investmentHolding.setQuantity( dto.getQuantity() );
+
+        return investmentHolding;
+    }
+
+    @Override
+    public List<InvestmentHoldingDTO> toHoldingDTOList(List<InvestmentHolding> holdings) {
+        if ( holdings == null ) {
+            return null;
+        }
+
+        List<InvestmentHoldingDTO> list = new ArrayList<InvestmentHoldingDTO>( holdings.size() );
+        for ( InvestmentHolding investmentHolding : holdings ) {
+            list.add( toHoldingDTO( investmentHolding ) );
+        }
+
+        return list;
+    }
+
+    private Long accountUserId(Account account) {
+        User user = account.getUser();
         if ( user == null ) {
             return null;
         }
-
-        UserDTO userDTO = new UserDTO();
-
-        userDTO.setId( user.getId() );
-        userDTO.setUsername( user.getUsername() );
-        userDTO.setEmail( user.getEmail() );
-        userDTO.setPassword( user.getPassword() );
-
-        return userDTO;
+        return user.getId();
     }
 
-    protected User userDTOToUser(UserDTO userDTO) {
-        if ( userDTO == null ) {
+    private Long holdingAccountId(InvestmentHolding investmentHolding) {
+        Account account = investmentHolding.getAccount();
+        if ( account == null ) {
             return null;
         }
-
-        User user = new User();
-
-        user.setId( userDTO.getId() );
-        user.setUsername( userDTO.getUsername() );
-        user.setEmail( userDTO.getEmail() );
-        user.setPassword( userDTO.getPassword() );
-
-        return user;
+        return account.getId();
     }
 }
