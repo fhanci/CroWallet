@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -6,37 +6,71 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import { Box } from "@mui/material";
+import { createTheme, ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
 import "./il8n";
 import { useTranslation } from "react-i18next";
 
 import Login from "./components/LoginPage";
 import DashboardLayout from "./components/DashboardLayout";
 
-import SettingPage from "./components/SettingPage";
+// MUI Theme with disabled scroll lock
+const muiTheme = createTheme({
+  components: {
+    MuiModal: {
+      defaultProps: {
+        disableScrollLock: true,
+      },
+    },
+    MuiMenu: {
+      defaultProps: {
+        disableScrollLock: true,
+      },
+    },
+    MuiPopover: {
+      defaultProps: {
+        disableScrollLock: true,
+      },
+    },
+    MuiDialog: {
+      defaultProps: {
+        disableScrollLock: true,
+      },
+    },
+    MuiDrawer: {
+      defaultProps: {
+        disableScrollLock: true,
+      },
+    },
+  },
+});
 
-import ProfileButton from "./components/ProfileButton";
-import NotificationButton from "./components/NotificationButton";
+import SettingsPage from "./pages/SettingsPage";
+import IncomePage from "./components/IncomePage";
 
 import ProfilePage from "./pages/ProfilePage";
 import NotificationPage from "./pages/NotificationPage";
 
 import AccountPage from "./components/AccountPage";
 import AccountCreatePage from "./pages/AccountCreatePage";
-import AccountEditPage from "./pages/AccountEditPage";
-import AccountDeletePage from "./pages/AccountDeletePage";
+import MyAccountsPage from "./pages/MyAccountsPage";
 
 import TransactionHistoryPage from "./components/TransactionHistoryPage";
+import AllTransactionsPage from "./components/AllTransactionsPage";
 import IncomingTransferPage from "./pages/IncomingTransferPage";
 import OutgoingTransferPage from "./pages/OutgoingTransferPage";
 import AccountToAccountTransferPage from "./pages/AccountToAccountTransferPage";
 
 import DebtPage from "./pages/DebtsPage";
 import DebtCreatePage from "./pages/DebtCreatePage";
-import DebtEditPage from "./pages/DebtEditPage";
-import DebtPayPage from "./pages/DebtPayPage";
+import InstallmentsPage from "./pages/InstallmentsPage";
+
+import InvestmentAccountDetailPage from "./pages/InvestmentAccountDetailPage";
+import MyStockAccountsPage from "./pages/MyStockAccountsPage";
+import MyGoldAccountsPage from "./pages/MyGoldAccountsPage";
 
 import { UserProvider } from "./config/UserStore";
+import { ThemeProvider } from "./config/ThemeContext";
 const MainApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(
     localStorage.getItem("isAuthenticated") === "true"
@@ -59,23 +93,6 @@ const MainApp = () => {
   };
   return (
     <>
-      {/* Sadece login dışında butonları göster */}
-      {!isLoginPage && (
-        <Box
-          sx={{
-            position: "fixed",
-            top: 16,
-            right: 16,
-            zIndex: 9999,
-            display: "flex",
-            gap: 3,
-          }}
-        >
-          <NotificationButton />
-          <ProfileButton />
-        </Box>
-      )}
-
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
@@ -85,7 +102,11 @@ const MainApp = () => {
         </Route>
 
         <Route path="/settings" element={<DashboardLayout />}>
-          <Route index element={<SettingPage />} />
+          <Route index element={<SettingsPage />} />
+        </Route>
+
+        <Route path="/income" element={<DashboardLayout />}>
+          <Route index element={<IncomePage />} />
         </Route>
 
         <Route path="/notification" element={<DashboardLayout />}>
@@ -100,16 +121,16 @@ const MainApp = () => {
           <Route index element={<TransactionHistoryPage />} />
         </Route>
 
+        <Route path="/all-transactions" element={<DashboardLayout />}>
+          <Route index element={<AllTransactionsPage />} />
+        </Route>
+
         <Route path="/account/create" element={<DashboardLayout />}>
           <Route index element={<AccountCreatePage />} />
         </Route>
 
-        <Route path="/account/edit" element={<DashboardLayout />}>
-          <Route index element={<AccountEditPage />} />
-        </Route>
-
-        <Route path="/account/delete" element={<DashboardLayout />}>
-          <Route index element={<AccountDeletePage />} />
+        <Route path="/accounts/my" element={<DashboardLayout />}>
+          <Route index element={<MyAccountsPage />} />
         </Route>
 
         <Route path="/transfer/incoming" element={<DashboardLayout />}>
@@ -132,12 +153,20 @@ const MainApp = () => {
           <Route index element={<DebtCreatePage />} />
         </Route>
 
-        <Route path="/debt/edit" element={<DashboardLayout />}>
-          <Route index element={<DebtEditPage />} />
+        <Route path="/debt/installments" element={<DashboardLayout />}>
+          <Route index element={<InstallmentsPage />} />
         </Route>
 
-        <Route path="/debt/pay" element={<DashboardLayout />}>
-          <Route index element={<DebtPayPage />} />
+        <Route path="/investment/:accountId" element={<DashboardLayout />}>
+          <Route index element={<InvestmentAccountDetailPage />} />
+        </Route>
+
+        <Route path="/investment/stocks" element={<DashboardLayout />}>
+          <Route index element={<MyStockAccountsPage />} />
+        </Route>
+
+        <Route path="/investment/gold" element={<DashboardLayout />}>
+          <Route index element={<MyGoldAccountsPage />} />
         </Route>
       </Routes>
     </>
@@ -147,9 +176,14 @@ const MainApp = () => {
 const App = () => {
   return (
     <UserProvider>
-      <Router>
-        <MainApp />
-      </Router>
+      <ThemeProvider>
+        <MuiThemeProvider theme={muiTheme}>
+          <CssBaseline />
+          <Router>
+            <MainApp />
+          </Router>
+        </MuiThemeProvider>
+      </ThemeProvider>
     </UserProvider>
   );
 };

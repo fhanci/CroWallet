@@ -29,11 +29,13 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../config/UserStore";
+import { useTheme } from "../config/ThemeContext";
 import axios from "axios";
 
 const TransactionHistoryPage = () => {
   const { user } = useUser();
   const { t } = useTranslation();
+  const { isDarkMode } = useTheme();
   const { accountId } = useParams();
   const [transactions, setTransactions] = useState([]);
   const [filteredTransactions, setFilteredTransactions] = useState([]);
@@ -59,13 +61,18 @@ const TransactionHistoryPage = () => {
           },
         });
 
-        if (response.data.length > 0) {
+        // Filter transactions by accountId
+        const accountTransactions = response.data.filter(
+          (t) => t.account && t.account.id.toString() === accountId.toString()
+        );
+
+        if (accountTransactions.length > 0) {
           setAccountName(
-            `${response.data[0].account.accountName} - ${response.data[0].account.currency}`
+            `${accountTransactions[0].account.accountName} - ${accountTransactions[0].account.currency}`
           );
         }
 
-        const sortedData = response.data.sort(
+        const sortedData = accountTransactions.sort(
           (a, b) => new Date(b.createDate) - new Date(a.createDate)
         );
 
@@ -322,7 +329,9 @@ const TransactionHistoryPage = () => {
               filteredTransactions.map((transaction, idx) => {
                 const incomeOrExpense = getIncomeOrExpense(transaction);
                 const isIncome = incomeOrExpense === t("income");
-                const textColor = isIncome ? "#0f5132" : "#842029";
+                const textColor = isIncome 
+                  ? (isDarkMode ? "#4caf50" : "#0f5132") 
+                  : (isDarkMode ? "#f44336" : "#842029");
 
                 return (
                   <React.Fragment key={transaction.id}>
@@ -330,9 +339,11 @@ const TransactionHistoryPage = () => {
                       onClick={() => handleExpandTransaction(transaction.id)}
                       sx={{
                         cursor: "pointer",
-                        backgroundColor: idx % 2 === 0 ? "#f9f9f9" : "white",
+                        backgroundColor: isDarkMode 
+                          ? (idx % 2 === 0 ? "rgba(255, 255, 255, 0.03)" : "transparent")
+                          : (idx % 2 === 0 ? "#f9f9f9" : "white"),
                         "&:hover": {
-                          backgroundColor: "#e6f2ff",
+                          backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.08)" : "#e6f2ff",
                         },
                       }}
                     >
@@ -421,7 +432,7 @@ const TransactionHistoryPage = () => {
         </Table>
       </TableContainer>
 
-      <Dialog open={dateFilterDialogOpen}>
+      <Dialog open={dateFilterDialogOpen} disableScrollLock>
         <DialogTitle>{t("filterByDate")}</DialogTitle>
         <DialogContent>
           <TextField

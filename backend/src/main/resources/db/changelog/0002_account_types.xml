@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+
+    <!-- Add account_type column to differentiate CURRENCY and INVESTMENT accounts -->
+    <changeSet id="10" author="user">
+        <addColumn tableName="accounts">
+            <column name="account_type" type="varchar(20)" defaultValue="CURRENCY">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- Add holding_type for CURRENCY accounts (BANK or CASH) -->
+    <changeSet id="11" author="user">
+        <addColumn tableName="accounts">
+            <column name="holding_type" type="varchar(20)"/>
+        </addColumn>
+    </changeSet>
+
+    <!-- Add investment-specific columns -->
+    <changeSet id="12" author="user">
+        <addColumn tableName="accounts">
+            <!-- For investments: STOCK or GOLD -->
+            <column name="asset_type" type="varchar(20)"/>
+            <!-- Stock symbol or gold type (e.g., XAU, gram gold) -->
+            <column name="asset_symbol" type="varchar(50)"/>
+            <!-- Quantity of assets held -->
+            <column name="quantity" type="numeric(15,4)"/>
+            <!-- Average purchase price per unit -->
+            <column name="average_cost" type="numeric(15,4)"/>
+            <!-- Current market price per unit -->
+            <column name="current_price" type="numeric(15,4)"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>
+

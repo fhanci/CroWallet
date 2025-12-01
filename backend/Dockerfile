@@ -1,8 +1,8 @@
 # Image Name: corwallet-backend
 # Image Tag: 0.2.0
 
-# Stage 1: Build the application using Maven and JDK 24
-FROM maven:3.9.11-eclipse-temurin-24-alpine AS build
+# Stage 1: Build the application using Maven and JDK 21
+FROM maven:3.9.11-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
 # Copy Maven project files
@@ -12,8 +12,8 @@ COPY src ./src
 # Build the application (skip tests for faster build)
 RUN mvn clean package -DskipTests
 
-# Stage 2: Run the application using JDK 24
-FROM openjdk:24-jdk-slim
+# Stage 2: Run the application using JDK 21
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # Copy the built jar from the previous stage

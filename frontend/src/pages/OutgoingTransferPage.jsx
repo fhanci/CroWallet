@@ -12,12 +12,18 @@ import {
   Snackbar,
   Alert,
   Box,
+  Card,
+  CardContent,
+  Chip,
+  Collapse,
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
+import RemoveIcon from "@mui/icons-material/Remove";
 import { useNavigate } from "react-router-dom";
 import { t } from "i18next";
 import axios from "axios";
 import { useUser } from "../config/UserStore";
+
 const OutgoingTransferPage = () => {
   const navigate = useNavigate();
   const { user } = useUser();
@@ -27,11 +33,20 @@ const OutgoingTransferPage = () => {
   const [selectedTransferAccount, setSelectedTransferAccount] = useState(null);
   const [selectedTransfer, setSelectedTransfer] = useState({});
   const [expenseSources, setExpenseSources] = useState([]);
+  const [customCategory, setCustomCategory] = useState("");
   const [error, setError] = useState(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
-  const hintText = t("exchangeRateHintTwo", {
-    currency: selectedTransferAccount?.currency || "TRY",
-  });
+
+  // Get currency symbol
+  const getCurrencySymbol = (currency) => {
+    switch (currency) {
+      case "TRY": return "₺";
+      case "USD": return "$";
+      case "EUR": return "€";
+      default: return currency;
+    }
+  };
+
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
@@ -43,7 +58,11 @@ const OutgoingTransferPage = () => {
             },
           }
         );
-        setAccounts(res.data);
+        // Only show CURRENCY type accounts
+        const currencyAccounts = res.data.filter(
+          acc => !acc.accountType || acc.accountType === "CURRENCY"
+        );
+        setAccounts(currencyAccounts);
       } catch (err) {
         console.error("Hesaplar alınamadı:", err);
       }
@@ -52,7 +71,6 @@ const OutgoingTransferPage = () => {
   }, [user.id]);
 
   useEffect(() => {
-    // Burada default expense kaynakları da ekleyebiliriz
     const defaultExpense = [
       "Kira",
       "Fatura",
@@ -61,29 +79,57 @@ const OutgoingTransferPage = () => {
       "Eğitim",
       "Eğlence",
       "Sağlık",
+      "Diğer",
     ];
     const savedExpense =
       JSON.parse(localStorage.getItem(`expenseSources_${user.id}`)) || [];
     const merged = Array.from(new Set([...defaultExpense, ...savedExpense]));
-    setExpenseSources(merged);
+    // Ensure "Diğer" is always at the end
+    const filtered = merged.filter(item => item !== "Diğer");
+    filtered.push("Diğer");
+    setExpenseSources(filtered);
   }, [user.id]);
 
+  const handleCategoryChange = (e) => {
+    const value = e.target.value;
+    setSelectedTransfer({
+      ...selectedTransfer,
+      category: value,
+    });
+    // Reset custom category when switching away from "Diğer"
+    if (value !== "Diğer") {
+      setCustomCategory("");
+    }
+  };
+
   const handleSubmit = async () => {
-    // Detay zorunluluğunu kaldırdık, o yüzden details kontrolü kaldırıldı
+    // Determine final category
+    const finalCategory = selectedTransfer.category === "Diğer" 
+      ? customCategory 
+      : selectedTransfer.category;
+
     if (
       !selectedTransferAccount ||
       !selectedTransfer.amount ||
-      !selectedTransfer.category ||
-      !selectedTransfer.date ||
-      (selectedTransferAccount.currency !== "TRY" &&
-        !selectedTransfer.exchangeRate)
+      !finalCategory ||
+      !selectedTransfer.date
     ) {
       setError(t("requiredFieldsError"));
       return;
     }
 
+    if (selectedTransfer.category === "Diğer" && !customCategory.trim()) {
+      setError("Lütfen özel kategori adı girin.");
+      return;
+    }
+
     const amount = parseFloat(selectedTransfer.amount);
     const currentBalance = parseFloat(selectedTransferAccount.balance);
+
+    if (amount <= 0) {
+      setError("Tutar 0'dan büyük olmalıdır.");
+      return;
+    }
 
     if (currentBalance < amount) {
       setError(t("insufficientBalance"));
@@ -96,10 +142,8 @@ const OutgoingTransferPage = () => {
 
     const updatedTransfer = {
       ...selectedTransfer,
-      exchangeRate:
-        selectedTransferAccount.currency === "TRY"
-          ? 1
-          : selectedTransfer.exchangeRate,
+      category: finalCategory,
+      exchangeRate: 1,
       type: "outgoing",
       createDate,
       user: { id: parseInt(user.id) },
@@ -115,8 +159,8 @@ const OutgoingTransferPage = () => {
     };
 
     try {
-      const response = await axios.put(
-        `http://localhost:8082/api/transfers/update/${updatedAccount.id}`,
+      await axios.post(
+        "http://localhost:8082/api/transfers/create",
         updatedTransfer,
         {
           headers: {
@@ -126,7 +170,7 @@ const OutgoingTransferPage = () => {
         }
       );
 
-      const response2 = await axios.put(
+      await axios.put(
         `http://localhost:8082/api/accounts/update/${selectedTransferAccount.id}`,
         updatedAccount,
         {
@@ -137,6 +181,15 @@ const OutgoingTransferPage = () => {
         }
       );
 
+      // Save custom category for future use
+      if (selectedTransfer.category === "Diğer" && customCategory.trim()) {
+        const savedExpense = JSON.parse(localStorage.getItem(`expenseSources_${user.id}`)) || [];
+        if (!savedExpense.includes(customCategory.trim())) {
+          savedExpense.push(customCategory.trim());
+          localStorage.setItem(`expenseSources_${user.id}`, JSON.stringify(savedExpense));
+        }
+      }
+
       setOpenSnackbar(true);
       setTimeout(() => navigate("/account"), 1000);
     } catch (err) {
@@ -145,6 +198,7 @@ const OutgoingTransferPage = () => {
     }
   };
 
+  // Details options for each category
   const detailsOptions = {
     Kira: ["Ev Kirası", "Ofis Kirası", "Dükkan Kirası", "Depo Kirası"],
     Fatura: [
@@ -191,168 +245,199 @@ const OutgoingTransferPage = () => {
   const selectedCategory = selectedTransfer?.category || "";
   const selectedDetailsOptions = detailsOptions[selectedCategory] || [];
 
+  // Calculate new balance preview
+  const newBalance = selectedTransferAccount && selectedTransfer.amount
+    ? selectedTransferAccount.balance - parseFloat(selectedTransfer.amount || 0)
+    : null;
+
   return (
-    <Container maxWidth="sm">
-      <Typography variant="h5" align="center" gutterBottom>
-        Para Çıkar
-      </Typography>
+    <Container maxWidth="sm" sx={{ mt: 2 }}>
+      <Card sx={{ borderRadius: 3, boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}>
+        <CardContent sx={{ p: 3 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
+            <RemoveIcon sx={{ color: "error.main", fontSize: 28 }} />
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
+              Para Çıkar
+            </Typography>
+          </Box>
 
-      <FormControl fullWidth margin="normal">
-        <InputLabel id="account-label">{t("selectAccount")}</InputLabel>
-        <Select
-          labelId="account-label"
-          id="account-select"
-          value={selectedTransferAccount?.id || ""}
-          label="Hesap Seçin*"
-          onChange={(e) =>
-            setSelectedTransferAccount(
-              accounts.find((acc) => acc.id === e.target.value)
-            )
-          }
-        >
-          {accounts.map((account) => (
-            <MenuItem key={account.id} value={account.id}>
-              {account.accountName} - {account.balance} {account.currency}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="account-label">{t("selectAccount")}</InputLabel>
+            <Select
+              labelId="account-label"
+              id="account-select"
+              value={selectedTransferAccount?.id || ""}
+              label={t("selectAccount")}
+              onChange={(e) =>
+                setSelectedTransferAccount(
+                  accounts.find((acc) => acc.id === e.target.value)
+                )
+              }
+              sx={{ borderRadius: 2 }}
+            >
+              {accounts.map((account) => (
+                <MenuItem key={account.id} value={account.id}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
+                    <span>{account.accountName}</span>
+                    <Chip 
+                      label={`${account.balance} ${account.currency}`} 
+                      size="small" 
+                      sx={{ ml: "auto" }}
+                    />
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
-      {selectedTransferAccount?.currency !== "TRY" && (
-        <>
+          {/* Currency info badge */}
+          {selectedTransferAccount && (
+            <Alert severity="info" sx={{ mt: 1, mb: 2, borderRadius: 2 }}>
+              Bu hesaptan yalnızca <strong>{selectedTransferAccount.currency}</strong> para birimi çıkarılabilir.
+            </Alert>
+          )}
+
+          <Box display="flex" alignItems="center" marginTop={2} marginBottom={1}>
+            <TextField
+              label={t("amount")}
+              type="number"
+              value={selectedTransfer.amount || ""}
+              onChange={(e) =>
+                setSelectedTransfer({ ...selectedTransfer, amount: e.target.value })
+              }
+              fullWidth
+              InputProps={{
+                startAdornment: selectedTransferAccount && (
+                  <Typography sx={{ mr: 1, color: "text.secondary", fontWeight: 600 }}>
+                    {getCurrencySymbol(selectedTransferAccount.currency)}
+                  </Typography>
+                ),
+              }}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+            />
+          </Box>
+
+          {/* Balance preview */}
+          {newBalance !== null && selectedTransfer.amount && (
+            <Box sx={{ 
+              bgcolor: newBalance >= 0 ? "warning.light" : "error.light", 
+              p: 2, 
+              borderRadius: 2, 
+              mb: 2,
+              opacity: 0.9
+            }}>
+              <Typography variant="body2" color={newBalance >= 0 ? "warning.dark" : "error.dark"}>
+                İşlem sonrası bakiye: <strong>{newBalance.toFixed(2)} {selectedTransferAccount.currency}</strong>
+                {newBalance < 0 && " (Yetersiz bakiye!)"}
+              </Typography>
+            </Box>
+          )}
+
           <TextField
-            label={t("exchangeRate")}
-            type="number"
-            value={selectedTransfer.exchangeRate || ""}
+            label={t("date")}
+            type="date"
+            value={selectedTransfer.date || ""}
+            onChange={(e) =>
+              setSelectedTransfer({ ...selectedTransfer, date: e.target.value })
+            }
+            fullWidth
+            margin="normal"
+            InputLabelProps={{ shrink: true }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+          />
+
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="category-label">{t("category")}</InputLabel>
+            <Select
+              labelId="category-label"
+              id="category-select"
+              value={selectedTransfer.category || ""}
+              label={t("category")}
+              onChange={handleCategoryChange}
+              sx={{ borderRadius: 2 }}
+            >
+              {expenseSources.map((source) => (
+                <MenuItem key={source} value={source}>
+                  {source}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Custom category input - shows when "Diğer" is selected */}
+          <Collapse in={selectedTransfer.category === "Diğer"}>
+            <TextField
+              label="Özel Kategori Adı"
+              value={customCategory}
+              onChange={(e) => setCustomCategory(e.target.value)}
+              fullWidth
+              margin="normal"
+              placeholder="Kategori adını yazın..."
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+            />
+          </Collapse>
+
+          {/* Details field */}
+          <Autocomplete
+            freeSolo
+            options={selectedDetailsOptions}
+            value={selectedTransfer.details || ""}
+            onChange={(e, newValue) =>
+              setSelectedTransfer({ ...selectedTransfer, details: newValue })
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label={t("details")}
+                fullWidth
+                margin="normal"
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+              />
+            )}
+          />
+
+          <TextField
+            label={t("description")}
+            value={selectedTransfer.description || ""}
             onChange={(e) =>
               setSelectedTransfer({
                 ...selectedTransfer,
-                exchangeRate: e.target.value,
+                description: e.target.value,
               })
             }
             fullWidth
             margin="normal"
+            multiline
+            rows={2}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
           />
-          <Typography variant="caption" sx={{ color: "gray", mt: 0.5 }}>
-            {hintText}
-          </Typography>
-        </>
-      )}
 
-      <Box display="flex" alignItems="center" marginTop={2} marginBottom={1}>
-        <TextField
-          label={t("amount")}
-          type="number"
-          value={selectedTransfer.amount || ""}
-          onChange={(e) =>
-            setSelectedTransfer({ ...selectedTransfer, amount: e.target.value })
-          }
-          fullWidth
-        />
-        <Typography
-          sx={{
-            marginLeft: 1,
-            whiteSpace: "nowrap",
-            lineHeight: "40px",
-            fontSize: "1rem",
-            color: "gray",
-          }}
-        >
-          {selectedTransferAccount?.currency}
-        </Typography>
-      </Box>
-
-      <FormControl fullWidth margin="normal">
-        <Autocomplete
-          freeSolo
-          options={expenseSources}
-          value={selectedTransfer.category || ""}
-          onChange={(e, newValue) =>
-            setSelectedTransfer({ ...selectedTransfer, category: newValue })
-          }
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label={t("category")}
-              fullWidth
-              margin="normal"
-            />
+          {error && (
+            <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>
+              {error}
+            </Alert>
           )}
-        />
-      </FormControl>
 
-      <TextField
-        label={t("date")}
-        type="date"
-        value={selectedTransfer.date || ""}
-        onChange={(e) =>
-          setSelectedTransfer({ ...selectedTransfer, date: e.target.value })
-        }
-        fullWidth
-        margin="normal"
-        InputLabelProps={{ shrink: true }}
-        InputProps={{
-          sx: {
-            "& input::-webkit-calendar-picker-indicator": {
-              cursor: "pointer",
-              display: "block",
-              position: "relative",
-              right: 0,
-              filter: "none",
-            },
-          },
-        }}
-      />
-
-      <Autocomplete
-        freeSolo
-        options={selectedDetailsOptions}
-        value={selectedTransfer.details || ""}
-        onChange={(e, newValue) =>
-          setSelectedTransfer({ ...selectedTransfer, details: newValue })
-        }
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label={t("addMoney")}
-            fullWidth
-            margin="normal"
-          />
-        )}
-      />
-      <Typography variant="caption" sx={{ color: "gray", mt: 0.5 }}>
-        {t("detailsHint")}
-      </Typography>
-
-      {error && (
-        <Typography color="error" align="center" mt={1}>
-          {error}
-        </Typography>
-      )}
-
-      <TextField
-        label={t("description")}
-        value={selectedTransfer.description || ""}
-        onChange={(e) =>
-          setSelectedTransfer({
-            ...selectedTransfer,
-            description: e.target.value,
-          })
-        }
-        fullWidth
-        margin="normal"
-      />
-
-      <Box textAlign="center" mt={2}>
-        <Button
-          variant="contained"
-          color="success"
-          startIcon={<SaveIcon />}
-          onClick={handleSubmit}
-        >
-          {t("save")}
-        </Button>
-      </Box>
+          <Box display="flex" gap={2} mt={3}>
+            <Button 
+              variant="outlined" 
+              onClick={() => navigate("/account")}
+              sx={{ flex: 1, borderRadius: 2 }}
+            >
+              İptal
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              startIcon={<SaveIcon />}
+              onClick={handleSubmit}
+              sx={{ flex: 1, borderRadius: 2 }}
+            >
+              {t("save")}
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
 
       <Snackbar
         open={openSnackbar}
@@ -360,7 +445,7 @@ const OutgoingTransferPage = () => {
         onClose={() => setOpenSnackbar(false)}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert onClose={() => setOpenSnackbar(false)} severity="success">
+        <Alert onClose={() => setOpenSnackbar(false)} severity="success" sx={{ borderRadius: 2 }}>
           Para çıkışı kaydedildi!
         </Alert>
       </Snackbar>
