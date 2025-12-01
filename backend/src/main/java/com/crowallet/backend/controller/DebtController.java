@@ -1,6 +1,8 @@
 package com.crowallet.backend.controller;
 
 import com.crowallet.backend.dto.DebtDTO;
+import com.crowallet.backend.dto.DebtPaymentDTO;
+import com.crowallet.backend.dto.DebtSummaryDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,9 +23,25 @@ public class DebtController {
         return debtService.getAllDebts();
     }
 
-    @GetMapping("/get/{id}")
-    public List<DebtDTO> getUserDebts(@PathVariable Long id) {
-        return debtService.getUserDebts(id);
+    @GetMapping("/get/{userId}")
+    public List<DebtDTO> getUserDebts(@PathVariable Long userId) {
+        return debtService.getUserDebts(userId);
+    }
+
+    @GetMapping("/active/{userId}")
+    public List<DebtDTO> getUserActiveDebts(@PathVariable Long userId) {
+        return debtService.getUserActiveDebts(userId);
+    }
+
+    @GetMapping("/summary/{userId}")
+    public DebtSummaryDTO getUserDebtSummary(@PathVariable Long userId) {
+        return debtService.getUserDebtSummary(userId);
+    }
+
+    @GetMapping("/upcoming/{userId}")
+    public List<DebtPaymentDTO> getUpcomingPayments(@PathVariable Long userId, 
+            @RequestParam(defaultValue = "5") int limit) {
+        return debtService.getUpcomingPayments(userId, limit);
     }
 
     @GetMapping("/{id}")
@@ -31,9 +49,19 @@ public class DebtController {
         return debtService.getDebtById(id);
     }
 
+    @GetMapping("/{id}/payments")
+    public List<DebtPaymentDTO> getDebtPayments(@PathVariable Long id) {
+        return debtService.getDebtPayments(id);
+    }
+
     @PostMapping("/create")
     public DebtDTO createDebt(@RequestBody DebtDTO debt) {
         return debtService.createDebt(debt);
+    }
+
+    @PostMapping("/payment/{paymentId}/pay")
+    public DebtPaymentDTO markPaymentAsPaid(@PathVariable Long paymentId) {
+        return debtService.markPaymentAsPaid(paymentId);
     }
 
     @PutMapping("/update/{id}")

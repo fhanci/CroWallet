@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -9,12 +9,13 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../config/UserStore";
+import { useTheme } from "../config/ThemeContext";
 
-const SettingPage = () => {
+const IncomePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useUser();
-  const token = localStorage.getItem("token");
+  const { isDarkMode } = useTheme();
   const defaultIncomeOptions = t("defaultIncomeOptions", {
     returnObjects: true,
   });
@@ -59,7 +60,7 @@ const SettingPage = () => {
     }
   };
 
-  const handleClose = () => navigate("/account");
+  const handleClose = () => navigate("/settings");
 
   const handleSave = () => {
     localStorage.setItem(
@@ -76,13 +77,16 @@ const SettingPage = () => {
   return (
     <Box
       sx={{
-        bgcolor: "white",
-        color: "black",
+        bgcolor: isDarkMode ? "rgba(30, 42, 58, 0.90)" : "white",
+        color: isDarkMode ? "#fff" : "black",
         px: { xs: 2, sm: 4, md: 6 },
         py: { xs: 4, sm: 6 },
         maxWidth: 600,
         mx: "auto",
         mt: { xs: 2, sm: 5 },
+        borderRadius: 0,
+        backdropFilter: "blur(20px)",
+        border: `1px solid ${isDarkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)"}`,
       }}
     >
       <Typography
@@ -91,9 +95,10 @@ const SettingPage = () => {
           mb: 4,
           textAlign: "center",
           fontSize: { xs: "1.5rem", md: "2rem" },
+          fontWeight: 700,
         }}
       >
-        {t("settings")}
+        Gelir/Gider Kategorileri
       </Typography>
 
       <Box sx={{ mb: 4 }}>
@@ -189,4 +194,4 @@ const SettingPage = () => {
   );
 };
 
-export default SettingPage;
+export default IncomePage;
