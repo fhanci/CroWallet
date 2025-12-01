@@ -7,7 +7,7 @@
   --color-header-button-bg: rgba(159, 177, 202, 0.44);
 
   /* Font ve temel değerler */
-  --font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --font-family: "Plus Jakarta Sans", Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   --font-size-base: 16px;
   --radius: 8px;
 }
@@ -18,6 +18,14 @@
   margin: 0;
 }
 
+html, body {
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+}
+
 body {
   font-family: var(--font-family);
   font-size: var(--font-size-base);
@@ -25,6 +33,60 @@ body {
   color: var(--color-text);
   line-height: 1.5;
   min-height: 100vh;
+}
+
+/* Force scrollbar to always be visible and prevent layout shift */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Override ALL MUI inline style modifications */
+html[style], body[style] {
+  overflow: scroll !important;
+  overflow-x: hidden !important;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+  width: 100% !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  background: transparent;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary, #f5f7f6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.4);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.6);
+}
+
+/* Prevent MUI from adding padding to compensate for scrollbar */
+.MuiModal-root,
+.MuiPopover-root,
+.MuiMenu-root,
+.MuiDialog-root,
+.MuiDrawer-root {
+  padding-right: 0 !important;
+}
+
+.MuiBackdrop-root {
+  padding-right: 0 !important;
+}
+
+/* Override any MUI body lock */
+body.MuiModal-open {
+  overflow: scroll !important;
+  padding-right: 0 !important;
 }
 
 /* Genel bağlantı stilleri */
