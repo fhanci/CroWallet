@@ -13,10 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Map;
 
@@ -27,15 +25,13 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
 
-    private final AuthenticationManager authManager;
+
     private final CustomUserDetailsService userDetailsService;
     private final JwtUtil jwtUtil;
 
-    public AuthController(AuthenticationManager authManager, CustomUserDetailsService userDetailsService, JwtUtil jwtUtil) {
-        this.authManager = authManager;
+    public AuthController( CustomUserDetailsService userDetailsService, JwtUtil jwtUtil) {
+ 
         this.userDetailsService = userDetailsService;
         this.jwtUtil = jwtUtil;
     }
@@ -45,28 +41,67 @@ public class AuthController {
         String email = signUpRequest.getEmail();
         String username = signUpRequest.getUsername();
         String password = signUpRequest.getPassword();
+
+        // Validate required fields
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "EMAIL_REQUIRED"));
+        }
+        if (username == null || username.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "USERNAME_REQUIRED"));
+        }
+        if (password == null || password.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "PASSWORD_REQUIRED"));
+        }
+        if (password.length() < 6) {
+            return ResponseEntity.badRequest().body(Map.of("error", "PASSWORD_TOO_SHORT"));
+        }
+
+        // Check if email already exists
+        if (userService.findByEmail(email) != null) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "EMAIL_EXISTS"));
+        }
+
+        // Check if username already exists
+        if (userService.findByUsername(username) != null) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "USERNAME_EXISTS"));
+        }
+
         UserDTO user = userService.register(email, username, password);
         if (user != null)
             return ResponseEntity.ok(user);
         else
-            return ResponseEntity.badRequest().body("register failed. Account already exists");
+            return ResponseEntity.badRequest().body(Map.of("error", "REGISTRATION_FAILED"));
     }
 
     @PostMapping("/login")
     @CrossOrigin(allowCredentials = "true")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletResponse response) {
+        // Validate required fields
+        if (loginRequest.getEmail() == null || loginRequest.getEmail().isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "EMAIL_REQUIRED"));
+        }
+        if (loginRequest.getPassword() == null || loginRequest.getPassword().isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "PASSWORD_REQUIRED"));
+        }
+
         CustomUserDetails userDetails;
         UserDTO user = userService.findByEmail(loginRequest.getEmail());
+
+        // Check if user exists
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "USER_NOT_FOUND"));
+        }
+
         try {
             userDetails = userDetailsService.loadUserById(user.getId());
         } catch (UsernameNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Kullanıcı bulunamadı");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "USER_NOT_FOUND"));
         }
 
-        // Şifre kontrolü
+        // Password check
         if (!loginRequest.getPassword().equals(userDetails.getPassword()) ||
                 !loginRequest.getPassword().equals(userService.findById(user.getId()).getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Geçersiz şifre");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "INVALID_PASSWORD"));
         }
 
         // Token üretimi
