@@ -18,6 +18,9 @@ public interface DebtPaymentRepository extends JpaRepository<DebtPayment, Long> 
     
     List<DebtPayment> findByDebtIdAndStatus(Long debtId, String status);
     
+    @Query("SELECT dp FROM DebtPayment dp WHERE dp.debt.id = :debtId AND dp.status = 'PENDING' ORDER BY dp.paymentDate ASC")
+    List<DebtPayment> findPendingPaymentsByDebtId(@Param("debtId") Long debtId);
+
     @Query("SELECT dp FROM DebtPayment dp WHERE dp.debt.user.id = :userId AND dp.status = 'PENDING' ORDER BY dp.paymentDate ASC")
     List<DebtPayment> findPendingPaymentsByUserId(@Param("userId") Long userId);
     
