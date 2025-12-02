@@ -70,6 +70,7 @@ import MyStockAccountsPage from "./pages/MyStockAccountsPage";
 import MyGoldAccountsPage from "./pages/MyGoldAccountsPage";
 
 import { UserProvider } from "./config/UserStore";
+import ErrorPage from "./components/ErrorPage";
 import { ThemeProvider } from "./config/ThemeContext";
 const MainApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(
@@ -168,6 +169,7 @@ const MainApp = () => {
         <Route path="/investment/gold" element={<DashboardLayout />}>
           <Route index element={<MyGoldAccountsPage />} />
         </Route>
+        <Route path="*" element={<ErrorPage />} />
       </Routes>
     </>
   );

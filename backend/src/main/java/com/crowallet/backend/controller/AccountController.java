@@ -1,6 +1,7 @@
 package com.crowallet.backend.controller;
 
 import com.crowallet.backend.dto.AccountDTO;
+import com.crowallet.backend.dto.TransferDTO;
 import com.crowallet.backend.dto.AccountSummaryDTO;
 import com.crowallet.backend.dto.CreateInvestmentAccountDTO;
 import com.crowallet.backend.dto.InvestmentHoldingDTO;
@@ -65,7 +66,7 @@ public class AccountController {
         return accountService.getAccountHoldings(id);
     }
 
-    @PostMapping("create-account")
+    @PostMapping("/create-account")
     public AccountDTO createAccount(@RequestBody AccountDTO account) {
         return accountService.createAccount(account);
     }
@@ -97,6 +98,11 @@ public class AccountController {
     @PutMapping("/update/{id}")
     public AccountDTO updateAccount(@PathVariable Long id, @RequestBody AccountDTO account) {
         return accountService.updateAccount(id, account);
+    }
+
+    @PostMapping("/withdraw-money")
+    public TransferDTO withdrawMoney(@RequestBody TransferDTO transferDTO) {
+        return accountService.withdrawMoney(transferDTO);
     }
 
     @DeleteMapping("/delete/{id}")
