@@ -5,7 +5,6 @@ import com.crowallet.backend.dto.TransferDTO;
 import com.crowallet.backend.dto.AccountSummaryDTO;
 import com.crowallet.backend.dto.CreateInvestmentAccountDTO;
 import com.crowallet.backend.dto.InvestmentHoldingDTO;
-import com.crowallet.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,9 +19,6 @@ public class AccountController {
 
     @Autowired
     private AccountService accountService;
-
-    @Autowired
-    private UserService userService;
 
     // Return all accounts
     @GetMapping

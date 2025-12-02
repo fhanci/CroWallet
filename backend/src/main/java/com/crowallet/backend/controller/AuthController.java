@@ -13,10 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Map;
 
@@ -27,15 +25,13 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
 
-    private final AuthenticationManager authManager;
+
     private final CustomUserDetailsService userDetailsService;
     private final JwtUtil jwtUtil;
 
-    public AuthController(AuthenticationManager authManager, CustomUserDetailsService userDetailsService, JwtUtil jwtUtil) {
-        this.authManager = authManager;
+    public AuthController( CustomUserDetailsService userDetailsService, JwtUtil jwtUtil) {
+ 
         this.userDetailsService = userDetailsService;
         this.jwtUtil = jwtUtil;
     }
