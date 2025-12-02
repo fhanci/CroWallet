@@ -1,5 +1,0 @@
-com\crowallet\backend\security\SecurityConfig.class
-com\crowallet\backend\mapper\TransferMapperImpl.class
-com\crowallet\backend\mapper\DebtMapperImpl.class
-com\crowallet\backend\mapper\AccountMapperImpl.class
-com\crowallet\backend\mapper\UserMapperImpl.class
