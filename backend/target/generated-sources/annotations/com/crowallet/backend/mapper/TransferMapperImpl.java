@@ -17,7 +17,7 @@ import javax.annotation.processing.Generated;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-12-01T15:56:31+0300",
+    date = "2025-12-02T08:31:54+0300",
     comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.44.0.v20251118-1623, environment: Java 21.0.9 (Eclipse Adoptium)"
 )
 public class TransferMapperImpl implements TransferMapper {

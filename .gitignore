@@ -3,6 +3,7 @@ api/shelf/
 api/workspace.xml
 api/mavenHomeManager.xml
 api/target/
+../data/
 
 frontend/node_modules/
 .vscode/settings.json
