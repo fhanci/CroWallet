@@ -125,7 +125,7 @@ const IncomingTransferPage = () => {
       now.getTime() + 3 * 60 * 60 * 1000
     ).toISOString();
 
-    const updatedTransfer = {
+    const transferPayload = {
       ...selectedTransfer,
       category: finalCategory,
       exchangeRate: 1,
@@ -133,14 +133,9 @@ const IncomingTransferPage = () => {
       createDate,
       user: { id: user.id },
       account: { id: parseInt(selectedTransferAccount.id) },
-      inputPreviousBalance: selectedTransferAccount.balance,
-      inputNextBalance: selectedTransferAccount.balance + amount,
-    };
-
-    const updatedAccount = {
-      ...selectedTransferAccount,
-      balance: selectedTransferAccount.balance + amount,
-      updateDate: createDate,
+      amount,
+      date: selectedTransfer.date,
+      createDate,
     };
 
     try {

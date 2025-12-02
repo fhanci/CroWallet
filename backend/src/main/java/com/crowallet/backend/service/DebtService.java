@@ -1,14 +1,27 @@
 package com.crowallet.backend.service;
 
 import com.crowallet.backend.dto.DebtDTO;
+import com.crowallet.backend.dto.TransferDTO;
+import com.crowallet.backend.entity.Account;
+import com.crowallet.backend.entity.Transfer;
+import com.crowallet.backend.mapper.AccountMapper;
 import com.crowallet.backend.dto.DebtPaymentDTO;
 import com.crowallet.backend.dto.DebtSummaryDTO;
 import com.crowallet.backend.entity.*;
 import com.crowallet.backend.mapper.DebtMapper;
+import com.crowallet.backend.mapper.UserMapper;
+import com.crowallet.backend.repository.TransferRepository;
+import com.crowallet.backend.requests.DebtResponse;
+import com.crowallet.backend.requests.PayDebt;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -34,7 +47,18 @@ public class DebtService {
     private AccountRepository accountRepository;
 
     @Autowired
+    private TransferService transferService;
+
+    @Autowired
+    private TransferRepository transferRepository;
+
+    @Autowired
     private UserRepository userRepository;
+
+    public DebtService(DebtRepository debtRepository, AccountRepository accountRepository) {
+        this.debtRepository = debtRepository;
+        this.accountRepository = accountRepository;
+    }
 
     @Transactional
     public DebtDTO createDebt(DebtDTO debtDTO) {
@@ -182,8 +206,73 @@ public class DebtService {
     }
 
     @Transactional
-    public DebtDTO updateDebt(Long id, DebtDTO updatedDebt) {
+    public DebtResponse updateDebt(Long id, DebtDTO updatedDebt) {
         Debt existingDebt = debtRepository.findById(id)
+                .orElseThrow(() -> new GeneralException("Debt not found: " + id));
+
+        BigDecimal oldAmount = existingDebt.getDebtAmount();
+        BigDecimal newAmount = updatedDebt.getDebtAmount();
+        BigDecimal difference = newAmount.subtract(oldAmount);
+
+        Account oldAccount = accountRepository.findById(existingDebt.getAccount().getId())
+                .orElseThrow(() -> new GeneralException("Old account not found"));
+        Account newAccount = accountRepository.findById(updatedDebt.getAccount().getId())
+                .orElseThrow(() -> new GeneralException("New account not found"));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        if (!Objects.equals(oldAccount.getId(), newAccount.getId())) {
+            // Eski hesaptan çıkış
+            BigDecimal oldAccUpdatedBalance = oldAccount.getBalance().subtract(oldAmount);
+            TransferDTO transferDTO = new TransferDTO();
+
+            transferDTO.setAmount(oldAmount);
+            transferDTO.setCategory("Borç Güncelleme");
+            transferDTO.setDetails("Borç hesap değişikliği - eski hesaptan çıkış");
+            transferDTO.setDate(now.toLocalDate());
+            transferDTO.setCreateDate(now);
+            transferDTO.setUser(updatedDebt.getUser());
+            transferDTO.setAccount(AccountMapper.INSTANCE.toAccountDTO(oldAccount));
+            transferDTO.setType("outgoing");
+            transferDTO.setOutputPreviousBalance(oldAccount.getBalance());
+            transferDTO.setOutputNextBalance(oldAccUpdatedBalance);
+
+            transferService.createTransfer(transferDTO);
+            oldAccount.setBalance(oldAccUpdatedBalance);
+
+            BigDecimal newAccUpdatedBalance = newAccount.getBalance().add(newAmount);
+            transferDTO.setAmount(newAmount);
+            transferDTO.setCategory("Borç Güncelleme");
+            transferDTO.setDetails("Borç hesap değişikliği - yeni hesaba giriş");
+            transferDTO.setDate(now.toLocalDate());
+            transferDTO.setCreateDate(now);
+            transferDTO.setUser(updatedDebt.getUser());
+            transferDTO.setAccount(AccountMapper.INSTANCE.toAccountDTO(newAccount));
+            transferDTO.setType("incoming");
+            transferDTO.setInputPreviousBalance(newAccount.getBalance());
+            transferDTO.setInputNextBalance(newAccUpdatedBalance);
+            transferService.createTransfer(transferDTO);
+            newAccount.setBalance(newAccUpdatedBalance);
+        } else {
+            BigDecimal updatedBalance = oldAccount.getBalance().add(difference);
+            String detail = difference.compareTo(BigDecimal.ZERO) > 0 ? "Borç arttı" : "Borç azaldı";
+            String type = difference.compareTo(BigDecimal.ZERO) > 0 ? "incoming" : "outgoing";
+            TransferDTO transferDTO = new TransferDTO();
+            transferDTO.setAmount(difference.abs());
+            transferDTO.setCategory("Borç Güncelleme");
+            transferDTO.setDetails(detail);
+            transferDTO.setDate(now.toLocalDate());
+            transferDTO.setCreateDate(now);
+            transferDTO.setUser(updatedDebt.getUser());
+            transferDTO.setAccount(AccountMapper.INSTANCE.toAccountDTO(oldAccount));
+            transferDTO.setType(type);
+            transferDTO.setInputPreviousBalance(oldAccount.getBalance());
+            transferDTO.setInputNextBalance(updatedBalance);
+            transferService.createTransfer(transferDTO);
+            oldAccount.setBalance(updatedBalance);
+        }
+
+        existingDebt.setDebtAmount(newAmount);
                 .orElseThrow(() -> new GeneralException("Debt not found: " + id));
 
         existingDebt.setDebtAmount(updatedDebt.getDebtAmount());
@@ -192,6 +281,14 @@ public class DebtService {
         existingDebt.setStatus(updatedDebt.getStatus());
         existingDebt.setWarningPeriod(updatedDebt.getWarningPeriod());
         existingDebt.setDueDate(updatedDebt.getDueDate());
+        existingDebt.setAccount(newAccount);
+        existingDebt.setUser(UserMapper.INSTANCE.toUser(updatedDebt.getUser()));
+
+        debtRepository.save(existingDebt);
+        accountRepository.save(oldAccount);
+        accountRepository.save(newAccount);
+
+        return new DebtResponse(newAccount.getBalance(), DebtMapper.INSTANCE.toDebtDTO(existingDebt));
         existingDebt.setDescription(updatedDebt.getDescription());
 
         if (updatedDebt.getAccount() != null && updatedDebt.getAccount().getId() != null) {
@@ -203,6 +300,7 @@ public class DebtService {
         Debt saved = debtRepository.save(existingDebt);
         return enrichDebtDTO(DebtMapper.INSTANCE.toDebtDTO(saved));
     }
+
 
     @Transactional
     public void deleteDebt(Long id) {
@@ -307,4 +405,45 @@ public class DebtService {
 
         return dto;
     }
+
+    @Transactional
+    public DebtResponse payDebt(Long id, PayDebt debt) {
+        Debt existingDebt = debtRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Borç bulunamadı"));
+
+        Account account = accountRepository.findById(debt.getAccountId())
+                .orElseThrow(() -> new RuntimeException("Hesap bulunamadı"));
+
+        BigDecimal payAmount = debt.getAmount();
+        BigDecimal updatedDebtAmount = existingDebt.getDebtAmount().subtract(payAmount);
+        BigDecimal updatedBalance = account.getBalance().subtract(payAmount);
+
+        if (updatedBalance.compareTo(BigDecimal.ZERO) < 0) {
+            throw new RuntimeException("Yetersiz bakiye");
+        }
+
+        existingDebt.setDebtAmount(updatedDebtAmount.max(BigDecimal.ZERO));
+        existingDebt.setStatus(updatedDebtAmount.compareTo(BigDecimal.ZERO) <= 0 ? "odendi" : "odenmedi");
+        debtRepository.save(existingDebt);
+
+        account.setBalance(updatedBalance);
+        account.setUpdateDate(LocalDateTime.now());
+        accountRepository.save(account);
+
+        Transfer transfer = new Transfer();
+        transfer.setAmount(payAmount);
+        transfer.setCategory("Borç Ödeme");
+        transfer.setDetails("Borç ödeme");
+        transfer.setDate(LocalDate.now());
+        transfer.setCreateDate(LocalDateTime.now());
+        transfer.setUser(userRepository.findById(debt.getUserId()).orElse(null));
+        transfer.setAccount(account);
+        transfer.setType("outgoing");
+        transfer.setOutputPreviousBalance(account.getBalance().add(payAmount));
+        transfer.setOutputNextBalance(updatedBalance);
+        transferRepository.save(transfer);
+
+        return new DebtResponse(updatedBalance, DebtMapper.INSTANCE.toDebtDTO(existingDebt));
+    }
+
 }

@@ -1,6 +1,9 @@
 package com.crowallet.backend.controller;
 
 import com.crowallet.backend.dto.DebtDTO;
+import com.crowallet.backend.requests.DebtResponse;
+import com.crowallet.backend.requests.PayDebt;
+import com.crowallet.backend.service.TransferService;
 import com.crowallet.backend.dto.DebtPaymentDTO;
 import com.crowallet.backend.dto.DebtSummaryDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +20,9 @@ public class DebtController {
 
     @Autowired
     private DebtService debtService;
+
+    @Autowired
+    private TransferService transferService;
 
     @GetMapping
     public List<DebtDTO> getAllDebts() {
@@ -55,8 +61,13 @@ public class DebtController {
     }
 
     @PostMapping("/create")
-    public DebtDTO createDebt(@RequestBody DebtDTO debt) {
+    public DebtResponse createDebt(@RequestBody DebtDTO debt) {
         return debtService.createDebt(debt);
+    }
+
+    @PutMapping("/pay/{id}")
+    public DebtResponse payDebt(@PathVariable Long id, @RequestBody PayDebt debt){
+        return debtService.payDebt(id, debt);
     }
 
     @PostMapping("/payment/{paymentId}/pay")
@@ -65,7 +76,7 @@ public class DebtController {
     }
 
     @PutMapping("/update/{id}")
-    public DebtDTO updateDebt(@PathVariable Long id, @RequestBody DebtDTO debt) {
+    public DebtResponse updateDebt(@PathVariable Long id, @RequestBody DebtDTO debt) {
         return debtService.updateDebt(id, debt);
     }
 

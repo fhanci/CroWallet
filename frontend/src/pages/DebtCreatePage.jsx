@@ -81,7 +81,7 @@ const DebtCreatePage = () => {
   // Exchange rate for foreign currencies (Nakit Borç only)
   const [exchangeRate, setExchangeRate] = useState("");
 
-  const [error, setError] = useState("");
+  const [error, setError] = useState();
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
   // Fetch currency accounts (only BANK accounts for Kredi)
@@ -324,7 +324,7 @@ const DebtCreatePage = () => {
       }
 
       setOpenSnackbar(true);
-      setError("");
+      setError();
       setTimeout(() => navigate("/debt"), 1000);
     } catch (err) {
       console.error(err);

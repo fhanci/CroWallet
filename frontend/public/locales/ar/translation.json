@@ -48,8 +48,13 @@
   "languageSelection": "اختيار اللغة",
   "newIncomeSource": "مصدر دخل جديد",
   "newExpenseSource": "مصدر مصروف جديد",
+  "actions": "الإجراءات",
   "cancel": "إلغاء",
   "apply": "تطبيق",
+  "verifyPasswordTitle": "التحقق من كلمة المرور",
+  "currentPassword": "كلمة المرور الحالية",
+  "invalidCurrentPassword": "كلمة المرور الحالية غير صحيحة",
+  "deleteFailed": "تعذر حذف الحساب",
   "defaultIncomeOptions": [
     "راتب",
     "دخل العمل الحر",
@@ -161,10 +166,16 @@
   "accountDeleted": "تم حذف الحساب.",
   "chooseLanguage": "اختر اللغة",
   "exchangeRateHintTwo": "يرجى إدخال سعر الصرف الحالي لـ {{currency}}/TRY",
-
+  "helperText": "أدخل القيمة المكافئة لهذه الديون بالليرة التركية يدويًا",
   "noTransaction": "لا توجد أي معاملات على هذا الحساب حتى الآن.",
-  
+  "chooseAccount": "اختر الحساب",
+  "noPageError": "الصفحة التي تبحث عنها غير موجودة أو ربما تم نقلها.",
+  "AccountBalanceChart": "رسم بياني لرصيد الحساب",
   "dueDateTwo": "التاريخ النهائي",
+  "pageNotFound": "٤٠٤ - الصفحة غير موجودة",
+  "returnMain": "العودة إلى الصفحة الرئيسية",
+  "confirmLogoutTitle": "تسجيل الخروج",
+  "confirmLogoutText": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
   "incomeDetails": {
     "الراتب": ["الراتب الشهري", "مكافأة", "دخل إضافي"],
     "العمل الحر": ["دفعة مشروع", "استشارات", "عمل حر"],

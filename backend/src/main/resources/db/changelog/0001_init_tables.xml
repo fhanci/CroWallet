@@ -43,7 +43,7 @@
             <column name="date" type="date"/>
             <column name="create_date" type="timestamp"/>
             <column name="description" type="text"/>
-            <column name="person" type="varchar(255)"/>
+            <column name="receiverId" type="bigint"/>
             <column name="type" type="varchar(50)"/>
             <column name="details" type="text"/>
             <column name="exchange_rate" type="numeric(10,4)"/>

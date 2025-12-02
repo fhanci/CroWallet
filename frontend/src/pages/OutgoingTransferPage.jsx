@@ -140,7 +140,7 @@ const OutgoingTransferPage = () => {
       now.getTime() + 3 * 60 * 60 * 1000
     ).toISOString();
 
-    const updatedTransfer = {
+    const transferPayload = {
       ...selectedTransfer,
       category: finalCategory,
       exchangeRate: 1,
@@ -148,6 +148,8 @@ const OutgoingTransferPage = () => {
       createDate,
       user: { id: parseInt(user.id) },
       account: { id: parseInt(selectedTransferAccount.id) },
+      amount,
+      date: selectedTransfer.date,
       outputPreviousBalance: currentBalance,
       outputNextBalance: currentBalance - amount,
     };

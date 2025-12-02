@@ -25,12 +25,11 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SearchIcon from "@mui/icons-material/Search";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../config/UserStore";
 import { useTheme } from "../config/ThemeContext";
 import axios from "axios";
+import Graph from "./Graph";
 
 const TransactionHistoryPage = () => {
   const { user } = useUser();
@@ -40,26 +39,30 @@ const TransactionHistoryPage = () => {
   const [transactions, setTransactions] = useState([]);
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [expandedTransaction, setExpandedTransaction] = useState(null);
-  const [error, setError] = useState("");
-  const [filterType, setFilterType] = useState("");
+  const [error, setError] = useState();
+  const [filterType, setFilterType] = useState();
   const [anchorEl, setAnchorEl] = useState(null);
-  const [accountName, setAccountName] = useState("");
+  const [accountName, setAccountName] = useState();
   const [dateFilterDialogOpen, setDateFilterDialogOpen] = useState(false);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [startDate, setStartDate] = useState();
+  const [endDate, setEndDate] = useState();
+  const [searchQuery, setSearchQuery] = useState();
   const [accountBalance, setAccountBalance] = useState(null);
-  const [accountCurrency, setAccountCurrency] = useState("");
+  const [accountCurrency, setAccountCurrency] = useState();
   const token = localStorage.getItem("token");
+  const [graphTransactions, setGraphTransactions] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(`http://localhost:8082/api/transfers/get/${user.id}`, {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        });
+        const response = await axios.get(
+          `http://localhost:8082/api/transfers/get/${accountId}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
 
         // Filter transactions by accountId
         const accountTransactions = response.data.filter(
@@ -75,9 +78,9 @@ const TransactionHistoryPage = () => {
         const sortedData = accountTransactions.sort(
           (a, b) => new Date(b.createDate) - new Date(a.createDate)
         );
-
         setTransactions(sortedData);
         setFilteredTransactions(sortedData);
+        setGraphTransactions(sortedData);
       } catch (error) {
         console.error("Hata:", error);
         setError("Bir hata oluştu, lütfen tekrar deneyin.");
@@ -114,12 +117,14 @@ const TransactionHistoryPage = () => {
 
     if (filterType) {
       filtered = filtered.filter((t) => t.type === filterType);
+      console.log(filterTyp)
     }
     if (startDate && endDate) {
       filtered = filtered.filter((t) => {
         const date = new Date(t.createDate);
         return date >= new Date(startDate) && date <= new Date(endDate);
       });
+      setGraphTransactions(filtered);
     }
     if (searchQuery) {
       const sq = searchQuery.toLowerCase();
@@ -160,10 +165,10 @@ const TransactionHistoryPage = () => {
   const handleCloseDateFilter = () => setDateFilterDialogOpen(false);
   const applyDateFilter = () => handleCloseDateFilter();
   const clearFilter = () => {
-    setFilterType("");
-    setStartDate("");
-    setEndDate("");
-    setSearchQuery("");
+    setFilterType();
+    setStartDate();
+    setEndDate();
+    setSearchQuery();
   };
 
   const handleSearch = (event) => {
@@ -172,16 +177,10 @@ const TransactionHistoryPage = () => {
 
   const getIncomeOrExpense = (transaction) => {
     if (transaction.type === "inter-account") {
-      if (
-        transaction.outputPreviousBalance !== null &&
-        transaction.account.id.toString() === accountId.toString()
-      ) {
+      if (transaction.account.id.toString() === accountId.toString()) {
         return t("expense");
       }
-      if (
-        transaction.inputPreviousBalance !== null &&
-        transaction.account.id.toString() === accountId.toString()
-      ) {
+      if (transaction.receiverId.toString() === accountId.toString()) {
         return t("income");
       }
       return "problem var";
@@ -287,7 +286,26 @@ const TransactionHistoryPage = () => {
           />
         </Box>
       </Box>
-
+      {filteredTransactions.length > 0 && (
+        <Box
+          sx={{
+            mt: 4,
+            mx: "auto",
+            px: { xs: 2, sm: 4 },
+            width: "100%",
+            maxWidth: "1000px",
+            minHeight: 400,
+            borderRadius: 2,
+            boxShadow: 3,
+            p: 3,
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            {t("AccountBalanceChart")}
+          </Typography>
+          <Graph transactions={graphTransactions} accountId={accountId} />
+        </Box>
+      )}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
