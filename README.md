@@ -77,9 +77,25 @@ Then,
 <h2 id="screenshots">📸 Screenshots</h2>
 
 <div align="center">
-    <img width=800 src="assets/screens/login_screen.png">
+    <img width=800 src="images/screenshot_01.png">
     <br><br>
-    <img width=800 src="assets/screens/main_screen.png">
+    <img width=800 src="images/screenshot_02.png">
+    <br><br>
+    <img width=800 src="images/screenshot_03.png">
+    <br><br>
+    <img width=800 src="images/screenshot_04.png">
+    <br><br>
+    <img width=800 src="images/screenshot_05.png">
+    <br><br>
+    <img width=800 src="images/screenshot_06.png">
+    <br><br>
+    <img width=800 src="images/screenshot_07.png">
+    <br><br>
+    <img width=800 src="images/screenshot_08.png">
+    <br><br>
+    <img width=800 src="images/screenshot_09.png">
+    <br><br>
+    <img width=800 src="images/screenshot_10.png">
 </div>
 
 <h2 id="architecture-overview">🏗️ Architecture Overview</h2>
