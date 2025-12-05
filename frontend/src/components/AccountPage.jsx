@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Container, Typography, Box, Card, Chip, Divider, Button, LinearProgress } from "@mui/material";
+import { Container, Typography, Box, Card, Chip, Divider, Button, LinearProgress, CircularProgress, IconButton, Tooltip as MuiTooltip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import SavingsIcon from "@mui/icons-material/Savings";
@@ -11,11 +11,88 @@ import PaymentIcon from "@mui/icons-material/Payment";
 import EventIcon from "@mui/icons-material/Event";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
+import EuroIcon from "@mui/icons-material/Euro";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import CurrencyLiraIcon from "@mui/icons-material/CurrencyLira";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import { PieChart, Pie, Cell, Sector, Tooltip, Legend } from "recharts";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../config/UserStore";
 import { useTheme } from "../config/ThemeContext";
+import useCurrencyRates from "../config/useCurrencyRates";
 import axios from "axios";
+
+// Currency Rates Display Component - Shows EUR/TRY, EUR/USD rates
+const CurrencyRatesDisplay = ({ isDarkMode }) => {
+  const { rates, loading, refresh } = useCurrencyRates(60000);
+  
+  const formatRate = (rate) => {
+    if (!rate) return '-';
+    return rate.toFixed(4);
+  };
+
+  const textColor = isDarkMode ? "#fff" : "#1a1a1a";
+  const bgColor = isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)";
+
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+      {/* EUR/TRY Rate */}
+      <Box sx={{ 
+        display: "flex", 
+        alignItems: "center", 
+        gap: 0.5, 
+        px: 1.5, 
+        py: 0.5, 
+        borderRadius: 2,
+        bgcolor: bgColor,
+        border: "1px solid",
+        borderColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"
+      }}>
+        <EuroIcon sx={{ fontSize: 18, color: "#2196F3" }} />
+        <Typography variant="body2" sx={{ color: textColor, fontWeight: 500 }}>/</Typography>
+        <CurrencyLiraIcon sx={{ fontSize: 18, color: "#E91E63" }} />
+        <Typography variant="body2" sx={{ color: textColor, fontWeight: 600, ml: 0.5 }}>
+          {loading && !rates.TRY ? "..." : formatRate(rates.TRY)}
+        </Typography>
+      </Box>
+
+      {/* EUR/USD Rate */}
+      <Box sx={{ 
+        display: "flex", 
+        alignItems: "center", 
+        gap: 0.5, 
+        px: 1.5, 
+        py: 0.5, 
+        borderRadius: 2,
+        bgcolor: bgColor,
+        border: "1px solid",
+        borderColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"
+      }}>
+        <EuroIcon sx={{ fontSize: 18, color: "#2196F3" }} />
+        <Typography variant="body2" sx={{ color: textColor, fontWeight: 500 }}>/</Typography>
+        <AttachMoneyIcon sx={{ fontSize: 18, color: "#4CAF50" }} />
+        <Typography variant="body2" sx={{ color: textColor, fontWeight: 600, ml: 0.5 }}>
+          {loading && !rates.USD ? "..." : formatRate(rates.USD)}
+        </Typography>
+      </Box>
+
+      {/* Refresh Button */}
+      <MuiTooltip title="Kurları Güncelle">
+        <IconButton 
+          onClick={refresh} 
+          size="small" 
+          disabled={loading}
+          sx={{ 
+            color: isDarkMode ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.5)",
+            "&:hover": { color: "#2196F3" }
+          }}
+        >
+          {loading ? <CircularProgress size={16} /> : <RefreshIcon sx={{ fontSize: 18 }} />}
+        </IconButton>
+      </MuiTooltip>
+    </Box>
+  );
+};
 
 const AccountPage = () => {
   const { t } = useTranslation();
@@ -740,14 +817,19 @@ const AccountPage = () => {
       <Divider sx={{ width: "100%", my: 4, borderColor: borderColor }} />
       
       <Box sx={{ width: "100%", mt: 2 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-          <AccountBalanceIcon sx={{ fontSize: 30, color: "#2196F3" }} />
-          <Typography variant="h5" sx={{ color: textPrimary, fontWeight: 600 }}>Para Hesapları</Typography>
-          <Chip 
-            label={accountSummary?.currencyAccountCount || 0} 
-            size="small" 
-            color="primary" 
-          />
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2, mb: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <AccountBalanceIcon sx={{ fontSize: 30, color: "#2196F3" }} />
+            <Typography variant="h5" sx={{ color: textPrimary, fontWeight: 600 }}>Para Hesapları</Typography>
+            <Chip 
+              label={accountSummary?.currencyAccountCount || 0} 
+              size="small" 
+              color="primary" 
+            />
+          </Box>
+          
+          {/* Real-time Currency Rates */}
+          <CurrencyRatesDisplay isDarkMode={isDarkMode} />
         </Box>
 
         {accountSummary?.currencyAccounts?.length === 0 ? (
