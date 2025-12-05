@@ -163,7 +163,7 @@ const OutgoingTransferPage = () => {
     try {
       await axios.post(
         "http://localhost:8082/api/transfers/create",
-        updatedTransfer,
+        transferPayload,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
