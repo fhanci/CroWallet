@@ -5,7 +5,7 @@ const UserContext = createContext();
 export function UserProvider({ children }) {
   const [user, setUser] = useState(() => {
     const stored = localStorage.getItem("user");
-    return stored ? JSON.parse(stored) : { id: "A", username: "", email: "" };
+    return stored ? JSON.parse(stored) : { id: "A", username: "" , email:  ""};
   });
 
   useEffect(() => {
@@ -17,7 +17,7 @@ export function UserProvider({ children }) {
   };
 
   const clearUser = () => {
-    setUser({ id: "", username: "", email: "" });
+    setUser({ id: "" , username: "" , email:  ""});
     localStorage.removeItem("user");
   };
 

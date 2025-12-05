@@ -1,5 +1,13 @@
 package com.crowallet.backend.service;
 
+import com.crowallet.backend.dto.AccountDTO;
+import com.crowallet.backend.dto.TransferDTO;
+import com.crowallet.backend.entity.Transfer;
+import com.crowallet.backend.mapper.AccountMapper;
+import com.crowallet.backend.mapper.TransferMapper;
+import com.crowallet.backend.mapper.UserMapper;
+import com.crowallet.backend.repository.TransferRepository;
+import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -8,6 +16,12 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
 
 import com.crowallet.backend.comman.GeneralException;
 import com.crowallet.backend.dto.AccountDTO;
@@ -21,6 +35,8 @@ import com.crowallet.backend.entity.InvestmentHolding;
 import com.crowallet.backend.entity.User;
 import com.crowallet.backend.mapper.AccountMapper;
 import com.crowallet.backend.repository.AccountRepository;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import com.crowallet.backend.repository.InvestmentHoldingRepository;
 import com.crowallet.backend.repository.UserRepository;
 
@@ -37,16 +53,42 @@ public class AccountService {
     @Autowired
     private InvestmentHoldingRepository holdingRepository;
 
-    public AccountDTO createAccount(AccountDTO account) {
-        Account account1 = AccountMapper.INSTANCE.toAccount(account);
-        if (account.getUserId() != null) {
-            User user = userRepository.findById(account.getUserId())
-                    .orElseThrow(() -> new GeneralException("User not found: " + account.getUserId()));
-            account1.setUser(user);
+    @Autowired
+    private TransferRepository transferRepository;
+
+    @Autowired
+    private TransferService transferService;
+
+    @Transactional
+    public AccountDTO createAccount(AccountDTO accountDTO) {
+        Account account = AccountMapper.INSTANCE.toAccount(accountDTO);
+        if (accountDTO.getUserId() != null) {
+            User user = userRepository.findById(accountDTO.getUserId())
+                    .orElseThrow(() -> new GeneralException("User not found: " + accountDTO.getUserId()));
+            account.setUser(user);
         }
-        accountRepository.save(account1);
-        return AccountMapper.INSTANCE.toAccountDTO(account1);
+        account.setUpdateDate(LocalDateTime.now());
+
+        accountRepository.save(account);
+
+        Transfer transfer = new Transfer();
+        transfer.setAmount(account.getBalance());
+        transfer.setCategory("Başlangıç Bütçesi");
+        transfer.setDetails("Hesap oluşturulurken girilen bakiye");
+        transfer.setType("incoming");
+        transfer.setDate(LocalDate.now());
+        transfer.setCreateDate(LocalDateTime.now());
+        transfer.setUser(account.getUser());
+        transfer.setAccount(account);
+        transfer.setInputPreviousBalance(BigDecimal.ZERO);
+        transfer.setInputNextBalance(account.getBalance());
+
+        transferRepository.save(transfer);
+
+        return AccountMapper.INSTANCE.toAccountDTO(account);
     }
+    
+
 
     @Transactional
     public AccountDTO createInvestmentAccount(CreateInvestmentAccountDTO dto) {
@@ -269,9 +311,13 @@ public class AccountService {
         Account existingAccount = accountRepository.findById(id)
                 .orElseThrow(() -> new GeneralException("Account to be updated not found: " + id));
 
+        BigDecimal oldBalance = existingAccount.getBalance();
+        BigDecimal newBalance = updatedAccount.getBalance();
+        BigDecimal difference = newBalance.subtract(oldBalance);
+
         existingAccount.setUpdateDate(updatedAccount.getUpdateDate());
         existingAccount.setAccountName(updatedAccount.getAccountName());
-        existingAccount.setBalance(updatedAccount.getBalance());
+        existingAccount.setBalance(newBalance);
         existingAccount.setCurrency(updatedAccount.getCurrency());
         
         // Update new fields
@@ -299,13 +345,66 @@ public class AccountService {
             existingAccount.setUser(user);
         }
 
-        return AccountMapper.INSTANCE.toAccountDTO(accountRepository.save(existingAccount));
+        Account savedAccount = accountRepository.save(existingAccount);
+
+        if (difference.compareTo(BigDecimal.ZERO) != 0) {
+            Transfer transfer = new Transfer();
+            transfer.setAmount(difference.abs());
+            transfer.setType(difference.compareTo(BigDecimal.ZERO) > 0 ? "incoming" : "outgoing");
+            transfer.setCategory("Bakiye Güncellemesi");
+            transfer.setDetails("Hesap güncellemesi sonucu bakiye farkı");
+            transfer.setDate(LocalDate.now());
+            transfer.setCreateDate(LocalDateTime.now());
+            transfer.setUser(savedAccount.getUser());
+            transfer.setAccount(savedAccount);
+            transfer.setInputPreviousBalance(oldBalance);
+            transfer.setInputNextBalance(newBalance);
+
+            transferRepository.save(transfer);
+        }
+
+        return AccountMapper.INSTANCE.toAccountDTO(savedAccount);
     }
 
+
+    @Transactional
     public void deleteAccount(Long id) {
-        if (!accountRepository.existsById(id)) {
-            throw new GeneralException("Account to be deleted not found: " + id);
-        }
-        accountRepository.deleteById(id);
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new GeneralException("Account to be deleted not found: " + id));
+
+        transferRepository.deleteByAccountId(account.getId());
+
+        accountRepository.delete(account);
     }
+
+
+    @Transactional
+    public TransferDTO withdrawMoney(TransferDTO transferDTO) {
+        Account account = accountRepository.findById(transferDTO.getAccount().getId())
+                .orElseThrow(() -> new GeneralException("Hesap bulunamadı"));
+
+        BigDecimal amount = transferDTO.getAmount();
+        BigDecimal currentBalance = account.getBalance();
+
+        if (currentBalance.compareTo(amount) < 0) {
+            throw new GeneralException("Yetersiz bakiye");
+        }
+
+        BigDecimal newBalance = currentBalance.subtract(amount);
+        account.setBalance(newBalance);
+        account.setUpdateDate(LocalDateTime.now());
+        accountRepository.save(account);
+
+        transferDTO.setType("outgoing");
+        transferDTO.setCreateDate(LocalDateTime.now());
+        transferDTO.setDate(LocalDate.now());
+        transferDTO.setOutputPreviousBalance(currentBalance);
+        transferDTO.setOutputNextBalance(newBalance);
+
+        Transfer transfer = TransferMapper.INSTANCE.toTransfer(transferDTO);
+        transferRepository.save(transfer);
+
+        return TransferMapper.INSTANCE.toTransferDTO(transfer);
+    }
+
 }

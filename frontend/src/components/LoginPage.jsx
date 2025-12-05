@@ -28,7 +28,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState();
   const [isRegistering, setIsRegistering] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -103,7 +103,7 @@ const LoginPage = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setMessage("");
+    setMessage();
 
     if (!email) {
       setMessage(t("emailRequired"));

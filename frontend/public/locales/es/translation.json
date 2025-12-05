@@ -20,6 +20,9 @@
   "registrationFailed": "El registro falló. Por favor, inténtalo de nuevo.",
   "serverError": "¡No se pudo conectar con el servidor!",
   "loginFailed": "¡Datos incorrectos!",
+  "verifyPasswordTitle": "Verificación de contraseña",
+  "currentPassword": "Contraseña actual",
+  "invalidCurrentPassword": "La contraseña actual es incorrecta",
   "genericError": "Ha ocurrido un error. Inténtalo más tarde.",
   "registrationSuccess": "¡Registro exitoso!",
   "emailRequired": "Por favor, introduce tu correo electrónico.",
@@ -49,7 +52,9 @@
   "newIncomeSource": "Nueva Fuente de Ingreso",
   "newExpenseSource": "Nueva Fuente de Gasto",
   "cancel": "Cancelar",
+  "deleteFailed": "No se pudo eliminar la cuenta",
   "apply": "Aplicar",
+  "actions": "Acciones",
   "defaultIncomeOptions": [
     "Salario",
     "Trabajo Freelance",
@@ -162,9 +167,17 @@
   "chooseLanguage": "Seleccionar Idioma",
   "exchangeRateHintTwo": "Por favor, introduce el tipo de cambio actual {{currency}}/TRY",
   "dueDateTwo": "Fecha límite",
-  
+
   "noTransaction": "Aún no hay movimientos en esta cuenta.",
-  
+
+  "noPageError": "La página que estás buscando no existe o puede haber sido movida.",
+  "pageNotFound": "404 - Página no encontrada",
+  "returnMain": "Volver a la página principal",
+  "AccountBalanceChart": "Gráfico de Saldo de Cuenta",
+  "confirmLogoutTitle": "Cerrar sesión",
+  "confirmLogoutText": "¿Estás seguro de que deseas cerrar sesión?",
+  "chooseAccount": "Elegir cuenta",
+  "helperText": "Ingrese manualmente el equivalente en liras turcas de esta deuda",
   "incomeDetails": {
     "Salario": ["Salario Mensual", "Prima", "Ingreso Adicional"],
     "Trabajo Autónomo": [

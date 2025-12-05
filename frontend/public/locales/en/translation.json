@@ -23,6 +23,9 @@
   "loginFailed": "Incorrect login information!",
   "genericError": "An error occurred. Please try again later.",
   "registrationSuccess": "Registration Successful!",
+  "verifyPasswordTitle": "Password Verification",
+  "currentPassword": "Current Password",
+  "invalidCurrentPassword": "Incorrect current password",
   "emailRequired": "Please enter your email address.",
   "passwordRequired": "Please enter your password.",
   "usernameRequired": "Please enter your name.",
@@ -48,10 +51,11 @@
   "settings": "Settings",
   "logout": "Logout",
   "languageSelection": "Language Selection",
-
+  "deleteFailed": "Account could not be deleted",
   "newIncomeSource": "New Income Source",
   "newExpenseSource": "New Expense Source",
   "cancel": "Cancel",
+  "actions": "Actions",
   "apply": "Apply",
   "defaultIncomeOptions": [
     "Salary",
@@ -180,9 +184,15 @@
 
   "dueDateTwo": "Deadline",
 
-  
   "noTransaction": "There are no transactions on this account yet.",
-
+  "noPageError": "The page you are looking for does not exist or may have been moved.",
+  "pageNotFound": "404 - Page Not Found",
+  "returnMain": "Return to Home",
+  "AccountBalanceChart": "Account Balance Chart",
+  "confirmLogoutTitle": "Log Out",
+  "confirmLogoutText": "Are you sure you want to log out?",
+  "chooseAccount": "Choose Account",
+  "helperText": "Enter the TL equivalent of this debt manually",
   "incomeDetails": {
     "Salary": ["Monthly Salary", "Bonus", "Additional Income"],
     "Freelance": ["Project Payment", "Consulting", "Freelance Work"],
