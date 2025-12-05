@@ -17,14 +17,12 @@ const ProfileButton = ({
   const handleClick = () => {
     navigate("/profile");
     if (isMobile && setIsDrawerOpen) {
-      setIsDrawerOpen(false); // ✅ Drawer'ı kapat
+      setIsDrawerOpen(false);
     }
   };
 
-  // Drawer içindeyse ve mobilde değilse gösterme
   if (isInsideDrawer && !(isMobile && isDrawerOpen)) return null;
 
-  // Drawer dışında ve mobildeyse gösterme
   if (!isInsideDrawer && isMobile) return null;
 
   return (

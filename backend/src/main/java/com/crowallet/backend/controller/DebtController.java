@@ -1,13 +1,24 @@
 package com.crowallet.backend.controller;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.crowallet.backend.dto.DebtDTO;
 import com.crowallet.backend.dto.DebtPaymentDTO;
 import com.crowallet.backend.dto.DebtSummaryDTO;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
+import com.crowallet.backend.requests.DebtResponse;
+import com.crowallet.backend.requests.PayDebt;
 import com.crowallet.backend.service.DebtService;
 
 @RestController
@@ -17,6 +28,7 @@ public class DebtController {
 
     @Autowired
     private DebtService debtService;
+
 
     @GetMapping
     public List<DebtDTO> getAllDebts() {
@@ -57,6 +69,11 @@ public class DebtController {
     @PostMapping("/create")
     public DebtDTO createDebt(@RequestBody DebtDTO debt) {
         return debtService.createDebt(debt);
+    }
+
+    @PutMapping("/pay/{id}")
+    public DebtResponse payDebt(@PathVariable Long id, @RequestBody PayDebt debt){
+        return debtService.payDebt(id, debt);
     }
 
     @PostMapping("/payment/{paymentId}/pay")

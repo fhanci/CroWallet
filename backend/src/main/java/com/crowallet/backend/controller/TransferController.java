@@ -41,6 +41,11 @@ public class TransferController {
         return transferService.updateTransfer(id, transfer);
     }
 
+    @PostMapping("/add-money")
+    public TransferDTO addMoney(@RequestBody TransferDTO transferDTO) {
+        return transferService.addMoney(transferDTO);
+    }
+
     @DeleteMapping("/delete/{id}")
     public void deleteTransfer(@PathVariable Long id) {
         transferService.deleteTransfer(id);

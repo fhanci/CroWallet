@@ -45,36 +45,18 @@ const ProfilePage = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const token = localStorage.getItem("token");
   const { t, i18n } = useTranslation();
+  const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [verifyError, setVerifyError] = useState("");
+  const [deleteVerifyDialogOpen, setDeleteVerifyDialogOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteVerifyError, setDeleteVerifyError] = useState("");
+
   const currentLang = i18n.language;
 
   const changeLanguage = (event) => {
     i18n.changeLanguage(event.target.value);
   };
-
-  // useEffect(() => {
-  //   const fetchUser = async () => {
-  //     const response = await fetch(
-  //       `http://localhost:8082/api/users/${userId}`,
-  //       {
-  //         method: "GET",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: token ? `Bearer ${token}` : undefined,
-  //         },
-  //       }
-  //     );
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       setUser(data);
-  //       setEditData({
-  //         name: data.name,
-  //         email: data.email,
-  //         password: data.password,
-  //       });
-  //     }
-  //   };
-  //   fetchUser();
-  // }, [userId]);
 
   const handleEdit = () => setIsEditing(true);
 
@@ -87,37 +69,85 @@ const ProfilePage = () => {
       });
     setIsEditing(false);
   };
-
-  const handleSave = async () => {
-    const response = await axios.put(
-      `http://localhost:8082/api/users/update/${user.id}`,
-      editData,
-      {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : undefined,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    setUserInfo(response.data);
-    setIsEditing(false);
-    setSnackbar({
-      open: true,
-      message: t("profileUpdated"),
-      severity: "success",
-    });
-  };
-
-  const handleDelete = async () => {
+  const handleVerifyAndSave = async () => {
     try {
-      const response = await axios.delete(
-        `http://localhost:8082/api/users/delete/${user.id}`,
+      const verifyResponse = await axios.post(
+        "http://localhost:8082/api/users/verify-password",
+        {
+          password: currentPassword,
+          id: user.id,
+        },
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
           },
         }
       );
+
+      if (!verifyResponse.data) {
+        setVerifyError(t("invalidCurrentPassword"));
+        return;
+      }
+
+      const updateResponse = await axios.put(
+        `http://localhost:8082/api/users/update/${user.id}`,
+        editData,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      setUserInfo(updateResponse.data);
+      setIsEditing(false);
+      setVerifyDialogOpen(false);
+      setCurrentPassword("");
+      setVerifyError("");
+      setSnackbar({
+        open: true,
+        message: t("profileUpdated"),
+        severity: "success",
+      });
+    } catch (error) {
+      console.error(error);
+      setSnackbar({
+        open: true,
+        message: t("updateFailed"),
+        severity: "error",
+      });
+    }
+  };
+
+  const handleVerifyAndDelete = async () => {
+    try {
+      const verifyResponse = await axios.post(
+        "http://localhost:8082/api/users/verify-password",
+        {
+          password: deletePassword,
+          id: user.id,
+        },
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!verifyResponse.data) {
+        setDeleteVerifyError(t("invalidCurrentPassword"));
+        return;
+      }
+
+      await axios.delete(`http://localhost:8082/api/users/delete/${user.id}`, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : undefined,
+        },
+      });
+
       setSnackbar({
         open: true,
         message: t("accountDeleted"),
@@ -126,7 +156,16 @@ const ProfilePage = () => {
       localStorage.clear();
       navigate("/login");
     } catch (err) {
-      console.log(err);
+      console.error(err);
+      setSnackbar({
+        open: true,
+        message: t("deleteFailed"),
+        severity: "error",
+      });
+    } finally {
+      setDeleteVerifyDialogOpen(false);
+      setDeletePassword("");
+      setDeleteVerifyError("");
     }
   };
 
@@ -184,22 +223,24 @@ const ProfilePage = () => {
               {t("edit")}
             </Button>
           ) : (
-            <Box display="flex" gap={2}>
-              <Button
-                variant="outlined"
-                startIcon={<CloseIcon />}
-                onClick={handleCancel}
-              >
-                {t("cancel")}
-              </Button>
-              <Button
-                variant="contained"
-                color="success"
-                startIcon={<SaveIcon />}
-                onClick={handleSave}
-              >
-                {t("save")}
-              </Button>
+            <Box display="flex" flexDirection="column" gap={2}>
+              <Box display="flex" gap={2}>
+                <Button
+                  variant="outlined"
+                  startIcon={<CloseIcon />}
+                  onClick={handleCancel}
+                >
+                  {t("cancel")}
+                </Button>
+                <Button
+                  variant="contained"
+                  color="success"
+                  startIcon={<SaveIcon />}
+                  onClick={() => setVerifyDialogOpen(true)}
+                >
+                  {t("save")}
+                </Button>
+              </Box>
             </Box>
           )}
 
@@ -228,7 +269,75 @@ const ProfilePage = () => {
           <Button onClick={() => setDeleteDialogOpen(false)}>
             {t("cancel")}
           </Button>
-          <Button onClick={handleDelete} color="error" variant="contained">
+          <Button
+            onClick={() => setDeleteVerifyDialogOpen(true)}
+            color="error"
+            variant="contained"
+          >
+            {t("delete")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={verifyDialogOpen}
+        onClose={() => setVerifyDialogOpen(false)}
+      >
+        <DialogTitle>{t("verifyPasswordTitle")}</DialogTitle>
+        <DialogContent>
+          <TextField
+            label={t("currentPassword")}
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            fullWidth
+            required
+          />
+          {verifyError && (
+            <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+              {verifyError}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setVerifyDialogOpen(false)}>
+            {t("cancel")}
+          </Button>
+          <Button variant="contained" onClick={handleVerifyAndSave}>
+            {t("confirm")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={deleteVerifyDialogOpen}
+        onClose={() => setDeleteVerifyDialogOpen(false)}
+      >
+        <DialogTitle>{t("verifyPasswordTitle")}</DialogTitle>
+        <DialogContent>
+          <Typography>{t("deleteConfirmText")}</Typography>
+          <TextField
+            label={t("currentPassword")}
+            type="password"
+            value={deletePassword}
+            onChange={(e) => setDeletePassword(e.target.value)}
+            fullWidth
+            required
+            sx={{ mt: 2 }}
+          />
+          {deleteVerifyError && (
+            <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+              {deleteVerifyError}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteVerifyDialogOpen(false)}>
+            {t("cancel")}
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleVerifyAndDelete}
+          >
             {t("delete")}
           </Button>
         </DialogActions>

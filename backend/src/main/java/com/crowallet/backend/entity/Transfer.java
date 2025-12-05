@@ -32,8 +32,8 @@ public class Transfer {
     @Column(name = "description")
     private String description;
 
-    @Column(name = "person")
-    private String person;
+    @Column(name = "receiverId")
+    private Long receiverId;
 
     @Column(name = "type")
     private String type;
