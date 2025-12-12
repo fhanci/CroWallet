@@ -52,11 +52,11 @@ const CurrencyRatesDisplay = ({ isDarkMode }) => {
         <Typography variant="body2" sx={{ color: textColor, fontWeight: 500 }}>/</Typography>
         <CurrencyLiraIcon sx={{ fontSize: 18, color: "#E91E63" }} />
         <Typography variant="body2" sx={{ color: textColor, fontWeight: 600, ml: 0.5 }}>
-          {loading && !rates.TRY ? "..." : formatRate(rates.TRY)}
+          {loading || !rates.EUR ? "..." : formatRate(1 / rates.EUR)}
         </Typography>
       </Box>
 
-      {/* EUR/USD Rate */}
+      {/* USD/TRY Rate */}
       <Box sx={{ 
         display: "flex", 
         alignItems: "center", 
@@ -68,11 +68,11 @@ const CurrencyRatesDisplay = ({ isDarkMode }) => {
         border: "1px solid",
         borderColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"
       }}>
-        <EuroIcon sx={{ fontSize: 18, color: "#2196F3" }} />
-        <Typography variant="body2" sx={{ color: textColor, fontWeight: 500 }}>/</Typography>
         <AttachMoneyIcon sx={{ fontSize: 18, color: "#4CAF50" }} />
+        <Typography variant="body2" sx={{ color: textColor, fontWeight: 500 }}>/</Typography>
+        <CurrencyLiraIcon sx={{ fontSize: 18, color: "#E91E63" }} />
         <Typography variant="body2" sx={{ color: textColor, fontWeight: 600, ml: 0.5 }}>
-          {loading && !rates.USD ? "..." : formatRate(rates.USD)}
+          {loading || !rates.USD ? "..." : formatRate(1 / rates.USD)}
         </Typography>
       </Box>
 

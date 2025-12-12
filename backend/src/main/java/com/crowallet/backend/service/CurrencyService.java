@@ -22,12 +22,12 @@ public class CurrencyService {
     private final RestTemplate restTemplate = new RestTemplate();
     
     // Frankfurter API - Free, no API key required
-    // Base currency is EUR, getting rates for USD and TRY
-    private static final String FRANKFURTER_API_URL = "https://api.frankfurter.dev/v1/latest?symbols=USD,TRY";
+    // Base currency is TRY, getting rates for USD and EUR
+    private static final String FRANKFURTER_API_URL = "https://api.frankfurter.dev/v1/latest?base=TRY&symbols=USD,EUR";
     
     private Map<String, Double> cachedRates = new HashMap<>();
     private LocalDate lastUpdated;
-    private String baseCurrency = "EUR";
+    private String baseCurrency = "TRY";
 
     @PostConstruct
     public void init() {
@@ -50,8 +50,8 @@ public class CurrencyService {
             
             if (response != null && response.getRates() != null) {
                 this.cachedRates = new HashMap<>();
-                // Add EUR as base (1.0)
-                this.cachedRates.put("EUR", 1.0);
+                // Add TRY as base (1.0)
+                this.cachedRates.put("TRY", 1.0);
                 // Add other rates
                 this.cachedRates.putAll(response.getRates());
                 this.lastUpdated = response.getDate();

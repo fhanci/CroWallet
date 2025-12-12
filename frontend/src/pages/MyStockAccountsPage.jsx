@@ -233,10 +233,20 @@ const MyStockAccountsPage = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 3, mb: 4 }}>
-      <Typography variant="h4" sx={{ fontWeight: 600, mb: 3, display: "flex", alignItems: "center", gap: 1 }}>
-        <ShowChartIcon sx={{ fontSize: 36, color: "#2196F3" }} />
-        Hisse Hesaplarım
-      </Typography>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+        <Typography variant="h4" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1 }}>
+          <ShowChartIcon sx={{ fontSize: 36, color: "#2196F3" }} />
+          Hisse Hesaplarım
+        </Typography>
+        <Button 
+          variant="outlined" 
+          startIcon={<SearchIcon />} 
+          onClick={() => navigate("/market")}
+          sx={{ borderRadius: 2 }}
+        >
+          Borsa Takip
+        </Button>
+      </Box>
 
       {/* Summary Cards */}
       <Box sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap" }}>
