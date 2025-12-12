@@ -1,5 +1,19 @@
 package com.crowallet.backend.controller;
 
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.crowallet.backend.dto.UserDTO;
 import com.crowallet.backend.requests.LoginRequest;
 import com.crowallet.backend.requests.SignUpRequest;
@@ -7,16 +21,9 @@ import com.crowallet.backend.security.CustomUserDetails;
 import com.crowallet.backend.security.CustomUserDetailsService;
 import com.crowallet.backend.security.JwtUtil;
 import com.crowallet.backend.service.UserService;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @CrossOrigin(origins = "localhost:5050")
@@ -26,9 +33,11 @@ public class AuthController {
     private UserService userService;
 
 
-
+    @Autowired
+    private PasswordEncoder passwordEncoder;
     private final CustomUserDetailsService userDetailsService;
     private final JwtUtil jwtUtil;
+
 
     public AuthController( CustomUserDetailsService userDetailsService, JwtUtil jwtUtil) {
  
@@ -99,8 +108,8 @@ public class AuthController {
         }
 
         // Password check
-        if (!loginRequest.getPassword().equals(userDetails.getPassword()) ||
-                !loginRequest.getPassword().equals(userService.findById(user.getId()).getPassword())) {
+        if (!passwordEncoder.matches(loginRequest.getPassword(), (userDetails.getPassword())) ||
+                !passwordEncoder.matches(loginRequest.getPassword(), (userService.findById(user.getId()).getPassword()))) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "INVALID_PASSWORD"));
         }
 
