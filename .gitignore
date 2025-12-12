@@ -13,10 +13,14 @@ build/
 !gradle-wrapper.jar
 
 #DB
-.db
+*.db
 
 # Logs
 *.log
+
+
+# DB
+.db
 
 # IDE ayarları
 *.iml
