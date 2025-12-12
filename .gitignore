@@ -12,6 +12,9 @@ release.properties
 build/
 !gradle-wrapper.jar
 
+#DB
+.db
+
 # Logs
 *.log
 

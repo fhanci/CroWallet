@@ -67,6 +67,7 @@ import InstallmentsPage from "./pages/InstallmentsPage";
 
 import InvestmentAccountDetailPage from "./pages/InvestmentAccountDetailPage";
 import MyStockAccountsPage from "./pages/MyStockAccountsPage";
+import StockMarketPage from "./pages/StockMarketPage";
 import MyGoldAccountsPage from "./pages/MyGoldAccountsPage";
 
 import { UserProvider } from "./config/UserStore";
@@ -162,11 +163,15 @@ const MainApp = () => {
           <Route index element={<InvestmentAccountDetailPage />} />
         </Route>
 
-        <Route path="/investment/stocks" element={<DashboardLayout />}>
+        <Route path="/accounts/investment/stock" element={<DashboardLayout />}>
           <Route index element={<MyStockAccountsPage />} />
         </Route>
 
-        <Route path="/investment/gold" element={<DashboardLayout />}>
+        <Route path="/market" element={<DashboardLayout />}>
+          <Route index element={<StockMarketPage />} />
+        </Route>
+
+        <Route path="/accounts/investment/gold" element={<DashboardLayout />}>
           <Route index element={<MyGoldAccountsPage />} />
         </Route>
         <Route path="*" element={<ErrorPage />} />
