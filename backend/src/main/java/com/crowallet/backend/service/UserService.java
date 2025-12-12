@@ -1,16 +1,18 @@
 package com.crowallet.backend.service;
 
-import com.crowallet.backend.dto.UserDTO;
-import com.crowallet.backend.mapper.UserMapper;
-import jakarta.transaction.Transactional;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import com.crowallet.backend.comman.GeneralException;
+import com.crowallet.backend.dto.UserDTO;
 import com.crowallet.backend.entity.User;
+import com.crowallet.backend.mapper.UserMapper;
 import com.crowallet.backend.repository.UserRepository;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class UserService {
@@ -33,7 +35,9 @@ public class UserService {
         if(usr != null){
             return null;
         }
-        User user = new User(email, username, password);
+
+        String encryptedPassword = passwordEncoder.encode(password);
+        User user = new User(email, username, encryptedPassword);
         userRepository.save(user);
         return UserMapper.INSTANCE.toUserDTO(user);
     }
@@ -88,7 +92,7 @@ public class UserService {
     public boolean verify(String password, Long id) {
         User user = userRepository.findById(id).orElse(null);
         if(user != null) {
-            return password.equals(user.getPassword());
+            return passwordEncoder.matches(password.trim(), user.getPassword());
         } else {
             return false;
         }
