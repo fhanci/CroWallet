@@ -42,6 +42,7 @@ public class SecurityConfig implements WebMvcConfigurer {
                         // Artık sadece /api/** üzerine tanımlı kurallar gelir:
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/currencies/**").permitAll()
+                        .requestMatchers("/api/market/**").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/users/delete/**").authenticated()
                         .requestMatchers("/api/messages/image").permitAll()
                         .requestMatchers("/api/messages/files").permitAll()
