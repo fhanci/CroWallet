@@ -125,6 +125,8 @@ const IncomingTransferPage = () => {
       now.getTime() + 3 * 60 * 60 * 1000
     ).toISOString();
 
+    const currentBalance = parseFloat(selectedTransferAccount.balance);
+
     const transferPayload = {
       ...selectedTransfer,
       category: finalCategory,
@@ -135,13 +137,20 @@ const IncomingTransferPage = () => {
       account: { id: parseInt(selectedTransferAccount.id) },
       amount,
       date: selectedTransfer.date,
-      createDate,
+      inputPreviousBalance: currentBalance,
+      inputNextBalance: currentBalance + amount,
+    };
+
+    const updatedAccount = {
+      ...selectedTransferAccount,
+      balance: currentBalance + amount,
+      updateDate: createDate,
     };
 
     try {
       await axios.post(
         "http://localhost:8082/api/transfers/create",
-        updatedTransfer,
+        transferPayload,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,

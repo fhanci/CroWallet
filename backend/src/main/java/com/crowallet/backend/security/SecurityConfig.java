@@ -41,6 +41,8 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .authorizeHttpRequests(auth -> auth
                         // Artık sadece /api/** üzerine tanımlı kurallar gelir:
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/currencies/**").permitAll()
+                        .requestMatchers("/api/market/**").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/users/delete/**").authenticated()
                         .requestMatchers("/api/messages/image").permitAll()
                         .requestMatchers("/api/messages/files").permitAll()
@@ -68,7 +70,7 @@ public class SecurityConfig implements WebMvcConfigurer {
         configuration.setAllowedOrigins(List.of("http://localhost:3000"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(false); // Authorization, Cookie kullanmayacaksan false
+        configuration.setAllowCredentials(true); // Authorization, Cookie kullanmayacaksan false
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);
