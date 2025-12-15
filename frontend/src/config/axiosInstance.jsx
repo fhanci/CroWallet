@@ -1,7 +1,8 @@
 import axios from "axios";
+import { backendUrl } from "../utils/envVariables";
 
 const api = axios.create({
-  baseURL: "http://localhost:8082/api",
+  baseURL: `${backendUrl}/api`,
   withCredentials: true,
 });
 

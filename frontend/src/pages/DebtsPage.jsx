@@ -36,6 +36,7 @@ import CreditCardIcon from "@mui/icons-material/CreditCard";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import SavingsIcon from "@mui/icons-material/Savings";
+import { backendUrl } from "../utils/envVariables";
 
 const DebtsPage = () => {
   const { t } = useTranslation();
@@ -65,7 +66,7 @@ const DebtsPage = () => {
   const fetchData = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:8082/api/debts/summary/${user.id}`,
+        `${backendUrl}/api/debts/summary/${user.id}`,
         {
           headers: { Authorization: token ? `Bearer ${token}` : undefined },
         }
@@ -115,7 +116,7 @@ const DebtsPage = () => {
   const handleDeleteDebt = async () => {
     try {
       await axios.delete(
-        `http://localhost:8082/api/debts/delete/${deletingDebtId}`,
+        `${backendUrl}/api/debts/delete/${deletingDebtId}`,
         {
           headers: { Authorization: token ? `Bearer ${token}` : undefined },
         }
@@ -130,7 +131,7 @@ const DebtsPage = () => {
   const handleMarkPaid = async () => {
     try {
       await axios.post(
-        `http://localhost:8082/api/debts/payment/${payingPayment.id}/pay`,
+        `${backendUrl}/api/debts/payment/${payingPayment.id}/pay`,
         {},
         {
           headers: { Authorization: token ? `Bearer ${token}` : undefined },
@@ -160,7 +161,7 @@ const DebtsPage = () => {
       const newRemainingAmount = (editingDebt.remainingAmount || 0) + amountDiff;
 
       await axios.put(
-        `http://localhost:8082/api/debts/update/${editingDebt.id}`,
+        `${backendUrl}/api/debts/update/${editingDebt.id}`,
         {
           ...editingDebt,
           toWhom: editToWhom,

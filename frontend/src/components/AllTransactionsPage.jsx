@@ -31,6 +31,7 @@ import { useTranslation } from "react-i18next";
 import { useUser } from "../config/UserStore";
 import { useTheme } from "../config/ThemeContext";
 import axios from "axios";
+import { backendUrl } from "../utils/envVariables";
 
 const AllTransactionsPage = () => {
   const { user } = useUser();
@@ -52,7 +53,7 @@ const AllTransactionsPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(`http://localhost:8082/api/transfers/get/${user.id}`, {
+        const response = await axios.get(`${backendUrl}/api/transfers/get/${user.id}`, {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
           },

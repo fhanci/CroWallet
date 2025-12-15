@@ -25,6 +25,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import { backendUrl } from "../utils/envVariables";
 
 const NotificationPage = () => {
   const { t } = useTranslation();
@@ -40,7 +41,7 @@ const NotificationPage = () => {
   const fetchPayments = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:8082/api/debts/upcoming/${user.id}?limit=50`,
+        `${backendUrl}/api/debts/upcoming/${user.id}?limit=50`,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
@@ -111,7 +112,7 @@ const NotificationPage = () => {
   const handleMarkPaid = async () => {
     try {
       await axios.post(
-        `http://localhost:8082/api/debts/payment/${payingPayment.id}/pay`,
+        `${backendUrl}/api/debts/payment/${payingPayment.id}/pay`,
         {},
         {
           headers: { Authorization: token ? `Bearer ${token}` : undefined },
