@@ -98,6 +98,7 @@ const AccountPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
+  const { rates } = useCurrencyRates();
 
   const [accountSummary, setAccountSummary] = useState(null);
   const [debtSummary, setDebtSummary] = useState(null);
@@ -504,9 +505,47 @@ const AccountPage = () => {
   const incomeData = getChartData(incomeSources, "incoming", transfers);
   const expenseData = getChartData(expenseSources, "outgoing", transfers);
 
-  // Calculate net balance (assets - debts)
-  const totalAssets = accountSummary?.totalBalanceTRY || 0;
-  const totalDebts = debtSummary?.totalRemainingAmount || 0;
+  // Helper to convert any currency to TRY using real-time rates
+  const convertToTRY = (amount, currency) => {
+    if (!amount || !currency || currency === "TRY") return amount || 0;
+    if (!rates || Object.keys(rates).length === 0 || !rates[currency] || !rates["TRY"]) {
+      return 0;
+    }
+    // rates[currency] = EUR rate, rates["TRY"] = EUR to TRY rate
+    // X [currency] = X * (TRY_rate / currency_rate) TRY
+    return amount * (rates["TRY"] / rates[currency]);
+  };
+
+  // Calculate total assets in TRY using real-time rates
+  const calculateTotalAssetsTRY = () => {
+    if (!rates || Object.keys(rates).length === 0) {
+      return accountSummary?.totalBalanceTRY || 0;
+    }
+    let total = 0;
+    if (accountSummary?.currencyTotals) {
+      Object.entries(accountSummary.currencyTotals).forEach(([currency, amount]) => {
+        total += convertToTRY(amount, currency);
+      });
+    }
+    total += accountSummary?.totalInvestmentValue || 0;
+    return total;
+  };
+
+  // Calculate total debts in TRY using real-time rates
+  const calculateTotalDebtsTRY = () => {
+    if (!rates || Object.keys(rates).length === 0 || !debtSummary?.debts) {
+      return debtSummary?.totalRemainingAmount || 0;
+    }
+    let total = 0;
+    debtSummary.debts.forEach((debt) => {
+      total += convertToTRY(debt.remainingAmount, debt.debtCurrency);
+    });
+    return total;
+  };
+
+  // Calculate net balance (assets - debts) with real-time conversion
+  const totalAssets = calculateTotalAssetsTRY();
+  const totalDebts = calculateTotalDebtsTRY();
   const netBalance = totalAssets - totalDebts;
 
   // Active debts for the debt section
@@ -516,10 +555,13 @@ const AccountPage = () => {
   const calculatePieData = () => {
     if (!accountSummary) return [];
     
-    // Calculate currency accounts total (Para)
-    const currencyTotal = accountSummary.currencyTotals 
-      ? Object.values(accountSummary.currencyTotals).reduce((sum, val) => sum + (val || 0), 0)
-      : 0;
+    // Calculate currency accounts total in TRY using real-time rates
+    let currencyTotal = 0;
+    if (accountSummary.currencyTotals) {
+      Object.entries(accountSummary.currencyTotals).forEach(([currency, amount]) => {
+        currencyTotal += convertToTRY(amount, currency);
+      });
+    }
     
     // Calculate gold and stock totals from investment accounts
     let goldTotal = 0;
@@ -540,8 +582,8 @@ const AccountPage = () => {
       });
     }
     
-    // Get debt total
-    const debtTotal = debtSummary?.totalRemainingAmount || 0;
+    // Get debt total in TRY
+    const debtTotal = totalDebts;
     
     const data = [];
     if (stockTotal > 0) data.push({ name: "Hisse Yatırımları", value: stockTotal, color: "#9C27B0" });
@@ -655,7 +697,7 @@ const AccountPage = () => {
                 Toplam Varlık
               </Typography>
               <Typography variant="h4" sx={{ fontWeight: 700, mb: 2, color: "#4CAF50" }}>
-                {formatCurrency(accountSummary.totalBalanceTRY, "TRY")}
+                {formatCurrency(totalAssets, "TRY")}
               </Typography>
 
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
