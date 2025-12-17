@@ -77,8 +77,8 @@ public class DebtController {
     }
 
     @PostMapping("/payment/{paymentId}/pay")
-    public DebtPaymentDTO markPaymentAsPaid(@PathVariable Long paymentId) {
-        return debtService.markPaymentAsPaid(paymentId);
+    public DebtPaymentDTO markPaymentAsPaid(@PathVariable Long paymentId, @RequestBody PayDebt payDebt) {
+        return debtService.markPaymentAsPaid(paymentId, payDebt);
     }
 
     @PutMapping("/update/{id}")

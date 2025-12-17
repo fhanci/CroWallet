@@ -145,7 +145,7 @@ const AllTransactionsPage = () => {
       }
       return "-";
     }
-    return transaction.type === "incoming" ? t("income") : t("expense");
+    return transaction.type === "incoming" ? t("income") : transaction.type === "debt_payment" ? t("debtPayment") : t("expense");
   };
 
   const getTransactionTypeLabel = (transaction) => {
@@ -156,6 +156,11 @@ const AllTransactionsPage = () => {
       return `${t("interAccount")} - ${incomeOrExpense}${
         otherAccountName ? " - " + otherAccountName : ""
       }`;
+    }
+
+    if (transaction.type === "debt_payment") {
+      const detay = transaction.details || "";
+      return `${t("debtPayment")}${detay ? " - " + detay : ""}`;
     }
 
     const kategori = transaction.category || "";
@@ -230,6 +235,9 @@ const AllTransactionsPage = () => {
         </MenuItem>
         <MenuItem onClick={() => applyFilter("inter-account")}>
           {t("interAccount")}
+        </MenuItem>
+        <MenuItem onClick={() => applyFilter("debt_payment")}>
+          {t("debtPayment")}
         </MenuItem>
         <MenuItem onClick={handleOpenDateFilter}>{t("filterByDate")}</MenuItem>
       </Menu>

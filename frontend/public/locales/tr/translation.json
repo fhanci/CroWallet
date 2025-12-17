@@ -202,5 +202,20 @@
     "Serbest Meslek": ["Proje Ödemesi", "Danışmanlık", "Serbest Çalışma"],
     "Yatırım": ["Faiz Geliri", "Hisse Senedi", "Kripto"],
     "Diğer": ["Hediye", "Geri Ödeme", "Diğer"]
-  }
+  },
+  "debtPayment": "Borç Ödemesi",
+  "debtPaymentDescription": "Taksit ödemesi yapıldı",
+  "installmentPayment": "Taksit Ödemesi",
+  "bankAccount": "Banka Hesabı",
+  "cashAccount": "Nakit",
+  "selectAccountType": "Hesap Türü Seçin",
+  "selectAccount": "Hesap Seçin",
+  "insufficientBalance": "Yetersiz bakiye",
+  "currencyConversion": "Döviz Kuru Dönüşümü",
+  "useRealTimeRate": "Anlık kuru kullan",
+  "realTimeRate": "Anlık Kur",
+  "exchangeRate": "Döviz Kuru",
+  "amountToDeduct": "Hesaptan düşülecek tutar",
+  "confirmPayment": "Ödemeyi Onayla",
+  "processing": "İşleniyor..."
 }

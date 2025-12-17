@@ -7,4 +7,5 @@
     <include file="db/changelog/0002_account_types.xml" relativeToChangelogFile="false"/>
     <include file="db/changelog/0003_investment_holdings.xml" relativeToChangelogFile="false"/>
     <include file="db/changelog/0004_debt_payments.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/0005_debt_payment_account.xml" relativeToChangelogFile="false"/>
 </databaseChangeLog>

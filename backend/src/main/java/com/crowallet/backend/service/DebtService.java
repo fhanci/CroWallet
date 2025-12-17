@@ -184,16 +184,61 @@ public class DebtService {
 
 
     @Transactional
-    public DebtPaymentDTO markPaymentAsPaid(Long paymentId) {
+    public DebtPaymentDTO markPaymentAsPaid(Long paymentId, PayDebt payDebt) {
         DebtPayment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new GeneralException("Payment not found"));
 
-        payment.setStatus("PAID");
-        payment.setPaidDate(LocalDate.now());
+        if ("PAID".equals(payment.getStatus())) {
+            throw new GeneralException("This payment has already been paid");
+        }
+
+        // Validate and get the account
+        Account account = accountRepository.findById(payDebt.getAccountId())
+                .orElseThrow(() -> new GeneralException("Account not found"));
 
         Debt debt = payment.getDebt();
+        String debtCurrency = debt.getDebtCurrency();
+        String accountCurrency = account.getCurrency();
+        BigDecimal installmentAmount = payment.getAmount();
+        BigDecimal amountToDeduct;
+        BigDecimal exchangeRate = null;
+
+        // Handle currency conversion if currencies differ
+        if (!debtCurrency.equals(accountCurrency)) {
+            if (payDebt.getExchangeRate() == null || payDebt.getExchangeRate().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new GeneralException("Exchange rate is required when currencies differ");
+            }
+            exchangeRate = payDebt.getExchangeRate();
+            // Convert installment amount to account currency
+            // If debt is in USD and account is in TRY, and rate is 30, then amountToDeduct = installmentAmount * 30
+            amountToDeduct = installmentAmount.multiply(exchangeRate).setScale(2, RoundingMode.HALF_UP);
+        } else {
+            amountToDeduct = installmentAmount;
+        }
+
+        // Validate sufficient balance
+        if (account.getBalance().compareTo(amountToDeduct) < 0) {
+            throw new GeneralException("Insufficient balance. Required: " + amountToDeduct + " " + accountCurrency + ", Available: " + account.getBalance() + " " + accountCurrency);
+        }
+
+        // Deduct from account
+        BigDecimal previousBalance = account.getBalance();
+        BigDecimal newBalance = previousBalance.subtract(amountToDeduct);
+        account.setBalance(newBalance);
+        account.setUpdateDate(LocalDateTime.now());
+        accountRepository.save(account);
+
+        // Update payment record
+        payment.setStatus("PAID");
+        payment.setPaidDate(LocalDate.now());
+        payment.setAccount(account);
+        payment.setPaidCurrency(accountCurrency);
+        payment.setUsedExchangeRate(exchangeRate);
+        payment.setPaidAmount(amountToDeduct);
+
+        // Update debt
         debt.setPaidInstallments((debt.getPaidInstallments() != null ? debt.getPaidInstallments() : 0) + 1);
-        debt.setRemainingAmount(debt.getRemainingAmount().subtract(payment.getAmount()));
+        debt.setRemainingAmount(debt.getRemainingAmount().subtract(installmentAmount));
 
         // Check if all payments are done
         if (debt.getPaymentType() == PaymentType.PERIODIC) {
@@ -207,7 +252,31 @@ public class DebtService {
         debtRepository.save(debt);
         payment = paymentRepository.save(payment);
 
-        return DebtMapper.INSTANCE.toPaymentDTO(payment);
+        // Create transfer record for transaction history
+        Transfer transfer = new Transfer();
+        transfer.setAmount(amountToDeduct);
+        transfer.setCategory("Borç Ödemesi");
+        transfer.setDetails("Taksit #" + payment.getPaymentNumber() + " - " + debt.getToWhom());
+        transfer.setDescription("Borç ödemesi: " + debt.getToWhom() + " (" + installmentAmount + " " + debtCurrency + ")");
+        transfer.setDate(LocalDate.now());
+        transfer.setCreateDate(LocalDateTime.now());
+        transfer.setUser(debt.getUser());
+        transfer.setAccount(account);
+        transfer.setType("debt_payment");
+        transfer.setOutputPreviousBalance(previousBalance);
+        transfer.setOutputNextBalance(newBalance);
+        if (exchangeRate != null) {
+            transfer.setExchangeRate(exchangeRate);
+        }
+        transferRepository.save(transfer);
+
+        DebtPaymentDTO dto = DebtMapper.INSTANCE.toPaymentDTO(payment);
+        dto.setAccountId(account.getId());
+        dto.setAccountName(account.getAccountName());
+        dto.setPaidCurrency(accountCurrency);
+        dto.setUsedExchangeRate(exchangeRate);
+        dto.setPaidAmount(amountToDeduct);
+        return dto;
     }
 
     public List<DebtDTO> getAllDebts() {

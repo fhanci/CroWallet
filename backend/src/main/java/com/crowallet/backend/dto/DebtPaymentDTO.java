@@ -19,5 +19,11 @@ public class DebtPaymentDTO {
     private String debtToWhom;
     private String debtCurrency;
     private String accountName;
+
+    // Payment account tracking fields
+    private Long accountId;
+    private String paidCurrency;
+    private BigDecimal usedExchangeRate;
+    private BigDecimal paidAmount;
 }
 
