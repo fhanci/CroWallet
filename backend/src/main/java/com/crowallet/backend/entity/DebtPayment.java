@@ -44,5 +44,18 @@ public class DebtPayment {
 
     @Column(name = "note")
     private String note;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "account_id")
+    private Account account;
+
+    @Column(name = "paid_currency")
+    private String paidCurrency;
+
+    @Column(name = "used_exchange_rate")
+    private BigDecimal usedExchangeRate;
+
+    @Column(name = "paid_amount")
+    private BigDecimal paidAmount;
 }
 

@@ -68,8 +68,10 @@ const DashboardLayout = () => {
           </Typography>
         </Box>
 
-        {/* Right - Settings, Notification, Profile */}
+        {/* Right - Notifications, Profile, Settings */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <NotificationButton />
+          <ProfileButton />
           <IconButton
             onClick={() => navigate("/settings")}
             sx={{
@@ -82,8 +84,6 @@ const DashboardLayout = () => {
           >
             <SettingsIcon />
           </IconButton>
-          <NotificationButton />
-          <ProfileButton />
         </Box>
       </Box>
 

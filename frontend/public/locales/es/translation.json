@@ -187,5 +187,20 @@
     ],
     "Inversión": ["Ingresos por Intereses", "Acciones", "Cripto"],
     "Otros": ["Regalo", "Reembolso", "Otro"]
-  }
+  },
+  "debtPayment": "Pago de Deuda",
+  "debtPaymentDescription": "Pago de cuota completado",
+  "installmentPayment": "Pago de Cuota",
+  "bankAccount": "Cuenta Bancaria",
+  "cashAccount": "Efectivo",
+  "selectAccountType": "Seleccionar Tipo de Cuenta",
+  "selectAccount": "Seleccionar Cuenta",
+  "insufficientBalance": "Saldo insuficiente",
+  "currencyConversion": "Conversión de Moneda",
+  "useRealTimeRate": "Usar tasa en tiempo real",
+  "realTimeRate": "Tasa en Tiempo Real",
+  "exchangeRate": "Tipo de Cambio",
+  "amountToDeduct": "Monto a deducir de la cuenta",
+  "confirmPayment": "Confirmar Pago",
+  "processing": "Procesando..."
 }

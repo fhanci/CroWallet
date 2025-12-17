@@ -181,5 +181,20 @@
     "العمل الحر": ["دفعة مشروع", "استشارات", "عمل حر"],
     "الاستثمار": ["دخل الفوائد", "الأسهم", "العملات الرقمية"],
     "أخرى": ["هدية", "استرداد", "أخرى"]
-  }
+  },
+  "debtPayment": "دفع الدين",
+  "debtPaymentDescription": "تم دفع القسط",
+  "installmentPayment": "دفع القسط",
+  "bankAccount": "حساب مصرفي",
+  "cashAccount": "نقد",
+  "selectAccountType": "اختر نوع الحساب",
+  "selectAccount": "اختر الحساب",
+  "insufficientBalance": "رصيد غير كافٍ",
+  "currencyConversion": "تحويل العملة",
+  "useRealTimeRate": "استخدام السعر الحالي",
+  "realTimeRate": "السعر الحالي",
+  "exchangeRate": "سعر الصرف",
+  "amountToDeduct": "المبلغ الذي سيخصم من الحساب",
+  "confirmPayment": "تأكيد الدفع",
+  "processing": "جاري المعالجة..."
 }

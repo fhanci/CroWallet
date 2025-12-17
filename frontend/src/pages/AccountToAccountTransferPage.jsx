@@ -15,13 +15,17 @@ import {
   CardContent,
   Chip,
   Divider,
+  Switch,
+  InputAdornment,
 } from "@mui/material";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
 import { useNavigate } from "react-router-dom";
 import { t } from "i18next";
 import { useUser } from "../config/UserStore";
 import { useTheme } from "../config/ThemeContext";
+import useCurrencyRates from "../config/useCurrencyRates";
 import axios from "axios";
 import { backendUrl } from "../utils/envVariables";
 
@@ -29,6 +33,7 @@ const AccountToAccountTransferPage = () => {
   const navigate = useNavigate();
   const { user } = useUser();
   const { isDarkMode } = useTheme();
+  const { rates } = useCurrencyRates();
   const now = new Date();
   const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
@@ -37,6 +42,8 @@ const AccountToAccountTransferPage = () => {
   const [transferData, setTransferData] = useState({});
   const [error, setError] = useState(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [useRealTimeRate, setUseRealTimeRate] = useState(true);
+  const [customExchangeRate, setCustomExchangeRate] = useState("");
 
   // Get currency symbol
   const getCurrencySymbol = (currency) => {
@@ -48,6 +55,69 @@ const AccountToAccountTransferPage = () => {
     }
   };
 
+  // Calculate real-time exchange rate
+  const calculateRealTimeRate = () => {
+    if (!selectedSenderAccount || !selectedReceiverAccount) return null;
+    const senderCurrency = selectedSenderAccount.currency;
+    const receiverCurrency = selectedReceiverAccount.currency;
+    if (senderCurrency === receiverCurrency) return 1;
+
+    const senderRate = rates?.[senderCurrency];
+    const receiverRate = rates?.[receiverCurrency];
+    if (!senderRate || !receiverRate) return null;
+    return receiverRate / senderRate;
+  };
+
+  // Rate display configuration (handle TRY involvement)
+  const getRateDisplayConfig = () => {
+    if (!selectedSenderAccount || !selectedReceiverAccount) return null;
+    const senderCurrency = selectedSenderAccount.currency;
+    const receiverCurrency = selectedReceiverAccount.currency;
+    if (senderCurrency === receiverCurrency) {
+      return { baseCurrency: senderCurrency, quoteCurrency: receiverCurrency, invert: false };
+    }
+
+    const tryInvolved = senderCurrency === "TRY" || receiverCurrency === "TRY";
+    if (tryInvolved) {
+      const baseCurrency = senderCurrency === "TRY" ? receiverCurrency : senderCurrency;
+      const quoteCurrency = "TRY";
+      const invert = senderCurrency === "TRY" && receiverCurrency !== "TRY";
+      return { baseCurrency, quoteCurrency, invert };
+    }
+
+    return { baseCurrency: senderCurrency, quoteCurrency: receiverCurrency, invert: false };
+  };
+
+  // Convert effective rate (for backend) to displayed rate (for UI)
+  const getDisplayedRateFromEffective = (effectiveRate) => {
+    const cfg = getRateDisplayConfig();
+    if (!cfg || effectiveRate == null) return null;
+    if (cfg.invert) return effectiveRate > 0 ? 1 / effectiveRate : null;
+    return effectiveRate;
+  };
+
+  // Convert displayed rate (from UI) to effective rate (for backend)
+  const getEffectiveRateFromDisplayed = (displayedRate) => {
+    const cfg = getRateDisplayConfig();
+    if (!cfg || displayedRate == null) return null;
+    if (cfg.invert) return displayedRate > 0 ? 1 / displayedRate : null;
+    return displayedRate;
+  };
+
+  // Get effective exchange rate (what backend needs)
+  const getEffectiveExchangeRate = () => {
+    if (!selectedSenderAccount || !selectedReceiverAccount) return null;
+    const senderCurrency = selectedSenderAccount.currency;
+    const receiverCurrency = selectedReceiverAccount.currency;
+    if (senderCurrency === receiverCurrency) return 1;
+
+    if (useRealTimeRate) return calculateRealTimeRate();
+
+    const displayed = parseFloat(customExchangeRate);
+    if (!displayed || displayed <= 0) return null;
+    return getEffectiveRateFromDisplayed(displayed);
+  };
+
   // Check if currencies are different
   const isDifferentCurrency = selectedSenderAccount && selectedReceiverAccount && 
     selectedSenderAccount.currency !== selectedReceiverAccount.currency;
@@ -56,8 +126,11 @@ const AccountToAccountTransferPage = () => {
   const calculateConvertedAmount = () => {
     if (!transferData.amount) return 0;
     const amount = parseFloat(transferData.amount);
-    if (isDifferentCurrency && transferData.exchangeRate) {
-      return amount * parseFloat(transferData.exchangeRate);
+    if (isDifferentCurrency) {
+      const effectiveRate = getEffectiveExchangeRate();
+      if (effectiveRate) {
+        return amount * effectiveRate;
+      }
     }
     return amount;
   };
@@ -98,8 +171,8 @@ const AccountToAccountTransferPage = () => {
       return;
     }
 
-    if (isDifferentCurrency && !transferData.exchangeRate) {
-      setError("Farklı para birimleri için döviz kuru girmelisiniz.");
+    if (isDifferentCurrency && !getEffectiveExchangeRate()) {
+      setError("Geçerli bir döviz kuru giriniz.");
       return;
     }
 
@@ -125,11 +198,11 @@ const AccountToAccountTransferPage = () => {
       now.getTime() + 3 * 60 * 60 * 1000
     ).toISOString();
     
-    const exchangeRate = isDifferentCurrency 
-      ? parseFloat(transferData.exchangeRate) 
+    const effectiveRate = isDifferentCurrency 
+      ? getEffectiveExchangeRate() 
       : 1;
 
-    const receiverAmount = amount * exchangeRate;
+    const receiverAmount = amount * effectiveRate;
 
     const outgoingTransfer = {
       amount,
@@ -139,7 +212,7 @@ const AccountToAccountTransferPage = () => {
       category: "Hesaplar Arası Transfer",
       createDate,
       date: transferData.date,
-      exchangeRate,
+      exchangeRate: effectiveRate,
       person: selectedReceiverAccount.accountName,
       description: transferData.description || `${selectedSenderAccount.accountName} → ${selectedReceiverAccount.accountName}`,
       outputPreviousBalance: senderBalance,
@@ -154,7 +227,7 @@ const AccountToAccountTransferPage = () => {
       category: "Hesaplar Arası Transfer",
       createDate,
       date: transferData.date,
-      exchangeRate,
+      exchangeRate: effectiveRate,
       person: selectedSenderAccount.accountName,
       description: transferData.description || `${selectedSenderAccount.accountName} → ${selectedReceiverAccount.accountName}`,
       inputPreviousBalance: selectedReceiverAccount.balance,
@@ -352,23 +425,73 @@ const AccountToAccountTransferPage = () => {
 
           {/* Exchange Rate Input - Only show when currencies are different */}
           {isDifferentCurrency && (
-            <Box sx={{ mt: 2 }}>
-              <TextField
-                label="Döviz Kuru"
-                type="number"
-                value={transferData.exchangeRate || ""}
-                onChange={(e) =>
-                  setTransferData({
-                    ...transferData,
-                    exchangeRate: e.target.value,
-                  })
-                }
-                fullWidth
-                placeholder={`1 ${selectedSenderAccount?.currency} = ? ${selectedReceiverAccount?.currency}`}
-                helperText={`1 ${selectedSenderAccount?.currency} kaç ${selectedReceiverAccount?.currency} değerinde?`}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-              />
-            </Box>
+            <>
+              <Divider sx={{ my: 2 }} />
+              <Box sx={{ 
+                bgcolor: isDarkMode ? "rgba(255,152,0,0.1)" : "rgba(255,152,0,0.08)", 
+                p: 2, 
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: "warning.main"
+              }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <CurrencyExchangeIcon color="warning" />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Döviz Kuru Dönüşümü
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                  <Typography variant="body2">
+                    Anlık kuru kullan
+                  </Typography>
+                  <Switch
+                    checked={useRealTimeRate}
+                    onChange={(e) => setUseRealTimeRate(e.target.checked)}
+                  />
+                </Box>
+
+                {useRealTimeRate ? (
+                  <Box sx={{ 
+                    bgcolor: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)", 
+                    p: 1.5, 
+                    borderRadius: 1 
+                  }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Anlık Kur
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      1 {getRateDisplayConfig()?.baseCurrency || selectedSenderAccount?.currency} = {getDisplayedRateFromEffective(calculateRealTimeRate())?.toFixed(4) || "..."} {getRateDisplayConfig()?.quoteCurrency || selectedReceiverAccount?.currency}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <TextField
+                    fullWidth
+                    label="Döviz Kuru"
+                    type="number"
+                    value={customExchangeRate}
+                    onChange={(e) => setCustomExchangeRate(e.target.value)}
+                    placeholder={`1 ${getRateDisplayConfig()?.baseCurrency || selectedSenderAccount?.currency} = ? ${getRateDisplayConfig()?.quoteCurrency || selectedReceiverAccount?.currency}`}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          1 {getRateDisplayConfig()?.baseCurrency || selectedSenderAccount?.currency} =
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          {getRateDisplayConfig()?.quoteCurrency || selectedReceiverAccount?.currency}
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ mb: 1 }}
+                  />
+                )}
+              </Box>
+            </>
+          )}
+          {!isDifferentCurrency && (
+            <Divider sx={{ my: 2 }} />
           )}
 
           {/* Transfer Calculation Preview */}
@@ -392,11 +515,11 @@ const AccountToAccountTransferPage = () => {
                   </Typography>
                 </Box>
                 
-                {isDifferentCurrency && transferData.exchangeRate && (
+                {isDifferentCurrency && getEffectiveExchangeRate() && (
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                     <Typography variant="body2">Kur:</Typography>
                     <Typography variant="body2">
-                      1 {selectedSenderAccount.currency} = {transferData.exchangeRate} {selectedReceiverAccount.currency}
+                      1 {getRateDisplayConfig()?.baseCurrency} = {getDisplayedRateFromEffective(getEffectiveExchangeRate())?.toFixed(4)} {getRateDisplayConfig()?.quoteCurrency}
                     </Typography>
                   </Box>
                 )}
@@ -404,7 +527,7 @@ const AccountToAccountTransferPage = () => {
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <Typography variant="body2">Alıcı:</Typography>
                   <Typography variant="body2" color="success.main" fontWeight={600}>
-                    +{convertedAmount.toFixed(2)} {selectedReceiverAccount.currency}
+                    +{calculateConvertedAmount().toFixed(2)} {selectedReceiverAccount.currency}
                   </Typography>
                 </Box>
 
@@ -472,7 +595,7 @@ const AccountToAccountTransferPage = () => {
               color="primary" 
               onClick={handleSubmit}
               disabled={!selectedSenderAccount || !selectedReceiverAccount || !transferData.amount || 
-                (isDifferentCurrency && !transferData.exchangeRate)}
+                (isDifferentCurrency && !getEffectiveExchangeRate())}
               sx={{ 
                 flex: 1, 
                 borderRadius: 2,

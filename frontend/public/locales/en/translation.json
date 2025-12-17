@@ -198,5 +198,20 @@
     "Freelance": ["Project Payment", "Consulting", "Freelance Work"],
     "Investment": ["Interest Income", "Stock", "Crypto"],
     "Other": ["Gift", "Refund", "Other"]
-  }
+  },
+  "debtPayment": "Debt Payment",
+  "debtPaymentDescription": "Installment payment completed",
+  "installmentPayment": "Installment Payment",
+  "bankAccount": "Bank Account",
+  "cashAccount": "Cash",
+  "selectAccountType": "Select Account Type",
+  "selectAccount": "Select Account",
+  "insufficientBalance": "Insufficient balance",
+  "currencyConversion": "Currency Conversion",
+  "useRealTimeRate": "Use real-time rate",
+  "realTimeRate": "Real-Time Rate",
+  "exchangeRate": "Exchange Rate",
+  "amountToDeduct": "Amount to deduct from account",
+  "confirmPayment": "Confirm Payment",
+  "processing": "Processing..."
 }

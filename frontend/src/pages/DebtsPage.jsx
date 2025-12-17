@@ -18,6 +18,13 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   TextField,
+  FormControl,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  CircularProgress,
+  InputAdornment,
+  Switch,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -36,6 +43,9 @@ import CreditCardIcon from "@mui/icons-material/CreditCard";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import SavingsIcon from "@mui/icons-material/Savings";
+import LocalAtmIcon from "@mui/icons-material/LocalAtm";
+import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
+import useCurrencyRates from "../config/useCurrencyRates";
 import { backendUrl } from "../utils/envVariables";
 
 const DebtsPage = () => {
@@ -62,6 +72,34 @@ const DebtsPage = () => {
   
   const { user } = useUser();
   const token = localStorage.getItem("token");
+
+  // Account selection states for paying installments
+  const [accounts, setAccounts] = useState([]);
+  const [accountsLoading, setAccountsLoading] = useState(false);
+  const [accountCategory, setAccountCategory] = useState("BANK"); // BANK or CASH
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [useRealTimeRate, setUseRealTimeRate] = useState(true);
+  const [customExchangeRate, setCustomExchangeRate] = useState("");
+  const [paymentError, setPaymentError] = useState("");
+  const [paymentLoading, setPaymentLoading] = useState(false);
+
+  const { rates } = useCurrencyRates();
+
+  const fetchAccounts = async () => {
+    setAccountsLoading(true);
+    try {
+      const response = await axios.get(
+        `http://localhost:8082/api/accounts/currency/${user.id}`,
+        { headers: { Authorization: token ? `Bearer ${token}` : undefined } }
+      );
+      setAccounts(response.data || []);
+    } catch (error) {
+      console.error("Error fetching accounts:", error);
+      setAccounts([]);
+    } finally {
+      setAccountsLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -128,19 +166,174 @@ const DebtsPage = () => {
     }
   };
 
+  const calculateRealTimeRate = () => {
+    if (!payingPayment || !selectedAccount) return null;
+    const debtCurrency = payingPayment.debtCurrency;
+    const accountCurrency = selectedAccount.currency;
+    if (!debtCurrency || !accountCurrency) return null;
+    if (debtCurrency === accountCurrency) return 1;
+
+    const debtRate = rates?.[debtCurrency];
+    const accountRate = rates?.[accountCurrency];
+    if (!debtRate || !accountRate) return null;
+    return accountRate / debtRate;
+  };
+
+  const getRateDisplayConfig = () => {
+    if (!payingPayment || !selectedAccount) return null;
+    const debtCurrency = payingPayment.debtCurrency;
+    const accountCurrency = selectedAccount.currency;
+    if (!debtCurrency || !accountCurrency) return null;
+
+    if (debtCurrency === accountCurrency) {
+      return { baseCurrency: debtCurrency, quoteCurrency: accountCurrency, invert: false };
+    }
+
+    const tryInvolved = debtCurrency === "TRY" || accountCurrency === "TRY";
+    if (tryInvolved) {
+      const baseCurrency = debtCurrency === "TRY" ? accountCurrency : debtCurrency;
+      const quoteCurrency = "TRY";
+      const invert = debtCurrency === "TRY" && accountCurrency !== "TRY";
+      return { baseCurrency, quoteCurrency, invert };
+    }
+
+    return { baseCurrency: debtCurrency, quoteCurrency: accountCurrency, invert: false };
+  };
+
+  const getDisplayedRateFromEffective = (effectiveRate) => {
+    const cfg = getRateDisplayConfig();
+    if (!cfg || effectiveRate == null) return null;
+    if (cfg.invert) return effectiveRate > 0 ? 1 / effectiveRate : null;
+    return effectiveRate;
+  };
+
+  const getEffectiveRateFromDisplayed = (displayedRate) => {
+    const cfg = getRateDisplayConfig();
+    if (!cfg || displayedRate == null) return null;
+    if (cfg.invert) return displayedRate > 0 ? 1 / displayedRate : null;
+    return displayedRate;
+  };
+
+  const getEffectiveExchangeRate = () => {
+    if (!payingPayment || !selectedAccount) return null;
+    const debtCurrency = payingPayment.debtCurrency;
+    const accountCurrency = selectedAccount.currency;
+    if (!debtCurrency || !accountCurrency) return null;
+
+    if (debtCurrency === accountCurrency) return 1;
+    if (useRealTimeRate) return calculateRealTimeRate();
+
+    const displayed = parseFloat(customExchangeRate);
+    if (!displayed || displayed <= 0) return null;
+    return getEffectiveRateFromDisplayed(displayed);
+  };
+
+  const calculateDeductAmount = () => {
+    if (!payingPayment || !selectedAccount) return null;
+    const debtCurrency = payingPayment.debtCurrency;
+    const accountCurrency = selectedAccount.currency;
+    if (!debtCurrency || !accountCurrency) return null;
+
+    if (debtCurrency === accountCurrency) return payingPayment.amount;
+
+    const effectiveRate = getEffectiveExchangeRate();
+    if (!effectiveRate || effectiveRate <= 0) return null;
+    return payingPayment.amount * effectiveRate;
+  };
+
+  const hasSufficientBalance = (account) => {
+    if (!payingPayment) return true;
+    if (!account) return false;
+
+    const debtCurrency = payingPayment.debtCurrency;
+    const accountCurrency = account.currency;
+    if (!debtCurrency || !accountCurrency) return true;
+
+    if (debtCurrency === accountCurrency) {
+      return account.balance >= payingPayment.amount;
+    }
+
+    const debtRate = rates?.[debtCurrency];
+    const accountRate = rates?.[accountCurrency];
+    if (!debtRate || !accountRate) return true;
+
+    const requiredAmount = (payingPayment.amount * accountRate) / debtRate;
+    return account.balance >= requiredAmount;
+  };
+
+  const filteredAccounts = accounts.filter(
+    (acc) => acc.holdingType === accountCategory
+  );
+
+  const handleOpenPayDialog = (payment) => {
+    setPayingPayment(payment);
+    setSelectedAccount(null);
+    setAccountCategory("BANK");
+    setUseRealTimeRate(true);
+    setCustomExchangeRate("");
+    setPaymentError("");
+    setPayDialogOpen(true);
+    fetchAccounts();
+  };
+
+  const handleClosePayDialog = () => {
+    setPayDialogOpen(false);
+    setPayingPayment(null);
+    setSelectedAccount(null);
+    setPaymentError("");
+  };
+
   const handleMarkPaid = async () => {
+    if (!selectedAccount) {
+      setPaymentError("Lütfen bir hesap seçin");
+      return;
+    }
+
+    setPaymentLoading(true);
+    setPaymentError("");
+
     try {
+      const debtCurrency = payingPayment?.debtCurrency;
+      const accountCurrency = selectedAccount?.currency;
+      const needsConversion = debtCurrency && accountCurrency && debtCurrency !== accountCurrency;
+
+      let exchangeRate = null;
+      if (needsConversion) {
+        exchangeRate = getEffectiveExchangeRate();
+
+        if (!exchangeRate || exchangeRate <= 0) {
+          setPaymentError("Geçerli bir döviz kuru giriniz");
+          setPaymentLoading(false);
+          return;
+        }
+      }
+
+      const payload = {
+        accountId: selectedAccount.id,
+        userId: user.id,
+        amount: payingPayment.amount,
+        exchangeRate: exchangeRate,
+      };
+
       await axios.post(
         `${backendUrl}/api/debts/payment/${payingPayment.id}/pay`,
-        {},
+        payload,
         {
           headers: { Authorization: token ? `Bearer ${token}` : undefined },
         }
       );
-      setPayDialogOpen(false);
+
+      handleClosePayDialog();
       fetchData();
     } catch (error) {
       console.error("Error marking payment as paid:", error);
+      setPaymentError(
+        error.response?.data?.message ||
+          error.response?.data ||
+          "Ödeme işlemi başarısız oldu"
+      );
+    } finally {
+      setPaymentLoading(false);
     }
   };
 
@@ -539,10 +732,13 @@ const DebtsPage = () => {
                           color="success"
                           size="small"
                           startIcon={<CheckCircleIcon />}
-                          onClick={() => {
-                            setPayingPayment(debt.nextPayment);
-                            setPayDialogOpen(true);
-                          }}
+                          onClick={() =>
+                            handleOpenPayDialog({
+                              ...debt.nextPayment,
+                              debtToWhom: debt.toWhom,
+                              debtCurrency: debt.debtCurrency,
+                            })
+                          }
                         >
                           Ödendi
                         </Button>
@@ -582,25 +778,310 @@ const DebtsPage = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Pay Confirmation Dialog */}
+      {/* Pay Dialog with Account Selection */}
       <Dialog
         open={payDialogOpen}
-        onClose={() => setPayDialogOpen(false)}
-        maxWidth="xs"
+        onClose={handleClosePayDialog}
+        maxWidth="sm"
+        fullWidth
         disableScrollLock
       >
-        <DialogTitle>Ödemeyi Onayla</DialogTitle>
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <PaymentIcon color="success" />
+            Ödeme Yap
+          </Box>
+        </DialogTitle>
         <DialogContent>
-          <Typography>
-            {payingPayment?.debtToWhom} -{" "}
-            {formatCurrency(payingPayment?.amount, payingPayment?.debtCurrency)}{" "}
-            tutarındaki ödemeyi tamamlandı olarak işaretlemek istiyor musunuz?
+          <Box
+            sx={{
+              bgcolor: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
+              p: 2,
+              borderRadius: 2,
+              mb: 3,
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              Ödenecek Taksit
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              {payingPayment?.debtToWhom}
+              {payingPayment?.paymentNumber ? ` - Taksit #${payingPayment.paymentNumber}` : ""}
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: "#f44336", mt: 1 }}>
+              {formatCurrency(payingPayment?.amount, payingPayment?.debtCurrency)}
+            </Typography>
+          </Box>
+
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+            Hesap Türü Seçin
           </Typography>
+          <ToggleButtonGroup
+            value={accountCategory}
+            exclusive
+            onChange={(e, newValue) => {
+              if (newValue !== null) {
+                setAccountCategory(newValue);
+                setSelectedAccount(null);
+              }
+            }}
+            fullWidth
+            sx={{ mb: 2 }}
+          >
+            <ToggleButton value="BANK" sx={{ py: 1.5 }}>
+              <AccountBalanceIcon sx={{ mr: 1 }} />
+              Banka Hesabı
+            </ToggleButton>
+            <ToggleButton value="CASH" sx={{ py: 1.5 }}>
+              <LocalAtmIcon sx={{ mr: 1 }} />
+              Nakit
+            </ToggleButton>
+          </ToggleButtonGroup>
+
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+            Hesap Seçin
+          </Typography>
+
+          {accountsLoading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : filteredAccounts.length === 0 ? (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              {accountCategory === "BANK"
+                ? "Banka hesabınız bulunmuyor"
+                : "Nakit hesabınız bulunmuyor"}
+            </Alert>
+          ) : (
+            <FormControl component="fieldset" sx={{ width: "100%", mb: 2 }}>
+              <RadioGroup
+                value={selectedAccount?.id || ""}
+                onChange={(e) => {
+                  const account = filteredAccounts.find(
+                    (acc) => acc.id === parseInt(e.target.value)
+                  );
+                  setSelectedAccount(account);
+                }}
+              >
+                {filteredAccounts.map((account) => {
+                  const sufficient = hasSufficientBalance(account);
+                  return (
+                    <Card
+                      key={account.id}
+                      sx={{
+                        mb: 1,
+                        p: 0,
+                        border:
+                          selectedAccount?.id === account.id
+                            ? "2px solid"
+                            : "1px solid",
+                        borderColor:
+                          selectedAccount?.id === account.id
+                            ? "primary.main"
+                            : sufficient
+                            ? "divider"
+                            : "error.main",
+                        bgcolor: !sufficient
+                          ? "rgba(244, 67, 54, 0.08)"
+                          : "transparent",
+                        opacity: !sufficient ? 0.7 : 1,
+                        cursor: sufficient ? "pointer" : "not-allowed",
+                      }}
+                      onClick={() => {
+                        if (sufficient) setSelectedAccount(account);
+                      }}
+                    >
+                      <FormControlLabel
+                        value={account.id}
+                        control={<Radio disabled={!sufficient} />}
+                        disabled={!sufficient}
+                        sx={{
+                          m: 0,
+                          p: 1.5,
+                          width: "100%",
+                          "& .MuiFormControlLabel-label": { width: "100%" },
+                        }}
+                        label={
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              width: "100%",
+                            }}
+                          >
+                            <Box>
+                              <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                                {account.accountName}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {account.holdingType === "BANK" ? "Banka" : "Nakit"}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ textAlign: "right" }}>
+                              <Typography
+                                variant="body1"
+                                sx={{
+                                  fontWeight: 600,
+                                  color: sufficient ? "success.main" : "error.main",
+                                }}
+                              >
+                                {formatCurrency(account.balance, account.currency)}
+                              </Typography>
+                              {!sufficient && (
+                                <Typography variant="caption" color="error">
+                                  Yetersiz bakiye
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
+                        }
+                      />
+                    </Card>
+                  );
+                })}
+              </RadioGroup>
+            </FormControl>
+          )}
+
+          {selectedAccount && payingPayment?.debtCurrency !== selectedAccount.currency && (
+            <>
+              <Divider sx={{ my: 2 }} />
+              <Box
+                sx={{
+                  bgcolor: isDarkMode ? "rgba(255,152,0,0.1)" : "rgba(255,152,0,0.08)",
+                  p: 2,
+                  borderRadius: 2,
+                  border: "1px solid",
+                  borderColor: "warning.main",
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <CurrencyExchangeIcon color="warning" />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Döviz Kuru Dönüşümü
+                  </Typography>
+                </Box>
+
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Borç para birimi ({payingPayment?.debtCurrency}) ile hesap para birimi ({selectedAccount.currency}) farklı.
+                </Typography>
+
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    mb: 2,
+                  }}
+                >
+                  <Typography variant="body2">Anlık kuru kullan</Typography>
+                  <Switch
+                    checked={useRealTimeRate}
+                    onChange={(e) => setUseRealTimeRate(e.target.checked)}
+                  />
+                </Box>
+
+                {useRealTimeRate ? (
+                  <Box
+                    sx={{
+                      bgcolor: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
+                      p: 1.5,
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      Anlık Kur
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      1 {getRateDisplayConfig()?.baseCurrency || payingPayment?.debtCurrency} = {getDisplayedRateFromEffective(calculateRealTimeRate())?.toFixed(4) || "..."} {getRateDisplayConfig()?.quoteCurrency || selectedAccount.currency}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <TextField
+                    fullWidth
+                    label="Döviz Kuru"
+                    type="number"
+                    value={customExchangeRate}
+                    onChange={(e) => setCustomExchangeRate(e.target.value)}
+                    placeholder={`1 ${getRateDisplayConfig()?.baseCurrency || payingPayment?.debtCurrency} = ? ${getRateDisplayConfig()?.quoteCurrency || selectedAccount.currency}`}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          1 {getRateDisplayConfig()?.baseCurrency || payingPayment?.debtCurrency} =
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          {getRateDisplayConfig()?.quoteCurrency || selectedAccount.currency}
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ mb: 1 }}
+                  />
+                )}
+
+                {calculateDeductAmount() && (
+                  <Box
+                    sx={{
+                      mt: 2,
+                      p: 1.5,
+                      bgcolor: "success.main",
+                      color: "white",
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Typography variant="body2">Hesaptan düşülecek tutar</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                      {formatCurrency(calculateDeductAmount(), selectedAccount.currency)}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </>
+          )}
+
+          {selectedAccount && payingPayment?.debtCurrency === selectedAccount.currency && (
+            <Box
+              sx={{
+                mt: 2,
+                p: 1.5,
+                bgcolor: "success.main",
+                color: "white",
+                borderRadius: 1,
+              }}
+            >
+              <Typography variant="body2">Hesaptan düşülecek tutar</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                {formatCurrency(payingPayment?.amount, selectedAccount.currency)}
+              </Typography>
+            </Box>
+          )}
+
+          {paymentError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {paymentError}
+            </Alert>
+          )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPayDialogOpen(false)}>İptal</Button>
-          <Button variant="contained" color="success" onClick={handleMarkPaid}>
-            Ödendi Olarak İşaretle
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={handleClosePayDialog} disabled={paymentLoading}>
+            İptal
+          </Button>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleMarkPaid}
+            disabled={!selectedAccount || paymentLoading}
+            startIcon={
+              paymentLoading ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <CheckCircleIcon />
+              )
+            }
+          >
+            {paymentLoading ? "İşleniyor..." : "Ödemeyi Onayla"}
           </Button>
         </DialogActions>
       </Dialog>

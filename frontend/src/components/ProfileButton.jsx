@@ -29,8 +29,6 @@ const ProfileButton = ({
     <IconButton
       onClick={handleClick}
       sx={{
-        backgroundColor: "#e0e0e0",
-        "&:hover": { backgroundColor: "#d5d5d5" },
         width: 40,
         height: 40,
         ml: 1,
