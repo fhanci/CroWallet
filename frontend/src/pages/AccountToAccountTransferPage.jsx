@@ -27,6 +27,7 @@ import { useUser } from "../config/UserStore";
 import { useTheme } from "../config/ThemeContext";
 import useCurrencyRates from "../config/useCurrencyRates";
 import axios from "axios";
+import { backendUrl } from "../utils/envVariables";
 
 const AccountToAccountTransferPage = () => {
   const navigate = useNavigate();
@@ -140,7 +141,7 @@ const AccountToAccountTransferPage = () => {
     const fetchAccounts = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8082/api/accounts/get/${user.id}`,
+          `${backendUrl}/api/accounts/get/${user.id}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
@@ -248,7 +249,7 @@ const AccountToAccountTransferPage = () => {
     try {
       // Sequential API calls to avoid SQLite database locking
       await axios.post(
-        "http://localhost:8082/api/transfers/create",
+        `${backendUrl}/api/transfers/create`,
         outgoingTransfer,
         {
           headers: {
@@ -259,7 +260,7 @@ const AccountToAccountTransferPage = () => {
       );
 
       await axios.post(
-        "http://localhost:8082/api/transfers/create",
+        `${backendUrl}/api/transfers/create`,
         incomingTransfer,
         {
           headers: {
@@ -270,7 +271,7 @@ const AccountToAccountTransferPage = () => {
       );
 
       await axios.put(
-        `http://localhost:8082/api/accounts/update/${selectedSenderAccount.id}`,
+        `${backendUrl}/api/accounts/update/${selectedSenderAccount.id}`,
         updatedSender,
         {
           headers: {
@@ -281,7 +282,7 @@ const AccountToAccountTransferPage = () => {
       );
 
       await axios.put(
-        `http://localhost:8082/api/accounts/update/${selectedReceiverAccount.id}`,
+        `${backendUrl}/api/accounts/update/${selectedReceiverAccount.id}`,
         updatedReceiver,
         {
           headers: {

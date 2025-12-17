@@ -23,6 +23,7 @@ import { useNavigate } from "react-router-dom";
 import { t } from "i18next";
 import axios from "axios";
 import { useUser } from "../config/UserStore";
+import { backendUrl } from "../utils/envVariables";
 
 const OutgoingTransferPage = () => {
   const navigate = useNavigate();
@@ -51,7 +52,7 @@ const OutgoingTransferPage = () => {
     const fetchAccounts = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:8082/api/accounts/get/${user.id}`,
+          `${backendUrl}/api/accounts/get/${user.id}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
@@ -162,7 +163,7 @@ const OutgoingTransferPage = () => {
 
     try {
       await axios.post(
-        "http://localhost:8082/api/transfers/create",
+        `${backendUrl}/api/transfers/create`,
         transferPayload,
         {
           headers: {
@@ -173,7 +174,7 @@ const OutgoingTransferPage = () => {
       );
 
       await axios.put(
-        `http://localhost:8082/api/accounts/update/${selectedTransferAccount.id}`,
+        `${backendUrl}/api/accounts/update/${selectedTransferAccount.id}`,
         updatedAccount,
         {
           headers: {

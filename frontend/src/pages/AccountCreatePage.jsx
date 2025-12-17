@@ -45,6 +45,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../config/UserStore";
 import { useTheme } from "../config/ThemeContext";
+import { backendUrl } from "../utils/envVariables";
 
 // Top 10 banks in Turkey
 const TURKISH_BANKS = [
@@ -388,7 +389,7 @@ const AccountCreatePage = () => {
         ).toISOString();
 
         await axios.post(
-          "http://localhost:8082/api/accounts/create-account",
+          `${backendUrl}/api/accounts/create-account`,
           {
             userId: user.id,
             updateDate,
@@ -429,7 +430,7 @@ const AccountCreatePage = () => {
             }));
 
         await axios.post(
-          "http://localhost:8082/api/accounts/create-investment",
+          `${backendUrl}/api/accounts/create-investment`,
           {
             userId: user.id,
             accountName,

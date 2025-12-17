@@ -46,6 +46,7 @@ import SavingsIcon from "@mui/icons-material/Savings";
 import LocalAtmIcon from "@mui/icons-material/LocalAtm";
 import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
 import useCurrencyRates from "../config/useCurrencyRates";
+import { backendUrl } from "../utils/envVariables";
 
 const DebtsPage = () => {
   const { t } = useTranslation();
@@ -103,7 +104,7 @@ const DebtsPage = () => {
   const fetchData = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:8082/api/debts/summary/${user.id}`,
+        `${backendUrl}/api/debts/summary/${user.id}`,
         {
           headers: { Authorization: token ? `Bearer ${token}` : undefined },
         }
@@ -153,7 +154,7 @@ const DebtsPage = () => {
   const handleDeleteDebt = async () => {
     try {
       await axios.delete(
-        `http://localhost:8082/api/debts/delete/${deletingDebtId}`,
+        `${backendUrl}/api/debts/delete/${deletingDebtId}`,
         {
           headers: { Authorization: token ? `Bearer ${token}` : undefined },
         }
@@ -315,7 +316,7 @@ const DebtsPage = () => {
       };
 
       await axios.post(
-        `http://localhost:8082/api/debts/payment/${payingPayment.id}/pay`,
+        `${backendUrl}/api/debts/payment/${payingPayment.id}/pay`,
         payload,
         {
           headers: { Authorization: token ? `Bearer ${token}` : undefined },
@@ -353,7 +354,7 @@ const DebtsPage = () => {
       const newRemainingAmount = (editingDebt.remainingAmount || 0) + amountDiff;
 
       await axios.put(
-        `http://localhost:8082/api/debts/update/${editingDebt.id}`,
+        `${backendUrl}/api/debts/update/${editingDebt.id}`,
         {
           ...editingDebt,
           toWhom: editToWhom,

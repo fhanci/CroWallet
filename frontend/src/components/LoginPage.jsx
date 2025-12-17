@@ -21,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import axios from "axios";
 import { useUser } from "../config/UserStore";
+import { backendUrl } from "../utils/envVariables";
 
 const LoginPage = () => {
   const { t } = useTranslation();
@@ -74,7 +75,7 @@ const LoginPage = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8082/api/auth/login",
+        `${backendUrl}/api/auth/login`,
         { email, password }
       );
       setUserInfo({
@@ -132,7 +133,7 @@ const LoginPage = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8082/api/auth/register",
+        `${backendUrl}/api/auth/register`,
         { email, username: name, password }
       );
 

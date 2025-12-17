@@ -37,6 +37,7 @@ import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import LocalAtmIcon from "@mui/icons-material/LocalAtm";
 import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
 import useCurrencyRates from "../config/useCurrencyRates";
+import { backendUrl } from "../utils/envVariables";
 
 const InstallmentsPage = () => {
   const { t } = useTranslation();
@@ -84,7 +85,7 @@ const InstallmentsPage = () => {
     try {
       // Fetch all debts to get all payments
       const response = await axios.get(
-        `http://localhost:8082/api/debts/summary/${user.id}`,
+        `${backendUrl}/api/debts/summary/${user.id}`,
         {
           headers: { Authorization: token ? `Bearer ${token}` : undefined },
         }
@@ -103,7 +104,7 @@ const InstallmentsPage = () => {
         for (const debt of response.data.debts) {
           try {
             const debtPaymentsRes = await axios.get(
-              `http://localhost:8082/api/debts/${debt.id}`,
+              `${backendUrl}/api/debts/${debt.id}`,
               {
                 headers: { Authorization: token ? `Bearer ${token}` : undefined },
               }
@@ -227,7 +228,7 @@ const InstallmentsPage = () => {
       };
 
       await axios.post(
-        `http://localhost:8082/api/debts/payment/${payingPayment.id}/pay`,
+        `${backendUrl}/api/debts/payment/${payingPayment.id}/pay`,
         payload,
         {
           headers: { Authorization: token ? `Bearer ${token}` : undefined },

@@ -31,6 +31,7 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { backendUrl } from "../utils/envVariables";
 
 // Gold types for display
 const GOLD_TYPES = {
@@ -72,7 +73,7 @@ const MyGoldAccountsPage = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:8082/api/accounts/investment/${user.id}`,
+        `${backendUrl}/api/accounts/investment/${user.id}`,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
@@ -176,7 +177,7 @@ const MyGoldAccountsPage = () => {
 
     try {
       await axios.put(
-        `http://localhost:8082/api/accounts/update/${editingAccount.id}`,
+        `${backendUrl}/api/accounts/update/${editingAccount.id}`,
         {
           ...editingAccount,
           accountName: editAccountName,
@@ -211,7 +212,7 @@ const MyGoldAccountsPage = () => {
   const handleConfirmDelete = async () => {
     try {
       const verifyRes = await axios.post(
-        `http://localhost:8082/api/users/verify-password/${user.id}`,
+        `${backendUrl}/api/users/verify-password/${user.id}`,
         { password: deletePassword },
         {
           headers: {
@@ -222,7 +223,7 @@ const MyGoldAccountsPage = () => {
 
       if (verifyRes.status === 200) {
         await axios.delete(
-          `http://localhost:8082/api/accounts/delete/${deletingAccount.id}`,
+          `${backendUrl}/api/accounts/delete/${deletingAccount.id}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,

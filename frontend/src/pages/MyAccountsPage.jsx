@@ -35,6 +35,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { backendUrl } from "../utils/envVariables";
 
 const MyAccountsPage = () => {
   const { t } = useTranslation();
@@ -71,7 +72,7 @@ const MyAccountsPage = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:8082/api/accounts/currency/${user.id}`,
+        `${backendUrl}/api/accounts/currency/${user.id}`,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
@@ -170,7 +171,7 @@ const MyAccountsPage = () => {
     try {
       const updateDate = new Date().toISOString();
       await axios.put(
-        `http://localhost:8082/api/accounts/update/${editingAccount.id}`,
+        `${backendUrl}/api/accounts/update/${editingAccount.id}`,
         {
           ...editingAccount,
           accountName: editAccountName,
@@ -208,7 +209,7 @@ const MyAccountsPage = () => {
     try {
       // Verify password first
       const verifyRes = await axios.post(
-        `http://localhost:8082/api/users/verify-password/${user.id}`,
+        `${backendUrl}/api/users/verify-password/${user.id}`,
         { password: deletePassword },
         {
           headers: {
@@ -220,7 +221,7 @@ const MyAccountsPage = () => {
       if (verifyRes.status === 200) {
         // Delete the account
         await axios.delete(
-          `http://localhost:8082/api/accounts/delete/${deletingAccount.id}`,
+          `${backendUrl}/api/accounts/delete/${deletingAccount.id}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
