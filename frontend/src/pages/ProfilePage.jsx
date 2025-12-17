@@ -27,6 +27,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../config/UserStore";
+import { backendUrl } from "../utils/envVariables";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -72,7 +73,7 @@ const ProfilePage = () => {
   const handleVerifyAndSave = async () => {
     try {
       const verifyResponse = await axios.post(
-        "http://localhost:8082/api/users/verify-password",
+        `${backendUrl}/api/users/verify-password`,
         {
           password: currentPassword,
           id: user.id,
@@ -91,7 +92,7 @@ const ProfilePage = () => {
       }
 
       const updateResponse = await axios.put(
-        `http://localhost:8082/api/users/update/${user.id}`,
+        `${backendUrl}/api/users/update/${user.id}`,
         editData,
         {
           headers: {
@@ -124,7 +125,7 @@ const ProfilePage = () => {
   const handleVerifyAndDelete = async () => {
     try {
       const verifyResponse = await axios.post(
-        "http://localhost:8082/api/users/verify-password",
+        `${backendUrl}/api/users/verify-password`,
         {
           password: deletePassword,
           id: user.id,
@@ -142,7 +143,7 @@ const ProfilePage = () => {
         return;
       }
 
-      await axios.delete(`http://localhost:8082/api/users/delete/${user.id}`, {
+      await axios.delete(`${backendUrl}/api/users/delete/${user.id}`, {
         headers: {
           Authorization: token ? `Bearer ${token}` : undefined,
         },

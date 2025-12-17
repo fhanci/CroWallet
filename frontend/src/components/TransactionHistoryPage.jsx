@@ -30,6 +30,7 @@ import { useUser } from "../config/UserStore";
 import { useTheme } from "../config/ThemeContext";
 import axios from "axios";
 import Graph from "./Graph";
+import { backendUrl } from "../utils/envVariables";
 
 const TransactionHistoryPage = () => {
   const { user } = useUser();
@@ -56,7 +57,7 @@ const TransactionHistoryPage = () => {
     const fetchData = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8082/api/transfers/get/${accountId}`,
+          `${backendUrl}/api/transfers/get/${accountId}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
@@ -97,7 +98,7 @@ const TransactionHistoryPage = () => {
   const fetchAccountBalance = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:8082/api/accounts/${accountId}`,
+        `${backendUrl}/api/accounts/${accountId}`,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,

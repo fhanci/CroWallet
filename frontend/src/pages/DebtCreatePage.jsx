@@ -29,6 +29,7 @@ import { useTranslation } from "react-i18next";
 import { useUser } from "../config/UserStore";
 import { useTheme } from "../config/ThemeContext";
 import axios from "axios";
+import { backendUrl } from "../utils/envVariables";
 
 const CURRENCIES = [
   { value: "TRY", label: "₺ Türk Lirası", symbol: "₺" },
@@ -89,7 +90,7 @@ const DebtCreatePage = () => {
     const fetchAccounts = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8082/api/accounts/currency/${user.id}`,
+          `${backendUrl}/api/accounts/currency/${user.id}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
@@ -267,7 +268,7 @@ const DebtCreatePage = () => {
 
       // Create debt
       await axios.post(
-        "http://localhost:8082/api/debts/create",
+        `${backendUrl}/api/debts/create`,
         newDebt,
         {
           headers: {
@@ -284,7 +285,7 @@ const DebtCreatePage = () => {
 
         // Update account balance
         await axios.put(
-          `http://localhost:8082/api/accounts/update/${selectedAccount.id}`,
+          `${backendUrl}/api/accounts/update/${selectedAccount.id}`,
           {
             ...selectedAccount,
             balance: updatedBalance,
@@ -300,7 +301,7 @@ const DebtCreatePage = () => {
 
         // Create transfer record
         await axios.post(
-          "http://localhost:8082/api/transfers/create",
+          `${backendUrl}/api/transfers/create`,
           {
             amount: parseFloat(debtAmount),
             category: "Kredi",

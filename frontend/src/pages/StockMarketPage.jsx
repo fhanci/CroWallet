@@ -24,6 +24,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useTheme } from "../config/ThemeContext";
+import { backendUrl } from "../utils/envVariables";
 
 const StockMarketPage = () => {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ const StockMarketPage = () => {
     
     setSearching(true);
     try {
-      const response = await axios.get(`http://localhost:8082/api/market/search?query=${searchQuery}`);
+      const response = await axios.get(`${backendUrl}/api/market/search?query=${searchQuery}`);
       setSearchResults(response.data);
       
       // If we have results, fetch their prices
@@ -59,7 +60,7 @@ const StockMarketPage = () => {
     
     setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:8082/api/market/prices?symbols=${symbols}`);
+      const response = await axios.get(`${backendUrl}/api/market/prices?symbols=${symbols}`);
       setPrices(prev => ({ ...prev, ...response.data }));
     } catch (error) {
       console.error("Error fetching prices:", error);

@@ -26,6 +26,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PaymentIcon from "@mui/icons-material/Payment";
 import SearchIcon from "@mui/icons-material/Search";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { backendUrl } from "../utils/envVariables";
 
 const InstallmentsPage = () => {
   const { t } = useTranslation();
@@ -44,7 +45,7 @@ const InstallmentsPage = () => {
     try {
       // Fetch all debts to get all payments
       const response = await axios.get(
-        `http://localhost:8082/api/debts/summary/${user.id}`,
+        `${backendUrl}/api/debts/summary/${user.id}`,
         {
           headers: { Authorization: token ? `Bearer ${token}` : undefined },
         }
@@ -63,7 +64,7 @@ const InstallmentsPage = () => {
         for (const debt of response.data.debts) {
           try {
             const debtPaymentsRes = await axios.get(
-              `http://localhost:8082/api/debts/${debt.id}`,
+              `${backendUrl}/api/debts/${debt.id}`,
               {
                 headers: { Authorization: token ? `Bearer ${token}` : undefined },
               }
@@ -157,7 +158,7 @@ const InstallmentsPage = () => {
   const handleMarkPaid = async () => {
     try {
       await axios.post(
-        `http://localhost:8082/api/debts/payment/${payingPayment.id}/pay`,
+        `${backendUrl}/api/debts/payment/${payingPayment.id}/pay`,
         {},
         {
           headers: { Authorization: token ? `Bearer ${token}` : undefined },

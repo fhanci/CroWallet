@@ -33,6 +33,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../config/ThemeContext";
 import axios from "axios";
+import { backendUrl } from "../utils/envVariables";
 
 // Gold types for display
 const GOLD_TYPES = {
@@ -73,10 +74,10 @@ const InvestmentAccountDetailPage = () => {
     try {
       setLoading(true);
       const [accountRes, holdingsRes] = await Promise.all([
-        axios.get(`http://localhost:8082/api/accounts/${accountId}`, {
+        axios.get(`${backendUrl}/api/accounts/${accountId}`, {
           headers: { Authorization: token ? `Bearer ${token}` : undefined },
         }),
-        axios.get(`http://localhost:8082/api/accounts/${accountId}/holdings`, {
+        axios.get(`${backendUrl}/api/accounts/${accountId}/holdings`, {
           headers: { Authorization: token ? `Bearer ${token}` : undefined },
         }),
       ]);
@@ -101,7 +102,7 @@ const InvestmentAccountDetailPage = () => {
   const handleEditSave = async () => {
     try {
       await axios.put(
-        `http://localhost:8082/api/accounts/holdings/${editingHolding.id}`,
+        `${backendUrl}/api/accounts/holdings/${editingHolding.id}`,
         {
           quantity: parseFloat(editQuantity),
           currentPrice: parseFloat(editPrice),
@@ -130,7 +131,7 @@ const InvestmentAccountDetailPage = () => {
   const handleDeleteConfirm = async () => {
     try {
       await axios.delete(
-        `http://localhost:8082/api/accounts/holdings/${deletingHoldingId}`,
+        `${backendUrl}/api/accounts/holdings/${deletingHoldingId}`,
         {
           headers: { Authorization: token ? `Bearer ${token}` : undefined },
         }

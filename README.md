@@ -1,5 +1,11 @@
 <h1 id="top" align="center">CroWallet</h1>
 
+<br>
+
+<div align="center">
+    <img width=500 src="frontend/public/images/CroWallet1.png">
+</div>
+
 ## 🔍 Table of Contents
 
 - [About Project](#intro)
@@ -10,16 +16,21 @@
 - [Screenshots](#screenshots)
 - [Contributors](#contributors)
 
+<br/>
+
 <h2 id="intro">📌 About Project</h2>
 
 CroWallet is a modular full-stack personal finance manager built with React + Vite, Spring Boot, and SQLite. It empowers users with real-time control over accounts, transfers, debts, and notifications. Designed for clarity and responsiveness, CroWallet is ideal for portfolio showcasing or as a foundation for a scalable finance platform.
+
+<br/>
 
 <h2 id="technologies">☄️ Technologies</h2>
 
 - 🧠 **Java Spring Boot** – Powerful backend framework for building RESTful APIs
 - ⚡ **React + Vite** – Lightning-fast frontend development with modern tooling
 - 📦 **Docker** – Seamless containerization for development and deployment
-  <br/>
+
+<br/>
 
 <h2 id="features">🔥 Features</h2>
 
@@ -39,6 +50,8 @@ CroWallet is a modular full-stack personal finance manager built with React + Vi
 
 **Docker-Ready**: Easily deployable with Docker Compose for local development and production.
 
+**Environment Variables:** Support for environment variables to manage configurations.
+
 <h3> Todo </h3>
 
 <a href="./todo.md">Todo Details</a>
@@ -56,6 +69,12 @@ git clone https://github.com/fhanci/crowallet
 cd crowallet
 ```
 
+Configure environment variables.
+
+```
+cp frontend/.env.example frontend/.env
+```
+
 Start services with Docker Compose.
 
 ```
@@ -63,7 +82,9 @@ docker compose up --build
 ```
 
 This method is ideal for quickly starting and testing the application.
+
 ### 🛠️ Development Setup (Recommended for Contributors)
+
 However, if you plan to contribute or develop features, it's recommended to set up the environment manually:
 
 Start the SQLite web interface:
@@ -79,11 +100,14 @@ Then,
 
 ```
   cd frontend
+  cp .env.example .env
   npm install
   npm run dev
 ```
 
 This setup gives you more flexibility during development and makes debugging easier.
+
+<br/>
 
 <h2 id="screenshots">📸 Screenshots</h2>
 
@@ -109,6 +133,8 @@ This setup gives you more flexibility during development and makes debugging eas
     <img width=800 src="images/screenshot_10.png">
 </div>
 
+<br/>
+
 <h2 id="architecture-overview">🏗️ Architecture Overview</h2>
 
 CroWallet follows a modular architecture:
@@ -118,7 +144,14 @@ CroWallet follows a modular architecture:
 - **Database:** SQLite with JPA/Hibernate
 - **Deployment:** Docker Compose orchestrates all services
 
+<br/>
+
 <h2 id="contributors">👥 Contributors</h2>
 
 <a href="https://github.com/AybarsKansu" target="_blank"><img width=60 height=60 src="https://avatars.githubusercontent.com/u/177699821?v=4"></a>
 <a href="https://github.com/durukaracan" target="_blank"><img width=60 height=60 src="https://avatars.githubusercontent.com/u/135610737?v=4"></a>
+<a href="https://github.com/canakpinar315" target="_blank"><img width=60 height=60 src="https://avatars.githubusercontent.com/u/159945647?v=4"></a>
+<a href="https://github.com/ahmettoguz" target="_blank"><img width=60 height=60 src="https://avatars.githubusercontent.com/u/101711642?v=4"></a>
+<a href="https://github.com/fhanci" target="_blank"><img width=60 height=60 src="https://avatars.githubusercontent.com/u/117524059?v=4"></a>
+
+[🔝](#top)

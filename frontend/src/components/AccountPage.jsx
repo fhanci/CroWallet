@@ -21,6 +21,7 @@ import { useUser } from "../config/UserStore";
 import { useTheme } from "../config/ThemeContext";
 import useCurrencyRates from "../config/useCurrencyRates";
 import axios from "axios";
+import { backendUrl } from "../utils/envVariables";
 
 // Currency Rates Display Component - Shows EUR/TRY, EUR/USD rates
 const CurrencyRatesDisplay = ({ isDarkMode }) => {
@@ -127,7 +128,7 @@ const AccountPage = () => {
     const fetchAccountSummary = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:8082/api/accounts/summary/${user.id}`,
+          `${backendUrl}/api/accounts/summary/${user.id}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
@@ -147,7 +148,7 @@ const AccountPage = () => {
     const fetchDebtSummary = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:8082/api/debts/summary/${user.id}`,
+          `${backendUrl}/api/debts/summary/${user.id}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
@@ -167,7 +168,7 @@ const AccountPage = () => {
     const fetchUpcomingPayments = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:8082/api/debts/upcoming/${user.id}?limit=5`,
+          `${backendUrl}/api/debts/upcoming/${user.id}?limit=5`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
@@ -187,7 +188,7 @@ const AccountPage = () => {
     const fetchTransfers = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:8082/api/transfers/get/${user.id}`,
+          `${backendUrl}/api/transfers/get/${user.id}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
