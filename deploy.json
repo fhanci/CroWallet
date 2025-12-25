@@ -1,0 +1,4 @@
+{
+  "crowallet-ui": "crowallet/crowallet-ui:0.2.0",
+  "crowallet_api": "crowallet/crowallet-api:0.2.0-SNAPSHOT"
+}
