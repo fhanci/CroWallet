@@ -8,7 +8,6 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,7 +25,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
-@CrossOrigin(origins = "localhost:5050")
 @RequestMapping("/api/auth")
 public class AuthController {
     @Autowired
@@ -83,7 +81,6 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @CrossOrigin(allowCredentials = "true")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletResponse response) {
         // Validate required fields
         if (loginRequest.getEmail() == null || loginRequest.getEmail().isBlank()) {

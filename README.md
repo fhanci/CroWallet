@@ -12,6 +12,7 @@
 - [Technologies](#technologies)
 - [Features](#features)
 - [System Startup](#system-startup)
+- [Mobile Access](#mobile-access)
 - [Architecture Overview](#architecture-overview)
 - [Screenshots](#screenshots)
 - [Contributors](#contributors)
@@ -48,7 +49,7 @@ CroWallet is a modular full-stack personal finance manager built with React + Vi
 
 **Custom Categories**: Define your own income and expense categories for personalized tracking.
 
-**Docker-Ready**: Easily deployable with Docker Compose for local development and production.
+**Docker-Ready**: Easily deployable with Docker Compose for local development and production. **Fully accessible from mobile phones** via Wi-Fi, Tailscale VPN, or ngrok tunneling.
 
 **Environment Variables:** Support for environment variables to manage configurations.
 
@@ -109,6 +110,97 @@ This setup gives you more flexibility during development and makes debugging eas
 
 <br/>
 
+<h2 id="mobile-access">Mobile Access</h2>
+
+After starting the application with Docker Compose, you can access CroWallet from your mobile phone using one of the following methods:
+
+### Option 1: Same Wi-Fi Network
+
+**Requirements:** Your phone and PC must be on the same Wi-Fi network.
+
+1. **Find your PC's IP address:**
+   - Windows: Run `ipconfig` in Command Prompt
+   - Look for "IPv4 Address" under your active Wi-Fi/Ethernet adapter
+   - Example: `192.168.1.100` or `10.26.253.109`
+
+2. **Open Windows Firewall for port 3000:**
+   ```powershell
+   # Run PowerShell as Administrator
+   New-NetFirewallRule -DisplayName "CroWallet Frontend" -Direction Inbound -LocalPort 3000 -Protocol TCP -Action Allow
+   New-NetFirewallRule -DisplayName "CroWallet Backend" -Direction Inbound -LocalPort 8082 -Protocol TCP -Action Allow
+   ```
+
+3. **Access from your phone:**
+   - Open browser on your phone
+   - Navigate to: `http://YOUR_PC_IP:3000`
+   - Example: `http://192.168.1.100:3000`
+
+**Troubleshooting:**
+- Ensure both devices are on the same Wi-Fi (not guest network)
+- Temporarily disable Windows Firewall to test if it's blocking
+- Check if your router has "AP Isolation" enabled (disable it)
+
+---
+
+### Option 2: Mobile Data/4G/5G with Tailscale (Recommended for Persistent Access)
+
+**Requirements:** Tailscale account (free).
+
+1. **Install Tailscale on your PC:**
+   - Download from: https://tailscale.com/download/windows
+   - Sign in with Google/Microsoft/GitHub account
+
+2. **Install Tailscale on your phone:**
+   - Download from Play Store (Android) or App Store (iOS)
+   - Sign in with the **same account**
+
+3. **Get your PC's Tailscale IP:**
+   ```powershell
+   tailscale ip -4
+   ```
+   You'll get an IP like `100.x.x.x`
+
+4. **Access from your phone:**
+   - Ensure Tailscale is connected on your phone
+   - Open browser: `http://100.x.x.x:3000` (use your PC's Tailscale IP)
+
+**Benefits:**
+- Works on any network (Wi-Fi, 4G, 5G)
+- Completely private and encrypted
+- IP address never changes
+- No connection limits
+
+---
+
+### Option 3: Mobile Data/4G/5G with ngrok
+
+**Requirements:** ngrok account (free).
+
+1. **Sign up and get auth token:**
+   - Go to https://ngrok.com/signup
+   - Copy your auth token from https://dashboard.ngrok.com/get-started/your-authtoken
+
+2. **Install ngrok:**
+   - Download from: https://ngrok.com/download
+   - Extract and move `ngrok.exe` to `C:\Windows\System32`
+
+3. **Authenticate ngrok:**
+   ```bash
+   ngrok config add-authtoken YOUR_AUTH_TOKEN
+   ```
+
+4. **Start the tunnel:**
+   ```bash
+   ngrok http 3000
+   ```
+
+5. **Access from your phone:**
+   - Copy the `Forwarding` URL from ngrok output (e.g., `https://abc123.ngrok-free.app`)
+   - Open that URL in your phone browser
+   - Click "Visit Site" on the ngrok warning page
+
+<br/>
+
 <h2 id="screenshots">📸 Screenshots</h2>
 
 <div align="center">
@@ -139,10 +231,13 @@ This setup gives you more flexibility during development and makes debugging eas
 
 CroWallet follows a modular architecture:
 
-- **Frontend:** React + Vite SPA served via Docker
-- **Backend:** Java Spring Boot REST API
+- **Frontend:** React + Vite SPA served via Nginx with reverse proxy to backend
+- **Backend:** Java Spring Boot REST API with CORS enabled for cross-origin access
 - **Database:** SQLite with JPA/Hibernate
 - **Deployment:** Docker Compose orchestrates all services
+- **Networking:** Nginx reverse proxy enables seamless mobile access from any network
+
+**Mobile-Ready Architecture:** The Nginx reverse proxy consolidates frontend and backend under a single origin, eliminating CORS issues and enabling access from Wi-Fi, mobile data (4G/5G), or VPN connections.
 
 <br/>
 
