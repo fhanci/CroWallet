@@ -224,10 +224,11 @@ const MenuPage = () => {
             position: "absolute",
             top: "40px", 
             left: 0,
-            width: "35%",
+            pr:"12px",
+            width: {xs:"48%",sm:"40%",md:"40%",lg:"40%",xl:"40%"},
             height: "55px",
             display: "flex",
-            justifyContent: "space-around", 
+            justifyContent:"space-around", 
             alignItems: "center", 
           }}
         >
@@ -324,12 +325,14 @@ const MenuPage = () => {
           sx={{
             position: "absolute",
             top: "40px", 
-            right: 0,
-            width: "35%",
+            right: "3vw",
+            pl:"12px",
+            width: {xs:"48%",sm:"40%",md:"40%",lg:"40%",xl:"40%"},            
             height: "55px",
             display: "flex",
             justifyContent: "space-around", 
-            alignItems: "center", 
+            alignItems:"center" 
+            
           }}
         >
           {/* Borçlar */}

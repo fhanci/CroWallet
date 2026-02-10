@@ -15,6 +15,7 @@ import java.io.IOException;
 
 //validates token on every request
 
+/* Hr request'te Headerdan JWT'yi alır, Token geçerli mi bakar ve kullanıcıyı SecurityContext'e koyar. */
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
     @Autowired
