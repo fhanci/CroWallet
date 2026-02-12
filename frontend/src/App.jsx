@@ -163,17 +163,21 @@ const MainApp = () => {
           <Route index element={<InvestmentAccountDetailPage />} />
         </Route>
 
-        <Route path="/accounts/investment/stock" element={<DashboardLayout />}>
-          <Route index element={<MyStockAccountsPage />} />
+        <Route path="/investment/stock_and_gold" element={<DashboardLayout />}>
+          <Route index element={<InvestmentAccountDetailPage/>} />
         </Route>
+
+        {/* <Route path="/accounts/investment/stock" element={<DashboardLayout />}>
+          <Route index element={<MyStockAccountsPage />} />
+        </Route> */}
 
         <Route path="/market" element={<DashboardLayout />}>
           <Route index element={<StockMarketPage />} />
         </Route>
 
-        <Route path="/accounts/investment/gold" element={<DashboardLayout />}>
+        {/* <Route path="/accounts/investment/gold" element={<DashboardLayout />}>
           <Route index element={<MyGoldAccountsPage />} />
-        </Route>
+        </Route> */}
         <Route path="*" element={<ErrorPage />} />
       </Routes>
     </>

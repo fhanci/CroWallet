@@ -233,7 +233,7 @@ const AccountCreatePage = () => {
       // Reset investment-specific fields
       setGoldItems([{ id: 1, goldType: "", quantity: "", price: "" }]);
       setStockItems([{ id: 1, stock: null, quantity: "", price: "" }]);
-      setAccountName("");
+      // setAccountName("");
     }
   };
 
@@ -450,6 +450,7 @@ const AccountCreatePage = () => {
       setTimeout(() => {
         navigate("/account");
       }, 1000);
+      setAccountName("");
     } catch (error) {
       console.error("Hata:", error);
       setError("Bir hata oluştu, tekrar deneyiniz.");
@@ -556,7 +557,7 @@ const AccountCreatePage = () => {
                 </ToggleButtonGroup>
               </Box>
 
-              {/* Bank Selection */}
+              {/* Bank Selection - Banka Seçimi*/}
               <Fade in={holdingType === "BANK"} unmountOnExit>
                 <FormControl fullWidth margin="normal" sx={{ mb: 2 }}>
                   <InputLabel id="bank-label">Banka Seçin</InputLabel>
@@ -582,7 +583,7 @@ const AccountCreatePage = () => {
                 </FormControl>
               </Fade>
 
-              {/* Currency Selection */}
+              {/* Currency Selection - Para Birimi */}
               <FormControl fullWidth margin="normal" sx={{ mb: 2 }}>
                 <InputLabel id="currency-label">{t("currency")}</InputLabel>
                 <Select
@@ -604,7 +605,7 @@ const AccountCreatePage = () => {
                 </Select>
               </FormControl>
 
-              {/* Balance Input */}
+              {/* Balance Input  - Bakiye*/}
               <TextField
                 label={t("balance")}
                 type="number"
@@ -649,7 +650,7 @@ const AccountCreatePage = () => {
           {/* INVESTMENT ACCOUNT FORM */}
           <Fade in={accountType === "INVESTMENT"} unmountOnExit>
             <Box>
-              {/* Account Name - at the top for investment accounts */}
+              {/* Account Name - at the top for investment accounts - Hesap Adı*/}
               <TextField
                 label="Hesap Adı"
                 fullWidth
@@ -665,7 +666,7 @@ const AccountCreatePage = () => {
                 }}
               />
 
-              {/* Asset Type Selection */}
+              {/* Asset Type Selection - Yatırım Türü??*/}
               <Box sx={{ mb: 3 }}>
                 <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 500 }}>
                   Yatırım Türü
@@ -1162,6 +1163,8 @@ const AccountCreatePage = () => {
                     accountType === "INVESTMENT"
                       ? "linear-gradient(135deg, #d4af37 0%, #c9a227 100%)"
                       : "linear-gradient(135deg, #1C2B44 0%, #2a4a5e 100%)",
+                  color:
+                    accountType !== "INVESTMENT" ? "white" : "black"
                 }}
               >
                 Kaydet

@@ -5,7 +5,7 @@ import com.crowallet.backend.dto.TransferDTO;
 import com.crowallet.backend.entity.Transfer;
 import com.crowallet.backend.mapper.AccountMapper;
 import com.crowallet.backend.mapper.TransferMapper;
-import com.crowallet.backend.mapper.UserMapper;
+// import com.crowallet.backend.mapper.UserMapper;
 import com.crowallet.backend.repository.TransferRepository;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
@@ -208,6 +208,13 @@ public class AccountService {
     public List<InvestmentHoldingDTO> getAccountHoldings(Long accountId) {
         List<InvestmentHolding> holdings = holdingRepository.findByAccountId(accountId);
         return AccountMapper.INSTANCE.toHoldingDTOList(holdings);
+    }
+
+    //Kişinin altın ve hisse hesaplarını getirir.
+    public List<Map<String,Object>> findByAccountInvesment(Long userID) {
+        List<Map<String,Object>> holdings = holdingRepository.findByAccountInvesment(userID);
+        return holdings;
+        // return AccountMapper.INSTANCE.toHoldingDTOList(holdings);
     }
 
     public List<AccountDTO> getAllAccounts() {

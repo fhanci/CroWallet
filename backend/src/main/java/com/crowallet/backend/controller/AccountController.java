@@ -2,15 +2,21 @@ package com.crowallet.backend.controller;
 
 import com.crowallet.backend.dto.AccountDTO;
 import com.crowallet.backend.dto.TransferDTO;
+import com.crowallet.backend.entity.User;
 import com.crowallet.backend.dto.AccountSummaryDTO;
 import com.crowallet.backend.dto.CreateInvestmentAccountDTO;
 import com.crowallet.backend.dto.InvestmentHoldingDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 import com.crowallet.backend.service.AccountService;
+import com.crowallet.backend.repository.UserRepository;
+;
 
 @RestController
 @CrossOrigin(origins = "*")
@@ -20,10 +26,22 @@ public class AccountController {
     @Autowired
     private AccountService accountService;
 
+    @Autowired
+    private UserRepository userRepository;
+
     // Return all accounts
-    @GetMapping
+    @GetMapping("/getAllAccount")
     public List<AccountDTO> getAllAccounts() {
         return accountService.getAllAccounts();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getMe(Authentication authentication) {
+        String username = authentication.getName();
+
+        
+        User user = userRepository.findByUsername(username).orElseThrow();
+        return ResponseEntity.ok(Long.valueOf(user.getId()));
     }
 
     // Get all user accounts
@@ -57,9 +75,14 @@ public class AccountController {
     }
 
     // Get holdings for an investment account
+    // @GetMapping("/{id}/holdings")
+    // public List<InvestmentHoldingDTO> getAccountHoldings(@PathVariable Long id) {
+    //     return accountService.getAccountHoldings(id);
+    // }
+
     @GetMapping("/{id}/holdings")
-    public List<InvestmentHoldingDTO> getAccountHoldings(@PathVariable Long id) {
-        return accountService.getAccountHoldings(id);
+    public List<Map<String,Object>> findByAccountInvesment(@PathVariable Long id) {
+        return accountService.findByAccountInvesment(id);
     }
 
     @PostMapping("/create-account")
