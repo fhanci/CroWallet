@@ -18,9 +18,9 @@ function TransferPage(){
             left:"50%",
             transform:"translateX(-50%)"
         }}>
-            <Button component={Link} to="incoming"><AddIcon/>Gelir Ekle</Button>
-            <Button component={Link} to="outgoing"><RemoveIcon></RemoveIcon>Gider Ekle</Button>
-            <Button component={Link} to="accounts"><SwapHorizIcon/>Transfer Yap</Button>
+            <Button component={Link} to="incoming" sx={{color: "green"}}><AddIcon/>Gelir Ekle</Button>
+            <Button component={Link} to="outgoing" sx={{color: "red"}}><RemoveIcon></RemoveIcon>Gider Ekle</Button>
+            <Button component={Link} to="accounts" sx={{color: "#e5e515"}}><SwapHorizIcon/>Transfer Yap</Button>
         </Box>
     )
 }

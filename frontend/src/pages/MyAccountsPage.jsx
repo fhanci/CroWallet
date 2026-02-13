@@ -245,16 +245,15 @@ const MyAccountsPage = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 3, mb: 4 }}>
-      <Box sx={{display:"flex",alignItems:"center"}}>
+    <Container maxWidth="lg" sx={{ mt: 3, mb: 4}}>
+      <Box sx={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap"}}>
         <Typography variant="h4" sx={{ fontWeight: 600, mb: 3 }}>
           Hesaplarım
       </Typography>
 
       <Button component={Link} to="/account/create" 
-      sx={{marginLeft:"auto",borderRadius: "30px",border: "none",background: "darkblue",color: "white",
-        textTransform:"none",padding:"10px"
-      }}>
+      sx={{borderRadius: "30px",border: "none",background: "darkblue",color: "white",
+        textTransform:"none",padding:"10px",mb:3 }}>
         Hesap Ekle
       </Button>
       

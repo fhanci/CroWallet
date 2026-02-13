@@ -47,6 +47,14 @@ const MenuPage = () => {
   const debtRef = useRef(null);
   const transferRef = useRef(null);
 
+
+  const [responsiveIconSize, setResponsiveIconSize] = useState({ xs: "2em", sm: "2em", md: "2em", lg: "2em", xl: "2em" });
+
+  const [responsiveFontSizeIsSelected, setResponsiveFontSizeIsSelected] = useState({ xs: "0.65em", sm: "0.80em", md: "0.80em", lg: "0.80em", xl: "0.80  em" });
+
+  const [responsiveFontSizeIsNotSelected, setResponsiveFontSizeIsNotSelected] = useState({ xs: "0.60em", sm: "0.75em", md: "0.75em", lg: "0.75em", xl: "0.75em" });
+
+
   // Determine active route
   useEffect(() => {
     const path = location.pathname;
@@ -116,6 +124,7 @@ const MenuPage = () => {
     // }
 
     const contextMenuBgColor = "rgba(174, 201, 184, 0.85)";
+
 
     return (
       <Menu
@@ -224,22 +233,18 @@ const MenuPage = () => {
         <Box
           sx={{
             position: "absolute",
-            top: "40px",
-            left: 0,
-            pr: "12px",
-            width: { xs: "48%", sm: "40%", md: "40%", lg: "40%", xl: "40%" },
-            height: "55px",
+            bottom: "0px",
             display: "flex",
+            flexDirection: "row",
             justifyContent: "space-around",
-            alignItems: "center",
+            transform: "translate(-8%, 10%)",
+            width: "50%",
           }}
         >
           {/* Yatırım */}
 
           <Box
             ref={investmentRef}
-            // onMouseEnter={() => { setActiveIndex(0); }}
-            // onMouseLeave={() => { setActiveIndex(-1); }}
             sx={{
               display: "flex",
               flexDirection: "column",
@@ -248,6 +253,7 @@ const MenuPage = () => {
               padding: "4px 12px",
               borderRadius: "12px",
               transition: "hover 0.3s",
+              marginLeft: "3px",
             }}
           >
 
@@ -259,24 +265,29 @@ const MenuPage = () => {
                 border: "none",
                 outline: "none",
                 "&:hover": { boxShadow: "none", outline: "none" },
-                fontWeight: 600, mt: 0.5,
+                fontWeight: 600,
                 alignItems: "center",
                 justifyContent: "center",
               }}>
               <TrendingUpIcon
                 sx={{
                   color: ICON_COLOR,
-                  fontSize: "26px",
+                  fontSize: responsiveIconSize,
                   opacity: activeIndex === 0 ? 1 : 0.75,
-                  transform: activeIndex === 0 ? "scale(1.25)" : "scale(1)",
+                  transform: activeIndex === 0 ? "scale(1.15)" : "scale(1)",
                   transition: "transform 1.5s",
                 }}
               />
 
 
               <Typography sx={{
-                color: ICON_COLOR, fontSize: activeIndex === 0 ? "0.80rem" : "0.65rem",
-                transition: "font-size 1.5s", fontWeight: 600, mt: 0.3, opacity: activeIndex === 0 ? 1 : 0.75, textTransform: "uppercase", letterSpacing: "0.5px"
+                color: ICON_COLOR,
+                fontSize: activeIndex === 0 ? responsiveFontSizeIsSelected : responsiveFontSizeIsNotSelected,
+                transition: "font-size 1.5s",
+                fontWeight: "inherit",
+                opacity: activeIndex === 0 ? 1 : 0.75,
+                textTransform: "uppercase",
+                letterSpacing: "0.5px"
               }}>
                 YATIRIM
               </Typography>
@@ -286,8 +297,6 @@ const MenuPage = () => {
           {/* Hesaplar */}
           <Box
             ref={accountsRef}
-            // onMouseEnter={() => { setActiveIndex(1); }}
-            // onMouseLeave={() => { setActiveIndex(-1); }}
             sx={{
               display: "flex",
               flexDirection: "column",
@@ -295,7 +304,8 @@ const MenuPage = () => {
               cursor: "pointer",
               padding: "4px 12px",
               borderRadius: "12px",
-              transition: "all 0.3s",
+              transition: "hover 0.3s",
+
             }}
           >
 
@@ -307,24 +317,29 @@ const MenuPage = () => {
                 border: "none",
                 outline: "none",
                 "&:hover": { boxShadow: "none", outline: "none" },
-                fontWeight: 600, mt: 0.5,
+                fontWeight: 600,
                 alignItems: "center",
                 justifyContent: "center",
+                marginRight: "50%",
               }}>
               <AccountBalanceIcon
                 sx={{
                   color: ICON_COLOR,
                   border: "none",
-                  fontSize: "26 px",
+                  fontSize: responsiveIconSize,
                   opacity: activeIndex === 1 ? 1 : 0.5,
-                  transform: activeIndex === 1 ? "scale(1.25)" : "scale(1)",
+                  transform: activeIndex === 1 ? "scale(1.15)" : "scale(1)",
                   transition: "transform 1.5s",
                 }}
               />
 
               <Box sx={{
-                marginTop: "3px", color: ICON_COLOR, fontSize: activeIndex === 1 ? "0.80rem" : "0.65rem",
-                transition: "font-size 1.5s", fontWeight: "inherit", textTransform: "uppercase", letterSpacing: "0.5px"
+                color: ICON_COLOR,
+                fontSize: activeIndex === 1 ? responsiveFontSizeIsSelected : responsiveFontSizeIsNotSelected,
+                transition: "font-size 1.5s",
+                fontWeight: "inherit",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px"
               }}>
                 Hesaplar
               </Box>
@@ -366,30 +381,28 @@ const MenuPage = () => {
         <Box
           sx={{
             position: "absolute",
-            top: "40px",
-            right: "3vw",
-            pl: "12px",
-            width: { xs: "48%", sm: "40%", md: "40%", lg: "40%", xl: "40%" },
-            height: "55px",
+            bottom: "0px",
+            right: "0px",
             display: "flex",
+            transform: "translate(15%, 8%)",
             justifyContent: "space-around",
-            alignItems: "center"
+            width: "55%",
+
 
           }}
         >
           {/* Borçlar */}
           <Box
             ref={debtRef}
-            // onMouseEnter={() => { setActiveIndex(3); }}
-            // onMouseLeave={() => { setActiveIndex(-1); }}
             sx={{
               display: "flex",
               flexDirection: "column",
-              justifyContent: "center",
               alignItems: "center",
               cursor: "pointer",
               padding: "4px 12px",
-              transition: "all 0.3s",
+              borderRadius: "12px",
+              transition: "hover 0.3s",
+
             }}
           >
 
@@ -398,24 +411,26 @@ const MenuPage = () => {
                 display: "flex",
                 flexDirection: "column",
                 color: ICON_COLOR,
-                fontWeight: 600, mt: 0.5,
+                border: "none",
+                outline: "none",
+                "&:hover": { boxShadow: "none", outline: "none" },
+                fontWeight: 600,
                 alignItems: "center",
                 justifyContent: "center",
               }}>
               <AccountBalanceWalletIcon
                 sx={{
                   color: ICON_COLOR,
-                  fontSize: "26px",
+                  fontSize: responsiveIconSize,
                   opacity: activeIndex === 3 ? 1 : 0.5,
-                  transform: activeIndex === 3 ? "scale(1.25)" : "scale(1)",
+                  transform: activeIndex === 3 ? "scale(1.15)" : "scale(1)",
                   transition: "transform 1.5s",
                 }}
               />
 
               <Box sx={{
-                marginTop: "3px",
                 color: ICON_COLOR,
-                fontSize: activeIndex === 3 ? "0.80rem" : "0.65rem",
+                fontSize: activeIndex === 3 ? responsiveFontSizeIsSelected : responsiveFontSizeIsNotSelected,
                 transition: "font-size 1.5s",
                 fontWeight: "inherit",
                 textTransform: "uppercase",
@@ -430,16 +445,16 @@ const MenuPage = () => {
           {/* Transfer */}
           <Box
             ref={transferRef}
-            // onMouseEnter={() => { setActiveIndex(4); handleMenuOpen(transferRef, "transfer"); }}
-            // onMouseLeave={() => { setActiveIndex(-1); }}
             sx={{
               display: "flex",
               flexDirection: "column",
-              justifyContent: "center",
               alignItems: "center",
               cursor: "pointer",
               padding: "4px 12px",
-              transition: "all 0.3s",
+              borderRadius: "12px",
+              transition: "hover 0.3s",
+              transform: "translateX(-15%)",
+              marginRight:"3px",
             }}
           >
 
@@ -448,33 +463,36 @@ const MenuPage = () => {
                 display: "flex",
                 flexDirection: "column",
                 color: ICON_COLOR,
-                fontWeight: 600, mt: 0.5,
+                border: "none",
+                outline: "none",
+                "&:hover": { boxShadow: "none", outline: "none" },
+                fontWeight: 600,
                 alignItems: "center",
                 justifyContent: "center",
+                marginRight:"15%",
               }}>
               <SwapHorizIcon
                 sx={{
                   color: ICON_COLOR,
-                  fontSize: "26px",
+                  fontSize: responsiveIconSize,
                   opacity: activeIndex === 4 ? 1 : 0.75,
-                  transform: activeIndex === 4 ? "scale(1.25)" : "scale(1)",
+                  transform: activeIndex === 4 ? "scale(1.15)" : "scale(1)",
                   transition: "transform 1.5s",
                 }}
               />
+              <Box sx={{
+                color: ICON_COLOR,
+                fontSize: activeIndex === 4 ? responsiveFontSizeIsSelected : responsiveFontSizeIsNotSelected,
+                transition: "font-size 1.5s",
+                fontWeight: "inherit",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px"
+              }}>
+                TRANSFER
+              </Box>
             </Button>
 
-            <Box sx={{
-              marginTop: "3px",
-              marginBottom:"10px",
-              color: ICON_COLOR,
-              fontSize: activeIndex === 4 ? "0.80rem" : "0.65rem",
-              transition: "font-size 1.5s",
-              fontWeight: "inherit",
-              textTransform: "uppercase",
-              letterSpacing: "0.5px"
-            }}>
-              TRANSFER
-            </Box>
+
           </Box>
         </Box>
       </Box>

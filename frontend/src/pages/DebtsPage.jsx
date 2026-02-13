@@ -394,6 +394,7 @@ const DebtsPage = () => {
       <Box
         sx={{
           display: "flex",
+          flexWrap:"wrap",
           justifyContent: "space-between",
           alignItems: "center",
           mb: 3,
@@ -402,7 +403,7 @@ const DebtsPage = () => {
         <Typography variant="h4" sx={{ fontWeight: 600 }}>
           {t("myDebts")}
         </Typography>
-        <Box sx={{ display: "flex", gap: 2 }}>
+        <Box sx={{ display: "flex", gap: 2, flexWrap:"wrap" }}>
           <Button
             variant="outlined"
             startIcon={<ListAltIcon />}
@@ -491,6 +492,9 @@ const DebtsPage = () => {
             if (newValue !== null) setViewMode(newValue);
           }}
           sx={{
+            display:"flex",
+            justifyContent:"space-evenly  ",
+            flexWrap:"wrap",
             "& .MuiToggleButton-root": {
               px: 4,
               py: 1.5,
