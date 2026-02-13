@@ -1,4 +1,5 @@
 import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
+import { backendUrl } from "../utils/envVariables";
 
 
 
@@ -6,7 +7,7 @@ export const holdingApi = createApi({
     reducerPath: "holdingApi",
 
     baseQuery: fetchBaseQuery({
-        baseUrl: "http://localhost:8082",
+        baseUrl: backendUrl,
         
         prepareHeaders: (headers) => {
             const token = localStorage.getItem("token");
@@ -56,10 +57,8 @@ export const holdingApi = createApi({
 
             invalidatesTags: (result,error,id) => [
 
-                ////Her holding için ayrı tag üret
                 {type:"Holding",id},
 
-                //Eğer result yoksa sadece LIST üret
                 {type:"Holding", id:"LIST"},
             ],
         }),

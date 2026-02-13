@@ -73,6 +73,7 @@ import MyGoldAccountsPage from "./pages/MyGoldAccountsPage";
 import { UserProvider } from "./config/UserStore";
 import ErrorPage from "./components/ErrorPage";
 import { ThemeProvider } from "./config/ThemeContext";
+import TransferPage from "./pages/TransferPage";
 const MainApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(
     localStorage.getItem("isAuthenticated") === "true"
@@ -145,6 +146,10 @@ const MainApp = () => {
 
         <Route path="/transfer/accounts" element={<DashboardLayout />}>
           <Route index element={<AccountToAccountTransferPage />} />
+        </Route>
+
+        <Route path="/transfer" element={<DashboardLayout />}>
+          <Route index element={<TransferPage/>} />
         </Route>
 
         <Route path="/debt" element={<DashboardLayout />}>

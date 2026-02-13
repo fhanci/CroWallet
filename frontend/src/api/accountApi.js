@@ -1,11 +1,11 @@
 import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
-
+import { backendUrl } from "../utils/envVariables";
 
 export const accountApi = createApi({
     reducerPath: "accountApi",
 
     baseQuery: fetchBaseQuery({
-        baseUrl: "http://localhost:8082",
+        baseUrl: backendUrl,
         
         prepareHeaders: (headers) => {
             const token = localStorage.getItem("token");

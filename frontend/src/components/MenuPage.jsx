@@ -84,36 +84,36 @@ const MenuPage = () => {
   const renderMenu = () => {
     let items = [];
 
-    switch (activeMenu) {
-      // case "investment":
-      //   items = [
-      //     { label: "Hisse Hesaplarım", path: "/investment/stock_and_gold", icon: <ShowChartIcon fontSize="small" /> },
-      //     { label: "Altın Hesaplarım", path: "/investment/stock_and_gold", icon: <ViewInArIcon fontSize="small" /> }
-      //   ];
-      //   break;
-      // case "accounts":
-      //   items = [
-      //     { label: "Hesaplarım", path: "/accounts/my", icon: <FolderIcon fontSize="small" /> },
-      //     { label: "Hesap Ekle", path: "/account/create", icon: <AddIcon fontSize="small" /> }
-      //   ];
-      //   break;
-      // case "debt":
-      //   items = [
-      //     { label: "Borçlar", path: "/debt", icon: <CreditCardIcon fontSize="small" /> },
-      //     { label: "Borç Ekle", path: "/debt/create", icon: <AddIcon fontSize="small" /> },
-      //     { label: "Taksitler", path: "/debt/installments", icon: <ListAltIcon fontSize="small" /> }
-      //   ];
-      //   break;
-      case "transfer":
-        items = [
-          { label: "Gelir Ekle", path: "/transfer/incoming", icon: <AddIcon fontSize="small" color="success" /> },
-          { label: "Gider Ekle", path: "/transfer/outgoing", icon: <RemoveIcon fontSize="small" color="error" /> },
-          { label: "Transfer Yap", path: "/transfer/accounts", icon: <SwapHorizIcon fontSize="small" color="action" /> }
-        ];
-        break;
-      default:
-        return null;
-    }
+    // switch (activeMenu) {
+    // case "investment":
+    //   items = [
+    //     { label: "Hisse Hesaplarım", path: "/investment/stock_and_gold", icon: <ShowChartIcon fontSize="small" /> },
+    //     { label: "Altın Hesaplarım", path: "/investment/stock_and_gold", icon: <ViewInArIcon fontSize="small" /> }
+    //   ];
+    //   break;
+    // case "accounts":
+    //   items = [
+    //     { label: "Hesaplarım", path: "/accounts/my", icon: <FolderIcon fontSize="small" /> },
+    //     { label: "Hesap Ekle", path: "/account/create", icon: <AddIcon fontSize="small" /> }
+    //   ];
+    //   break;
+    // case "debt":
+    //   items = [
+    //     { label: "Borçlar", path: "/debt", icon: <CreditCardIcon fontSize="small" /> },
+    //     { label: "Borç Ekle", path: "/debt/create", icon: <AddIcon fontSize="small" /> },
+    //     { label: "Taksitler", path: "/debt/installments", icon: <ListAltIcon fontSize="small" /> }
+    //   ];
+    //   break;
+    // case "transfer":
+    //   items = [
+    //     { label: "Gelir Ekle", path: "/transfer/incoming", icon: <AddIcon fontSize="small" color="success" /> },
+    //     { label: "Gider Ekle", path: "/transfer/outgoing", icon: <RemoveIcon fontSize="small" color="error" /> },
+    //     { label: "Transfer Yap", path: "/transfer/accounts", icon: <SwapHorizIcon fontSize="small" color="action" /> }
+    //   ];
+    //   break;
+    // default:
+    //   return null;
+    // }
 
     const contextMenuBgColor = "rgba(174, 201, 184, 0.85)";
 
@@ -380,8 +380,8 @@ const MenuPage = () => {
           {/* Borçlar */}
           <Box
             ref={debtRef}
-            onMouseEnter={() => { setActiveIndex(3); }}
-            onMouseLeave={() => { setActiveIndex(-1); }}
+            // onMouseEnter={() => { setActiveIndex(3); }}
+            // onMouseLeave={() => { setActiveIndex(-1); }}
             sx={{
               display: "flex",
               flexDirection: "column",
@@ -428,36 +428,53 @@ const MenuPage = () => {
 
 
           {/* Transfer */}
-          <Box 
+          <Box
             ref={transferRef}
-            onMouseEnter={() => { setActiveIndex(4); handleMenuOpen(transferRef, "transfer"); }}
+            // onMouseEnter={() => { setActiveIndex(4); handleMenuOpen(transferRef, "transfer"); }}
             // onMouseLeave={() => { setActiveIndex(-1); }}
             sx={{
               display: "flex",
               flexDirection: "column",
+              justifyContent: "center",
               alignItems: "center",
               cursor: "pointer",
               padding: "4px 12px",
-              borderRadius: "12px",
               transition: "all 0.3s",
-              "&:hover": { bgcolor: "rgba(255,255,255,0.15)" },
             }}
           >
-            <SwapHorizIcon
+
+            <Button component={Link} to="/transfer" onClick={() => { setActiveIndex(4); }}
               sx={{
+                display: "flex",
+                flexDirection: "column",
                 color: ICON_COLOR,
-                fontSize: "28px",
-                opacity: activeIndex === 4 ? 1 : 0.75,
-                transform: activeIndex === 4 ? "scale(1.25)" : "scale(1)",
-                transition: "transform 1.5s",
-              }}
-            />
-            <Typography sx={{
-              color: ICON_COLOR, fontSize: activeIndex === 4 ? "0.80rem" : "0.65rem",
-              transition: "font-size 1.5s", fontWeight: 600, mt: 0.3, opacity: activeIndex === 4 ? 1 : 0.75, textTransform: "uppercase", letterSpacing: "0.5px"
+                fontWeight: 600, mt: 0.5,
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+              <SwapHorizIcon
+                sx={{
+                  color: ICON_COLOR,
+                  fontSize: "26px",
+                  opacity: activeIndex === 4 ? 1 : 0.75,
+                  transform: activeIndex === 4 ? "scale(1.25)" : "scale(1)",
+                  transition: "transform 1.5s",
+                }}
+              />
+            </Button>
+
+            <Box sx={{
+              marginTop: "3px",
+              marginBottom:"10px",
+              color: ICON_COLOR,
+              fontSize: activeIndex === 4 ? "0.80rem" : "0.65rem",
+              transition: "font-size 1.5s",
+              fontWeight: "inherit",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px"
             }}>
               TRANSFER
-            </Typography>
+            </Box>
           </Box>
         </Box>
       </Box>
