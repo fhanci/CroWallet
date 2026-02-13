@@ -9,7 +9,6 @@ import java.util.List;
 import com.crowallet.backend.service.TransferService;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/api/transfers")
 public class TransferController {
 

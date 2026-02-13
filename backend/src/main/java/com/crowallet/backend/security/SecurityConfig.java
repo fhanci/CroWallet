@@ -64,14 +64,13 @@ public class SecurityConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/audio/**").addResourceLocations("file:./uploads/audio/");
     }
 
-    // Burada CORS konfigürasyonunu manuel tanımlıyoruz
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        configuration.setAllowedOriginPatterns(List.of("*"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true); // Authorization, Cookie kullanmayacaksan false
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);

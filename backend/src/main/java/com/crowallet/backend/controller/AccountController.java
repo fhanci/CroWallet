@@ -19,7 +19,6 @@ import com.crowallet.backend.repository.UserRepository;
 ;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/api/accounts")
 public class AccountController {
 
