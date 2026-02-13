@@ -1,10 +1,3 @@
-Login:
-    - Sent to sign in page
-    - Throw exceptions
-
-Sign In:
-    - Throw exceptions
-
 Transaction (add-remove): 
     - Remove enter currency box after real time currency fetching
     - Continuous income/ based on category

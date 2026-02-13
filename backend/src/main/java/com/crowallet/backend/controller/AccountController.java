@@ -13,7 +13,6 @@ import java.util.List;
 import com.crowallet.backend.service.AccountService;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/api/accounts")
 public class AccountController {
 

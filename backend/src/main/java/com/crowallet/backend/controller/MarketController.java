@@ -11,7 +11,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/market")
-@CrossOrigin(origins = "*")
 public class MarketController {
 
     private final MarketDataService marketDataService;

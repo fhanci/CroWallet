@@ -12,7 +12,6 @@ import java.util.List;
 import com.crowallet.backend.service.UserService;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/api/users")
 public class UserController {
 
