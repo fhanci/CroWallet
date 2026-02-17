@@ -14,6 +14,7 @@ import {
     Container,
     Typography,
     Box,
+    Stack,
     Card,
     CardContent,
     CircularProgress,
@@ -32,7 +33,15 @@ import {
     TextField,
     InputAdornment,
     Alert,
+    DialogContentText,
+    OutlinedInput,
+    Select,
+    MenuItem,
+    FormControl,
+    FormHelperText,
+    InputLabel
 } from "@mui/material";
+import { FaPlus } from "react-icons/fa";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
 import ShowChartIcon from "@mui/icons-material/ShowChart";
@@ -59,6 +68,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     const [editingHolding, setEditingHolding] = useState(null);
     const [editQuantity, setEditQuantity] = useState("");
     const [editPrice, setEditPrice] = useState("");
+    const [showAddDialog, setShowAddDialog] = useState(false);
 
     //       // Delete confirmation state
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -74,10 +84,85 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
 
 
+
+    //Add Investment
+    // const [goldList, setGoldList] = useState([]);
+    // const [selectedGold, setSelectedGold] = useState(-1);
+    // const [goldId, setGoldId] = useState(0);
+
+
+    // useEffect(() => {
+    //     console.log("Aha Burda: " + selectedGold);
+    //     console.log("Gold List Burda: " + JSON.stringify(goldList, 4, 4))
+    // }, [selectedGold])
+
+    // const handleAddShowDialog = () => {
+
+    // }
+
+    const openShowAddDialog = () => {
+        setShowAddDialog(true);
+        // setSelectedGold(-1);
+        // setGoldList([{
+        //     id: goldId,
+        //     goldTpye: "",
+        //     goldQuantity: 0,
+        //     goldPrice: 0,
+        // }])
+        // setGoldId(() => goldId + 1);
+    }
+
+    // const closeShowAddDialog = () => {
+    //     setShowAddDialog(false);
+    // }
+
+    // const getPrice = (item) => {
+    //     return item.goldQuantity * item.goldPrice;
+    // }
+
+    // const getTotalPrice = () => {
+    //     return goldList.reduce(((sum, item) => sum + (item.goldQuantity * item.goldPrice)), 0)
+    // }
+
+    // const addGold = () => {
+    //     const data = {
+    //         id: goldId,
+    //         goldTpye: "",
+    //         goldQuantity: 0,
+    //         goldPrice: 0
+    //     }
+    //     setGoldList(
+    //         [...goldList, data]
+    //     );
+
+    //     console.log("Tüm Data");
+    //     console.log(JSON.stringify(goldList, 4, 4))
+    //     setGoldId(() => goldId + 1)
+    // }
+
+    // const removeGold = (item) => {
+    //     console.log("İtem Burda" + JSON.stringify(item, 4, 4))
+    //     const newList = goldList.filter((goldItem) => goldItem.id !== item.id)
+    //     console.log("Item: " + newList)
+    //     setGoldList(
+    //         [...newList]
+    //     )
+    // }
+
+    // const updateGoldItem = (id, field, value) => {
+
+    //     setGoldList(
+    //         goldList.map((item) =>
+    //             item.id === id ? { ...item, [field]: value } : item
+    //         )
+    //     );
+    // }
+
+
     const handleEditClick = (holding) => {
         setEditingHolding(holding);
         setEditQuantity(holding.quantity.toString());
-        setEditPrice(holding.purchase_price.toString());
+        setEditPrice(holding.purchasePrice.toString());
         setEditDialogOpen(true);
     };
 
@@ -111,7 +196,6 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     const handleDeleteConfirm = async () => {
         try {
 
-
             console.log("Silinecek ID: " + deletingHoldingId)
             await deleteHolding(deletingHoldingId).unwrap();
             console.log("Kişi Başarıyla Silindi");
@@ -121,33 +205,15 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
             console.log("Key Değeri Burda Ya: " + 1)
             if (item.length === 1) {
 
-                await axios.delete(backendUrl + `/api/accounts/delete/${item[0].account_id}`, {
+                await axios.delete(backendUrl + `/api/accounts/delete/${item[0].accountId}`, {
                     headers: {
                         Authorization: token ? `Bearer ${token}` : undefined,
                     },
                 });
 
             }
-            // window.location.reload();
-
-
-
-
-            // await axios.delete(
-            //     `${backendUrl}/api/accounts/holdings/${deletingHoldingId}`,
-            //     {
-            //         headers: { Authorization: token ? `Bearer ${token}` : undefined },
-            //     }
-            // );
 
             setDeleteDialogOpen(false);
-
-            // If this was the last holding, go back to accounts page
-            // if (holdings.length === 1)
-            //     navigate("/account");                
-            // } else {
-            //     fetchAccountData();
-            // }
         } catch (err) {
             console.error("Error deleting holding:", err);
             setError("Silme sırasında bir hata oluştu.");
@@ -165,31 +231,22 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     const getHoldingDisplayName = (holding) => {
         // const isGold = (title == "Altın")
         if (isGold) {
-            return GOLD_TYPES[holding.asset_type]?.label || holding.asset_symbol;
+            return GOLD_TYPES[holding.assetSymbol]?.label || holding.assetSymbol;
         }
-        return `${holding.asset_symbol} - ${holding.asset_name}`;
+        return `${holding.assetSymbol} - ${holding.assetName}`;
     };
 
     const getQuantityUnit = (holding) => {
 
         if (isGold) {
-            return GOLD_TYPES[holding.asset_symbol]?.symbol || "adet";
+            return GOLD_TYPES[holding.assetSymbol]?.symbol || "adet";
         }
         return "adet";
     };
 
     const mainCardProfitLoss = item.reduce(
-        (sum, v) => sum + (parseFloat(v.current_price) * parseFloat(v.quantity)) - (parseFloat(v.purchase_price) * parseFloat(v.quantity)), 0
+        (sum, v) => sum + (parseFloat(v.currentPrice) * parseFloat(v.quantity)) - (parseFloat(v.purchasePrice) * parseFloat(v.quantity)), 0
     );
-
-
-    // if (loading) {
-    //     return (
-    //         <Container sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-    //             <CircularProgress />
-    //         </Container>
-    //     );
-    // }
 
     if (Object.keys(item).length === 0) {
         return (
@@ -208,11 +265,11 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
 
     const totalValue = item.reduce(
-        (sum, currentValue) => sum + parseFloat(currentValue.quantity * currentValue.current_price || 0),
+        (sum, currentValue) => sum + parseFloat(currentValue.quantity * currentValue.currentPrice || 0),
         0);
 
     const totalProfitLoss = item.reduce(
-        (sum, currentValue) => sum + parseFloat(currentValue.purchase_price - currentValue.current_price || 0),
+        (sum, currentValue) => sum + parseFloat(currentValue.purchasePrice - currentValue.currentPrice || 0),
         0);
 
 
@@ -227,7 +284,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
         </IconButton> */}
                 <Box sx={{ flex: 1 }}>
                     <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                        {item[0].hesapAdi}
+                        {item[0].accountName}
                     </Typography>
                     <Chip
                         icon={isGold ? <ViewInArIcon /> : <ShowChartIcon />}
@@ -311,13 +368,23 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                             </Box>
                         </Box>
                     </Box>
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mt: 1 }}
-                    >
-                        {item.length} farklı {isGold ? "altın türü" : "hisse senedi"}
-                    </Typography>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mt: 1 }}
+                        >
+                            {item.length} farklı {isGold ? "altın türü" : "hisse senedi"}
+                        </Typography>
+
+                        <IconButton
+                            size="small"
+                            onClick={() => openShowAddDialog()}
+                            sx={{ color: "green" }}
+                        >
+                            <FaPlus fontSize="large" />
+                        </IconButton>
+                    </Box>
                 </CardContent>
             </Card>
 
@@ -366,16 +433,16 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                                 >
                                     <ListItemIcon>
                                         {isGold ? (
-                                            <ViewInArIcon sx={{ color: themeColor, fontSize: 32, mt:"1vh" }} />
+                                            <ViewInArIcon sx={{ color: themeColor, fontSize: 32, mt: "1vh" }} />
                                         ) : (
                                             <Chip
-                                                label={holding.asset_symbol}
+                                                label={holding.assetSymbol}
                                                 size="small"
                                                 sx={{
                                                     fontWeight: 600,
                                                     bgcolor: themeColor,
                                                     color: "white",
-                                                    mt:"1vh"
+                                                    mt: "1vh"
                                                 }}
                                             />
                                         )}
@@ -396,7 +463,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                                                         gap: 1,
                                                         mt: 0.5,
                                                         flexWrap: "wrap",
-                                                        
+
                                                     }}
                                                 >
                                                     <Typography component={"span"} variant="body2">
@@ -407,14 +474,14 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                                                         </strong>
                                                     </Typography>
                                                     <Typography component={"span"} variant="body2" color="text.secondary" sx={{
-                                                        display:"flex",
-                                                        gap:"5px"
+                                                        display: "flex",
+                                                        gap: "5px"
                                                     }}>
                                                         Maliyet Fiyat:{" "}
-                                                        <strong>{formatCurrency(holding.purchase_price)}</strong>
-                                                        
+                                                        <strong>{formatCurrency(holding.purchasePrice)}</strong>
+
                                                         Anlık Fiyat:{" "}
-                                                        <strong>{formatCurrency(holding.current_price)}</strong>
+                                                        <strong>{formatCurrency(holding.currentPrice)}</strong>
                                                     </Typography>
 
 
@@ -427,10 +494,10 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                                     />
                                     <Box sx={{ textAlign: "left", mr: "10%", }}>
                                         <Typography sx={{ fontWeight: 600, color: themeColor }}>
-                                            Toplam Değer: {formatCurrency(holding.quantity * holding.current_price)}
+                                            Toplam Değer: {formatCurrency(holding.quantity * holding.currentPrice)}
                                         </Typography>
                                         <Typography sx={{ fontWeight: 600, color: themeColor }}>
-                                            Maliyet Tutarı: {formatCurrency(holding.quantity * holding.purchase_price)}
+                                            Maliyet Tutarı: {formatCurrency(holding.quantity * holding.purchasePrice)}
                                         </Typography>
                                         <Typography
                                             variant="body2"
@@ -442,7 +509,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                                             }}
                                         >
                                             {parseFloat(holding.profitLoss) >= 0 ? "+ Kar " : "- Zarar "}
-                                            {formatCurrency((holding.current_price * holding.quantity) - (holding.purchase_price * holding.quantity))}
+                                            {formatCurrency((holding.currentPrice * holding.quantity) - (holding.purchasePrice * holding.quantity))}
                                         </Typography>
                                     </Box>
                                 </ListItem>
@@ -455,6 +522,108 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
 
 
+            {/* Add Investment*/}
+            {/* */}
+                {/* <Dialog open={showAddDialog} onClose={closeShowAddDialog} sx={{ height: "100%" }}>
+                    <DialogTitle>{isGold ? "Altın Ekleme Yap" : "Hisse Ekleme Yap"}</DialogTitle>
+                    {goldList.map((item, index) => {
+
+                        console.log("AAAAA");
+                        console.log(item)
+                        return <DialogContent key={index} sx={{height:"100%", overflow:"clip    "}}>
+                            <form onSubmit={handleAddShowDialog} id="addGold-form">
+                                <Stack>
+                                    <Box>
+                                        <FormControl sx={{ width: "100%", marginTop: "10px" }}>
+                                            <InputLabel id="gold-label">Altın Türleri</InputLabel>
+                                            <Select
+                                                labelId="gold-label"
+                                                id="gold-select"
+                                                value={item.goldType}
+                                                onChange={(e) => updateGoldItem(item.id, "goldTpye", (e.target.value))}
+                                                label="Altın Türleri"
+                                            >
+                                                <MenuItem value={-1}></MenuItem>
+                                                {Object.keys(GOLD_TYPES).map((gold, idx) => {
+
+                                                    return <MenuItem value={idx}>
+                                                        <ViewInArIcon sx={{ fontSize: 20, color: "#d4af37", marginRight: "15px   " }} />
+                                                        {GOLD_TYPES[gold].label} </MenuItem>
+                                                })
+                                                }
+                                            </Select>
+                                        </FormControl>
+
+                                        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                                            <FormControl sx={{ width: "45%", marginTop: "10px" }}>
+                                                <InputLabel id="gold-label">Miktar</InputLabel>
+                                                <OutlinedInput
+                                                    id="alim-adedi"
+                                                    type="number"
+                                                    endAdornment={<InputAdornment position="end">{item.goldTpye === 0 ? "gr" : "adet"}</InputAdornment>}
+                                                    label="Miktar"
+                                                    value={item.goldQuantity}
+                                                    onChange={(e) => updateGoldItem(item.id, "goldQuantity", parseFloat(e.target.value))}
+
+                                                />
+                                            </FormControl>
+
+
+                                            <FormControl sx={{ width: "45%", marginTop: "10px" }}>
+                                                <InputLabel id="birim-label">Birim Fiyatı</InputLabel>
+                                                <OutlinedInput
+                                                    id="birim-adet"
+                                                    type="number"
+                                                    value={item.goldPrice}
+                                                    onChange={(e) => updateGoldItem(item.id, "goldPrice", parseFloat(e.target.value))}
+                                                    endAdornment={<InputAdornment position="end">₺</InputAdornment>}
+                                                    label="Birim Fiyatı"
+                                                />
+                                            </FormControl>
+
+                                        </Box>
+                                        <Box sx={{ display: getPrice(item) <= 0 ? "none" : "flex", flexDirection: "row", justifyContent: "space-between", fontWeight: 600, color: "white", backgroundColor: "#d4af37", borderRadius: "7px", my: "10px" }}>
+                                            <Typography variant="body2" sx={{ my: "10px", mx: "10px" }}>
+                                                Değer:
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ my: "10px", mx: "10px" }}>
+                                                ₺{getPrice(item).toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                    <Box sx={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignContent: "space-evenly" }}>
+                                        <Button variant="contained" sx={{
+                                            width: "45%", my: "10px", border: "1px dashed #d4af37", background: "none",
+                                            color: "#d4af37", ":hover": { background: "#efede6ff" }
+                                        }} onClick={addGold}>Altın Ekle</Button>
+
+                                        <Button variant="contained" sx={{
+                                            width: "45%", my: "10px", border: "1px dashed #ff0000ff", background: "none",
+                                            color: "#cc2525ff", ":hover": { background: "#efede6ff" }
+                                        }} onClick={() => removeGold(item)}>Altını Kaldır</Button>
+                                    </Box>
+                                </Stack>
+
+                            </form>
+                            <Divider sx={{mt:"3px", }}></Divider>
+                        </DialogContent>
+                        
+                    })}
+                    <Box sx={{ display: getTotalPrice <= 0 ? "none" : "flex", flexDirection: "row", justifyContent: "space-between", fontWeight: 600, color: "white", backgroundColor: "#24ac3fff", borderRadius: "7px", my: "10px", margin:"10px 10px"}}>
+                        <Typography variant="body2" sx={{ my: "10px", mx: "10px" }}>
+                            Toplam Tutar:
+                        </Typography>
+                        <Typography variant="body2" sx={{ my: "10px", mx: "10px" }}>
+                            ₺{getTotalPrice().toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </Typography>
+                    </Box>
+                    <DialogActions>
+                        <Button onClick={closeShowAddDialog} sx={{ color: "red" }}>İptal Et</Button>
+                        <Button type="submit" form="subscription-form" sx={{ color: "green" }}>
+                            Onayla
+                        </Button>
+                    </DialogActions>
+                </Dialog> */}
 
 
 

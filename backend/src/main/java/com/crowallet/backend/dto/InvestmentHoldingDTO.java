@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 public class InvestmentHoldingDTO {
     private Long id;
     private Long accountId;
+    private Long userId;
     private AssetType assetType;
     private String assetSymbol;
     private String assetName;
@@ -16,5 +17,6 @@ public class InvestmentHoldingDTO {
     private BigDecimal currentPrice;
     private BigDecimal totalValue;
     private BigDecimal profitLoss;
+    private String accountName;
 }
 

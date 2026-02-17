@@ -164,13 +164,13 @@ const MainApp = () => {
           <Route index element={<InstallmentsPage />} />
         </Route>
 
-        <Route path="/investment/:accountId" element={<DashboardLayout />}>
+        <Route path="/investment/stock_and_gold/:accountId?" element={<DashboardLayout />}>
           <Route index element={<InvestmentAccountDetailPage />} />
         </Route>
 
-        <Route path="/investment/stock_and_gold" element={<DashboardLayout />}>
+        {/* <Route path="/investment/stock_and_gold" element={<DashboardLayout />}>
           <Route index element={<InvestmentAccountDetailPage/>} />
-        </Route>
+        </Route> */}
 
         {/* <Route path="/accounts/investment/stock" element={<DashboardLayout />}>
           <Route index element={<MyStockAccountsPage />} />

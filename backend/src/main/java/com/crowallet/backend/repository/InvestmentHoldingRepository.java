@@ -16,6 +16,8 @@ import com.crowallet.backend.entity.InvestmentHolding;
 public interface InvestmentHoldingRepository extends JpaRepository<InvestmentHolding, Long> {
     List<InvestmentHolding> findByAccountId(Long accountId);
     void deleteByAccountId(Long accountId);
+    List<InvestmentHolding> findByUserId(Long accountId);
+
 
 
     @Query(value = """

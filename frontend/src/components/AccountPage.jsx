@@ -137,6 +137,7 @@ const AccountPage = () => {
           }
         );
         setAccountSummary(res.data);
+        console.log("AccountSummarData: " + JSON.stringify(res.data,4,4));
       } catch (error) {
         console.error("Error fetching account summary:", error);
       }
@@ -215,7 +216,7 @@ const AccountPage = () => {
 
   const handleOpenAccountDetails = (account) => {
     if (account.accountType === "INVESTMENT") {
-      navigate(`/investment/${account.id}`);
+      navigate(`/investment/stock_and_gold/${account.id}`);
     } else {
       navigate(`/transactions/${account.id}`);
     }

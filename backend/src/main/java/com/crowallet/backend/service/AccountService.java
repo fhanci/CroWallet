@@ -119,6 +119,7 @@ public class AccountService {
             holding.setQuantity(BigDecimal.valueOf(item.getQuantity()));
             holding.setPurchasePrice(BigDecimal.valueOf(item.getPurchasePrice()));
             holding.setCurrentPrice(BigDecimal.valueOf(item.getCurrentPrice()));
+            holding.setUser(user);
             
             holdingRepository.save(holding);
             account.getHoldings().add(holding);
@@ -206,7 +207,7 @@ public class AccountService {
     }
 
     public List<InvestmentHoldingDTO> getAccountHoldings(Long accountId) {
-        List<InvestmentHolding> holdings = holdingRepository.findByAccountId(accountId);
+        List<InvestmentHolding> holdings = holdingRepository.findByUserId(accountId);
         return AccountMapper.INSTANCE.toHoldingDTOList(holdings);
     }
 
