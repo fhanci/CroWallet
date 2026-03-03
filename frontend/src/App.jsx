@@ -73,6 +73,7 @@ import MyGoldAccountsPage from "./pages/MyGoldAccountsPage";
 import { UserProvider } from "./config/UserStore";
 import ErrorPage from "./components/ErrorPage";
 import { ThemeProvider } from "./config/ThemeContext";
+import TransferPage from "./pages/TransferPage";
 const MainApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(
     localStorage.getItem("isAuthenticated") === "true"
@@ -147,6 +148,10 @@ const MainApp = () => {
           <Route index element={<AccountToAccountTransferPage />} />
         </Route>
 
+        <Route path="/transfer" element={<DashboardLayout />}>
+          <Route index element={<TransferPage/>} />
+        </Route>
+
         <Route path="/debt" element={<DashboardLayout />}>
           <Route index element={<DebtPage />} />
         </Route>
@@ -159,21 +164,25 @@ const MainApp = () => {
           <Route index element={<InstallmentsPage />} />
         </Route>
 
-        <Route path="/investment/:accountId" element={<DashboardLayout />}>
+        <Route path="/investment/stock_and_gold/:accountId?" element={<DashboardLayout />}>
           <Route index element={<InvestmentAccountDetailPage />} />
         </Route>
 
-        <Route path="/accounts/investment/stock" element={<DashboardLayout />}>
+        {/* <Route path="/investment/stock_and_gold" element={<DashboardLayout />}>
+          <Route index element={<InvestmentAccountDetailPage/>} />
+        </Route> */}
+
+        {/* <Route path="/accounts/investment/stock" element={<DashboardLayout />}>
           <Route index element={<MyStockAccountsPage />} />
-        </Route>
+        </Route> */}
 
         <Route path="/market" element={<DashboardLayout />}>
           <Route index element={<StockMarketPage />} />
         </Route>
 
-        <Route path="/accounts/investment/gold" element={<DashboardLayout />}>
+        {/* <Route path="/accounts/investment/gold" element={<DashboardLayout />}>
           <Route index element={<MyGoldAccountsPage />} />
-        </Route>
+        </Route> */}
         <Route path="*" element={<ErrorPage />} />
       </Routes>
     </>

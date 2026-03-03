@@ -8,6 +8,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+/* JWT oluşturur, JWT içinden username ve claim okur, token geçerli mi? süresi geçmiş mi kontrol eder. */
 @Component
 public class JwtUtil {
     private final String SECRET = "çok-uzun-anahtar-öncekine-göre";

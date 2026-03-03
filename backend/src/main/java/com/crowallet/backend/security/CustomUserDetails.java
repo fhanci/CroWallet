@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 
+/* Spring Security'nin anlayacağı kullanıcı modelidir. */
 @Data
 public class CustomUserDetails implements UserDetails {
     private final Long id;
@@ -16,6 +17,15 @@ public class CustomUserDetails implements UserDetails {
         this.id = id;
         this.username = username;
         this.password = password;
+    }
+
+    public Long getId(){
+        return id;
+    }
+
+    @Override
+    public String getUsername(){
+        return username;
     }
 
     @Override

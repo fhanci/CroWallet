@@ -15,6 +15,7 @@ import java.io.IOException;
 
 //validates token on every request
 
+/* Hr request'te Headerdan JWT'yi alır, Token geçerli mi bakar ve kullanıcıyı SecurityContext'e koyar. */
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
     @Autowired
@@ -38,6 +39,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 token.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(token);
+                
             } else {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;

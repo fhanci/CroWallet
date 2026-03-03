@@ -24,7 +24,7 @@ import {
   MenuItem,
   Snackbar,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import axios from "axios";
 import { useUser } from "../config/UserStore";
@@ -36,6 +36,7 @@ import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { backendUrl } from "../utils/envVariables";
+
 
 const MyAccountsPage = () => {
   const { t } = useTranslation();
@@ -244,10 +245,19 @@ const MyAccountsPage = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 3, mb: 4 }}>
-      <Typography variant="h4" sx={{ fontWeight: 600, mb: 3 }}>
-        Hesaplarım
+    <Container maxWidth="lg" sx={{ mt: 3, mb: 4}}>
+      <Box sx={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap"}}>
+        <Typography variant="h4" sx={{ fontWeight: 600, mb: 3 }}>
+          Hesaplarım
       </Typography>
+
+      <Button component={Link} to="/account/create" 
+      sx={{borderRadius: "30px",border: "none",background: "darkblue",color: "white",
+        textTransform:"none",padding:"10px",mb:3 }}>
+        Hesap Ekle
+      </Button>
+      
+      </Box>
 
       {/* Summary Cards */}
       <Box sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap" }}>

@@ -424,7 +424,7 @@ const OutgoingTransferPage = () => {
           <Box display="flex" gap={2} mt={3}>
             <Button 
               variant="outlined" 
-              onClick={() => navigate("/account")}
+              onClick={() => navigate("/transfer")}
               sx={{ flex: 1, borderRadius: 2 }}
             >
               İptal

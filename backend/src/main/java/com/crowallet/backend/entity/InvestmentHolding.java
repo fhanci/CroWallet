@@ -29,6 +29,10 @@ public class InvestmentHolding {
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "asset_type", nullable = false)
     private AssetType assetType;

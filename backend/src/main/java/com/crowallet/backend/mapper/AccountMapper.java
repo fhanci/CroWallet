@@ -43,11 +43,15 @@ public interface AccountMapper {
     @Mapping(source = "account.id", target = "accountId")
     @Mapping(target = "totalValue", expression = "java(holding.getTotalValue())")
     @Mapping(target = "profitLoss", expression = "java(holding.getProfitLoss())")
+    @Mapping(source = "user.id", target = "userId")
+    @Mapping(source = "account.accountName",target = "accountName")
     InvestmentHoldingDTO toHoldingDTO(InvestmentHolding holding);
 
     @Mapping(target = "account", ignore = true)
     InvestmentHolding toHolding(InvestmentHoldingDTO dto);
 
+
+    // @Mapping(source = "user_id", target = "userId")
     List<InvestmentHoldingDTO> toHoldingDTOList(List<InvestmentHolding> holdings);
 
     @Named("accountTypeToString")

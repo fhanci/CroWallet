@@ -68,6 +68,9 @@ const MyGoldAccountsPage = () => {
   // Snackbar
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
+
+
+
   // Fetch investment accounts with GOLD holdings
   const fetchAccounts = async () => {
     try {

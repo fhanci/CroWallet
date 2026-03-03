@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from "react";
-import { 
-  Box, 
-  Fab, 
-  Menu, 
-  MenuItem, 
-  ListItemIcon, 
+import {
+  Box,
+  Fab,
+  Menu,
+  MenuItem,
+  ListItemIcon,
   ListItemText,
-  Typography
+  Typography,
+  Button
 } from "@mui/material";
+import { Link } from "react-router-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 
 // Icons
@@ -34,7 +36,7 @@ const MenuPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeIndex, setActiveIndex] = useState(2);
-  
+
   // Menu State
   const [anchorEl, setAnchorEl] = useState(null);
   const [activeMenu, setActiveMenu] = useState(null);
@@ -44,6 +46,14 @@ const MenuPage = () => {
   const accountsRef = useRef(null);
   const debtRef = useRef(null);
   const transferRef = useRef(null);
+
+
+  const [responsiveIconSize, setResponsiveIconSize] = useState({ xs: "2em", sm: "2em", md: "2em", lg: "2em", xl: "2em" });
+
+  const [responsiveFontSizeIsSelected, setResponsiveFontSizeIsSelected] = useState({ xs: "0.65em", sm: "0.80em", md: "0.80em", lg: "0.80em", xl: "0.80  em" });
+
+  const [responsiveFontSizeIsNotSelected, setResponsiveFontSizeIsNotSelected] = useState({ xs: "0.60em", sm: "0.75em", md: "0.75em", lg: "0.75em", xl: "0.75em" });
+
 
   // Determine active route
   useEffect(() => {
@@ -81,39 +91,40 @@ const MenuPage = () => {
 
   const renderMenu = () => {
     let items = [];
-    
-    switch (activeMenu) {
-      case "investment":
-        items = [
-          { label: "Hisse Hesaplarım", path: "/investment/stocks", icon: <ShowChartIcon fontSize="small" /> },
-          { label: "Altın Hesaplarım", path: "/investment/gold", icon: <ViewInArIcon fontSize="small" /> }
-        ];
-        break;
-      case "accounts":
-        items = [
-          { label: "Hesaplarım", path: "/accounts/my", icon: <FolderIcon fontSize="small" /> },
-          { label: "Hesap Ekle", path: "/account/create", icon: <AddIcon fontSize="small" /> }
-        ];
-        break;
-      case "debt":
-        items = [
-          { label: "Borçlar", path: "/debt", icon: <CreditCardIcon fontSize="small" /> },
-          { label: "Borç Ekle", path: "/debt/create", icon: <AddIcon fontSize="small" /> },
-          { label: "Taksitler", path: "/debt/installments", icon: <ListAltIcon fontSize="small" /> }
-        ];
-        break;
-      case "transfer":
-        items = [
-          { label: "Gelir Ekle", path: "/transfer/incoming", icon: <AddIcon fontSize="small" color="success" /> },
-          { label: "Gider Ekle", path: "/transfer/outgoing", icon: <RemoveIcon fontSize="small" color="error" /> },
-          { label: "Transfer Yap", path: "/transfer/accounts", icon: <SwapHorizIcon fontSize="small" color="action" /> }
-        ];
-        break;
-      default:
-        return null;
-    }
 
-    const contextMenuBgColor = "rgba(174, 201, 184, 0.85)"; 
+    // switch (activeMenu) {
+    // case "investment":
+    //   items = [
+    //     { label: "Hisse Hesaplarım", path: "/investment/stock_and_gold", icon: <ShowChartIcon fontSize="small" /> },
+    //     { label: "Altın Hesaplarım", path: "/investment/stock_and_gold", icon: <ViewInArIcon fontSize="small" /> }
+    //   ];
+    //   break;
+    // case "accounts":
+    //   items = [
+    //     { label: "Hesaplarım", path: "/accounts/my", icon: <FolderIcon fontSize="small" /> },
+    //     { label: "Hesap Ekle", path: "/account/create", icon: <AddIcon fontSize="small" /> }
+    //   ];
+    //   break;
+    // case "debt":
+    //   items = [
+    //     { label: "Borçlar", path: "/debt", icon: <CreditCardIcon fontSize="small" /> },
+    //     { label: "Borç Ekle", path: "/debt/create", icon: <AddIcon fontSize="small" /> },
+    //     { label: "Taksitler", path: "/debt/installments", icon: <ListAltIcon fontSize="small" /> }
+    //   ];
+    //   break;
+    // case "transfer":
+    //   items = [
+    //     { label: "Gelir Ekle", path: "/transfer/incoming", icon: <AddIcon fontSize="small" color="success" /> },
+    //     { label: "Gider Ekle", path: "/transfer/outgoing", icon: <RemoveIcon fontSize="small" color="error" /> },
+    //     { label: "Transfer Yap", path: "/transfer/accounts", icon: <SwapHorizIcon fontSize="small" color="action" /> }
+    //   ];
+    //   break;
+    // default:
+    //   return null;
+    // }
+
+    const contextMenuBgColor = "rgba(174, 201, 184, 0.85)";
+
 
     return (
       <Menu
@@ -121,34 +132,34 @@ const MenuPage = () => {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
         disableScrollLock={true}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: 'center', horizontal: 'center' }}
         transformOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        MenuListProps={{ 
+        MenuListProps={{
           onMouseLeave: handleMenuClose,
           sx: { py: 0.5 }
-        }} 
+        }}
         slotProps={{
           paper: {
-            elevation: 8, 
+            elevation: 8,
             sx: {
               mt: -1,
-              borderRadius: "16px", 
+              borderRadius: "16px",
               minWidth: "180px",
-              bgcolor: contextMenuBgColor, 
+              bgcolor: contextMenuBgColor,
               backdropFilter: "blur(12px)",
-              border: `1px solid rgba(255, 255, 255, 0.4)`, 
-              boxShadow: "0px -8px 24px rgba(0, 0, 0, 0.15)", 
+              border: `1px solid rgba(255, 255, 255, 0.4)`,
+              boxShadow: "0px -8px 24px rgba(0, 0, 0, 0.15)",
               overflow: "visible",
               "& .MuiList-root": {
                 padding: "4px",
               },
               "& .MuiMenuItem-root": {
                 fontSize: "0.9rem",
-                fontWeight: 600, 
-                borderRadius: "12px", 
-                margin: "4px",
+                fontWeight: 600,
+                borderRadius: "12px",
+                margin: "10px",
                 padding: "10px 16px",
-                color: "#2c3e32", 
+                color: "#2c3e32",
                 transition: "all 0.2s",
                 "&:hover": {
                   bgcolor: "rgba(255, 255, 255, 0.5)",
@@ -198,13 +209,13 @@ const MenuPage = () => {
         }}
       >
         <svg
-          viewBox="0 0 375 95" 
+          viewBox="0 0 375 95"
           preserveAspectRatio="none"
           style={{
             width: "100%",
             height: "100%",
             display: "block",
-            filter: "drop-shadow(0px -6px 16px rgba(0,0,0,0.15))", 
+            filter: "drop-shadow(0px -6px 16px rgba(0,0,0,0.15))",
           }}
         >
           <path
@@ -222,19 +233,18 @@ const MenuPage = () => {
         <Box
           sx={{
             position: "absolute",
-            top: "40px", 
-            left: 0,
-            width: "35%",
-            height: "55px",
+            bottom: "0px",
             display: "flex",
-            justifyContent: "space-around", 
-            alignItems: "center", 
+            flexDirection: "row",
+            justifyContent: "space-around",
+            transform: "translate(-8%, 10%)",
+            width: "50%",
           }}
         >
           {/* Yatırım */}
+
           <Box
             ref={investmentRef}
-            onMouseEnter={() => { setActiveIndex(0); handleMenuOpen(investmentRef, "investment"); }}
             sx={{
               display: "flex",
               flexDirection: "column",
@@ -242,28 +252,51 @@ const MenuPage = () => {
               cursor: "pointer",
               padding: "4px 12px",
               borderRadius: "12px",
-              transition: "all 0.3s",
-              "&:hover": { bgcolor: "rgba(255,255,255,0.15)" },
+              transition: "hover 0.3s",
+              marginLeft: "3px",
             }}
           >
-            <TrendingUpIcon
+
+            <Button component={Link} to="/investment/stock_and_gold" onClick={() => { setActiveIndex(0); }}
               sx={{
+                display: "flex",
+                flexDirection: "column",
                 color: ICON_COLOR,
-                fontSize: "26px",
+                border: "none",
+                outline: "none",
+                "&:hover": { boxShadow: "none", outline: "none" },
+                fontWeight: 600,
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+              <TrendingUpIcon
+                sx={{
+                  color: ICON_COLOR,
+                  fontSize: responsiveIconSize,
+                  opacity: activeIndex === 0 ? 1 : 0.75,
+                  transform: activeIndex === 0 ? "scale(1.15)" : "scale(1)",
+                  transition: "transform 1.5s",
+                }}
+              />
+
+
+              <Typography sx={{
+                color: ICON_COLOR,
+                fontSize: activeIndex === 0 ? responsiveFontSizeIsSelected : responsiveFontSizeIsNotSelected,
+                transition: "font-size 1.5s",
+                fontWeight: "inherit",
                 opacity: activeIndex === 0 ? 1 : 0.75,
-                transform: activeIndex === 0 ? "scale(1.1)" : "scale(1)",
-                transition: "all 0.3s",
-              }}
-            />
-            <Typography sx={{ color: ICON_COLOR, fontSize: "0.7rem", fontWeight: 600, mt: 0.3, opacity: activeIndex === 0 ? 1 : 0.75, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              YATIRIM
-            </Typography>
+                textTransform: "uppercase",
+                letterSpacing: "0.5px"
+              }}>
+                YATIRIM
+              </Typography>
+            </Button>
           </Box>
 
           {/* Hesaplar */}
           <Box
             ref={accountsRef}
-            onMouseEnter={() => { setActiveIndex(1); handleMenuOpen(accountsRef, "accounts"); }}
             sx={{
               display: "flex",
               flexDirection: "column",
@@ -271,22 +304,47 @@ const MenuPage = () => {
               cursor: "pointer",
               padding: "4px 12px",
               borderRadius: "12px",
-              transition: "all 0.3s",
-              "&:hover": { bgcolor: "rgba(255,255,255,0.15)" },
+              transition: "hover 0.3s",
+
             }}
           >
-            <AccountBalanceIcon
+
+            <Button component={Link} to="/accounts/my" onClick={() => { setActiveIndex(1); }}
               sx={{
+                display: "flex",
+                flexDirection: "column",
                 color: ICON_COLOR,
-                fontSize: "26px",
-                opacity: activeIndex === 1 ? 1 : 0.75,
-                transform: activeIndex === 1 ? "scale(1.1)" : "scale(1)",
-                transition: "all 0.3s",
-              }}
-            />
-            <Typography sx={{ color: ICON_COLOR, fontSize: "0.7rem", fontWeight: 600, mt: 0.3, opacity: activeIndex === 1 ? 1 : 0.75, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              HESAPLAR
-            </Typography>
+                border: "none",
+                outline: "none",
+                "&:hover": { boxShadow: "none", outline: "none" },
+                fontWeight: 600,
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: "50%",
+              }}>
+              <AccountBalanceIcon
+                sx={{
+                  color: ICON_COLOR,
+                  border: "none",
+                  fontSize: responsiveIconSize,
+                  opacity: activeIndex === 1 ? 1 : 0.5,
+                  transform: activeIndex === 1 ? "scale(1.15)" : "scale(1)",
+                  transition: "transform 1.5s",
+                }}
+              />
+
+              <Box sx={{
+                color: ICON_COLOR,
+                fontSize: activeIndex === 1 ? responsiveFontSizeIsSelected : responsiveFontSizeIsNotSelected,
+                transition: "font-size 1.5s",
+                fontWeight: "inherit",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px"
+              }}>
+                Hesaplar
+              </Box>
+
+            </Button>
           </Box>
         </Box>
 
@@ -294,7 +352,7 @@ const MenuPage = () => {
         <Box
           sx={{
             position: "absolute",
-            top: "0px", 
+            top: "0px",
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 1201,
@@ -308,10 +366,10 @@ const MenuPage = () => {
             sx={{
               bgcolor: MENU_COLOR,
               color: ICON_COLOR,
-              width: "60px", 
-              height: "60px", 
+              width: "60px",
+              height: "60px",
               boxShadow: "0px 4px 12px rgba(174, 201, 184, 0.8)",
-              "&:hover": { bgcolor: "#8aa395" }, 
+              "&:hover": { bgcolor: "#8aa395" },
               border: "4px solid white",
             }}
           >
@@ -323,19 +381,19 @@ const MenuPage = () => {
         <Box
           sx={{
             position: "absolute",
-            top: "40px", 
-            right: 0,
-            width: "35%",
-            height: "55px",
+            bottom: "0px",
+            right: "0px",
             display: "flex",
-            justifyContent: "space-around", 
-            alignItems: "center", 
+            transform: "translate(15%, 8%)",
+            justifyContent: "space-around",
+            width: "55%",
+
+
           }}
         >
           {/* Borçlar */}
           <Box
             ref={debtRef}
-            onMouseEnter={() => { setActiveIndex(3); handleMenuOpen(debtRef, "debt"); }}
             sx={{
               display: "flex",
               flexDirection: "column",
@@ -343,28 +401,50 @@ const MenuPage = () => {
               cursor: "pointer",
               padding: "4px 12px",
               borderRadius: "12px",
-              transition: "all 0.3s",
-              "&:hover": { bgcolor: "rgba(255,255,255,0.15)" },
+              transition: "hover 0.3s",
+
             }}
           >
-            <AccountBalanceWalletIcon
+
+            <Button component={Link} to="/debt" onClick={() => { setActiveIndex(3); }}
               sx={{
+                display: "flex",
+                flexDirection: "column",
                 color: ICON_COLOR,
-                fontSize: "26px",
-                opacity: activeIndex === 3 ? 1 : 0.75,
-                transform: activeIndex === 3 ? "scale(1.1)" : "scale(1)",
-                transition: "all 0.3s",
-              }}
-            />
-            <Typography sx={{ color: ICON_COLOR, fontSize: "0.7rem", fontWeight: 600, mt: 0.3, opacity: activeIndex === 3 ? 1 : 0.75, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              BORÇLAR
-            </Typography>
+                border: "none",
+                outline: "none",
+                "&:hover": { boxShadow: "none", outline: "none" },
+                fontWeight: 600,
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+              <AccountBalanceWalletIcon
+                sx={{
+                  color: ICON_COLOR,
+                  fontSize: responsiveIconSize,
+                  opacity: activeIndex === 3 ? 1 : 0.5,
+                  transform: activeIndex === 3 ? "scale(1.15)" : "scale(1)",
+                  transition: "transform 1.5s",
+                }}
+              />
+
+              <Box sx={{
+                color: ICON_COLOR,
+                fontSize: activeIndex === 3 ? responsiveFontSizeIsSelected : responsiveFontSizeIsNotSelected,
+                transition: "font-size 1.5s",
+                fontWeight: "inherit",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px"
+              }}>
+                Borçlar
+              </Box>
+            </Button>
           </Box>
+
 
           {/* Transfer */}
           <Box
             ref={transferRef}
-            onMouseEnter={() => { setActiveIndex(4); handleMenuOpen(transferRef, "transfer"); }}
             sx={{
               display: "flex",
               flexDirection: "column",
@@ -372,22 +452,47 @@ const MenuPage = () => {
               cursor: "pointer",
               padding: "4px 12px",
               borderRadius: "12px",
-              transition: "all 0.3s",
-              "&:hover": { bgcolor: "rgba(255,255,255,0.15)" },
+              transition: "hover 0.3s",
+              transform: "translateX(-15%)",
+              marginRight:"3px",
             }}
           >
-            <SwapHorizIcon
+
+            <Button component={Link} to="/transfer" onClick={() => { setActiveIndex(4); }}
               sx={{
+                display: "flex",
+                flexDirection: "column",
                 color: ICON_COLOR,
-                fontSize: "28px",
-                opacity: activeIndex === 4 ? 1 : 0.75,
-                transform: activeIndex === 4 ? "scale(1.1)" : "scale(1)",
-                transition: "all 0.3s",
-              }}
-            />
-            <Typography sx={{ color: ICON_COLOR, fontSize: "0.7rem", fontWeight: 600, mt: 0.3, opacity: activeIndex === 4 ? 1 : 0.75, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              TRANSFER
-            </Typography>
+                border: "none",
+                outline: "none",
+                "&:hover": { boxShadow: "none", outline: "none" },
+                fontWeight: 600,
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight:"15%",
+              }}>
+              <SwapHorizIcon
+                sx={{
+                  color: ICON_COLOR,
+                  fontSize: responsiveIconSize,
+                  opacity: activeIndex === 4 ? 1 : 0.75,
+                  transform: activeIndex === 4 ? "scale(1.15)" : "scale(1)",
+                  transition: "transform 1.5s",
+                }}
+              />
+              <Box sx={{
+                color: ICON_COLOR,
+                fontSize: activeIndex === 4 ? responsiveFontSizeIsSelected : responsiveFontSizeIsNotSelected,
+                transition: "font-size 1.5s",
+                fontWeight: "inherit",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px"
+              }}>
+                TRANSFER
+              </Box>
+            </Button>
+
+
           </Box>
         </Box>
       </Box>

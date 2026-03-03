@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 
+/* Spring Security'e Şunu Söyler: Bu username'e ait kullanıcı bilgisi DB'de budur. */
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 

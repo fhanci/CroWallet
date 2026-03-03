@@ -21,6 +21,7 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.util.List;
 
+/* Hangi endpoint açık?, Hangisi JWT ister?, JWT filter hangi sırada çalışacak. */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig implements WebMvcConfigurer {

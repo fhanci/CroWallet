@@ -46,89 +46,12 @@ import { useTranslation } from "react-i18next";
 import { useUser } from "../config/UserStore";
 import { useTheme } from "../config/ThemeContext";
 import { backendUrl } from "../utils/envVariables";
+import {TURKISH_BANKS} from "../data/bankData"
+import {CURRENCIES} from "../data/currencies"
+import {GOLD_TYPES} from "../data/goldData"
+import {STOCKS} from "../data/stocksData"
 
-// Top 10 banks in Turkey
-const TURKISH_BANKS = [
-  { value: "ZIRAAT", label: "Ziraat Bankası" },
-  { value: "ISBANK", label: "İş Bankası" },
-  { value: "GARANTI", label: "Garanti BBVA" },
-  { value: "YAPIKREDI", label: "Yapı Kredi" },
-  { value: "AKBANK", label: "Akbank" },
-  { value: "HALKBANK", label: "Halkbank" },
-  { value: "VAKIFBANK", label: "VakıfBank" },
-  { value: "QNB", label: "QNB Finansbank" },
-  { value: "DENIZBANK", label: "Denizbank" },
-  { value: "TEB", label: "TEB" },
-];
 
-const CURRENCIES = [
-  { value: "TRY", label: "₺ Türk Lirası", flag: "🇹🇷" },
-  { value: "USD", label: "$ Amerikan Doları", flag: "🇺🇸" },
-  { value: "EUR", label: "€ Euro", flag: "🇪🇺" },
-];
-
-// Gold types
-const GOLD_TYPES = [
-  { value: "GRAM", label: "Gram Altın", symbol: "gr" },
-  { value: "CEYREK", label: "Çeyrek Altın", symbol: "adet" },
-  { value: "YARIM", label: "Yarım Altın", symbol: "adet" },
-  { value: "TAM", label: "Tam Altın", symbol: "adet" },
-  { value: "CUMHURIYET", label: "Cumhuriyet Altını", symbol: "adet" },
-];
-
-// Stock list
-const STOCKS = [
-  { symbol: "AKBNK", name: "Akbank T.A.Ş." },
-  { symbol: "GARAN", name: "Garanti BBVA" },
-  { symbol: "ISCTR", name: "Türkiye İş Bankası (C)" },
-  { symbol: "KCHOL", name: "Koç Holding A.Ş." },
-  { symbol: "TUPRS", name: "Tüpraş - Türkiye Petrol Rafinerileri A.Ş." },
-  { symbol: "THYAO", name: "Türk Hava Yolları A.O." },
-  { symbol: "FROTO", name: "Ford Otomotiv Sanayi A.Ş." },
-  { symbol: "ASELS", name: "ASELSAN Elektronik Sanayi ve Ticaret A.Ş." },
-  { symbol: "BIMAS", name: "BİM Birleşik Mağazalar A.Ş." },
-  { symbol: "SASA", name: "SASA Polyester Sanayi A.Ş." },
-  { symbol: "ARCLK", name: "Arçelik A.Ş." },
-  { symbol: "SISE", name: "Türkiye Şişe ve Cam Fabrikaları A.Ş." },
-  { symbol: "AKSA", name: "Aksa Akrilik Kimya Sanayii A.Ş." },
-  { symbol: "MGROS", name: "Migros Ticaret A.Ş." },
-  { symbol: "EREGL", name: "Ereğli Demir ve Çelik Fabrikaları T.A.Ş." },
-  { symbol: "EKGYO", name: "Emlak Konut Gayrimenkul Yatırım Ortaklığı A.Ş." },
-  { symbol: "PETKM", name: "Petkim Petrokimya Holding A.Ş." },
-  { symbol: "TCELL", name: "Turkcell İletişim Hizmetleri A.Ş." },
-  { symbol: "PGSUS", name: "Pegasus Hava Taşımacılığı A.Ş." },
-  { symbol: "ENKAI", name: "Enka İnşaat ve Sanayi A.Ş." },
-  { symbol: "TAVHL", name: "TAV Havalimanları Holding A.Ş." },
-  { symbol: "TTKOM", name: "Türk Telekomünikasyon A.Ş." },
-  { symbol: "VAKBN", name: "Türkiye Vakıflar Bankası T.A.O." },
-  { symbol: "HALKB", name: "Türkiye Halk Bankası A.Ş." },
-  { symbol: "YKBNK", name: "Yapı ve Kredi Bankası A.Ş." },
-  { symbol: "GUBRF", name: "Gübre Fabrikaları T.A.Ş." },
-  { symbol: "ENJSA", name: "Enerjisa Enerji A.Ş." },
-  { symbol: "KOZAL", name: "Koza Altın İşletmeleri A.Ş." },
-  { symbol: "DOAS", name: "Doğuş Otomotiv Servis ve Ticaret A.Ş." },
-  { symbol: "ALARK", name: "Alarko Holding A.Ş." },
-  { symbol: "ASTOR", name: "Astor Enerji A.Ş." },
-  { symbol: "BRSAN", name: "Borusan Mannesmann Boru Sanayi ve Ticaret A.Ş." },
-  { symbol: "SOKM", name: "Şok Marketler Ticaret A.Ş." },
-  { symbol: "AKCNS", name: "Akçansa Çimento Sanayi ve Ticaret A.Ş." },
-  { symbol: "AKSEN", name: "Aksa Enerji Üretim A.Ş." },
-  { symbol: "AEFES", name: "Anadolu Efes Biracılık ve Malt Sanayii A.Ş." },
-  { symbol: "CCOLA", name: "Coca-Cola İçecek A.Ş." },
-  { symbol: "ULKER", name: "Ülker Bisküvi Sanayi A.Ş." },
-  { symbol: "OTKAR", name: "Otokar Otomotiv ve Savunma Sanayi A.Ş." },
-  { symbol: "TKFEN", name: "Tekfen Holding A.Ş." },
-  { symbol: "KRDMD", name: "Kardemir Karabük Demir Çelik Sanayi ve Ticaret A.Ş. (D)" },
-  { symbol: "OYAKC", name: "Oyak Çimento Fabrikaları A.Ş." },
-  { symbol: "GWIND", name: "Galata Wind Enerji A.Ş." },
-  { symbol: "AYDEM", name: "Aydem Yenilenebilir Enerji A.Ş." },
-  { symbol: "HEKTS", name: "Hektaş Ticaret T.A.Ş." },
-  { symbol: "GESAN", name: "Girişim Elektrik Sanayi Taahhüt ve Ticaret A.Ş." },
-  { symbol: "KONTR", name: "Kontrolmatik Teknoloji Enerji ve Mühendislik A.Ş." },
-  { symbol: "MIATK", name: "Mia Teknoloji A.Ş." },
-  { symbol: "CIMSA", name: "Çimsa Çimento Sanayi ve Ticaret A.Ş." },
-  { symbol: "DOHOL", name: "Doğan Holding A.Ş." },
-];
 
 const AccountCreatePage = () => {
   const { t } = useTranslation();
@@ -233,7 +156,7 @@ const AccountCreatePage = () => {
       // Reset investment-specific fields
       setGoldItems([{ id: 1, goldType: "", quantity: "", price: "" }]);
       setStockItems([{ id: 1, stock: null, quantity: "", price: "" }]);
-      setAccountName("");
+      // setAccountName("");
     }
   };
 
@@ -450,6 +373,7 @@ const AccountCreatePage = () => {
       setTimeout(() => {
         navigate("/account");
       }, 1000);
+      setAccountName("");
     } catch (error) {
       console.error("Hata:", error);
       setError("Bir hata oluştu, tekrar deneyiniz.");
@@ -556,7 +480,7 @@ const AccountCreatePage = () => {
                 </ToggleButtonGroup>
               </Box>
 
-              {/* Bank Selection */}
+              {/* Bank Selection - Banka Seçimi*/}
               <Fade in={holdingType === "BANK"} unmountOnExit>
                 <FormControl fullWidth margin="normal" sx={{ mb: 2 }}>
                   <InputLabel id="bank-label">Banka Seçin</InputLabel>
@@ -582,7 +506,7 @@ const AccountCreatePage = () => {
                 </FormControl>
               </Fade>
 
-              {/* Currency Selection */}
+              {/* Currency Selection - Para Birimi */}
               <FormControl fullWidth margin="normal" sx={{ mb: 2 }}>
                 <InputLabel id="currency-label">{t("currency")}</InputLabel>
                 <Select
@@ -604,7 +528,7 @@ const AccountCreatePage = () => {
                 </Select>
               </FormControl>
 
-              {/* Balance Input */}
+              {/* Balance Input  - Bakiye*/}
               <TextField
                 label={t("balance")}
                 type="number"
@@ -649,7 +573,7 @@ const AccountCreatePage = () => {
           {/* INVESTMENT ACCOUNT FORM */}
           <Fade in={accountType === "INVESTMENT"} unmountOnExit>
             <Box>
-              {/* Account Name - at the top for investment accounts */}
+              {/* Account Name - at the top for investment accounts - Hesap Adı*/}
               <TextField
                 label="Hesap Adı"
                 fullWidth
@@ -665,7 +589,7 @@ const AccountCreatePage = () => {
                 }}
               />
 
-              {/* Asset Type Selection */}
+              {/* Asset Type Selection - Yatırım Türü??*/}
               <Box sx={{ mb: 3 }}>
                 <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 500 }}>
                   Yatırım Türü
@@ -1162,6 +1086,8 @@ const AccountCreatePage = () => {
                     accountType === "INVESTMENT"
                       ? "linear-gradient(135deg, #d4af37 0%, #c9a227 100%)"
                       : "linear-gradient(135deg, #1C2B44 0%, #2a4a5e 100%)",
+                  color:
+                    accountType !== "INVESTMENT" ? "white" : "black"
                 }}
               >
                 Kaydet
