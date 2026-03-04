@@ -3,8 +3,6 @@ import { accountApi } from "../api/accountApi";
 import { holdingApi } from "../api/holdingsApi";
 
 
-
-
 export const store = configureStore({
     reducer: {
         [accountApi.reducerPath] : accountApi.reducer,

@@ -89,8 +89,13 @@ public class AccountController {
 
     // Create investment account with multiple holdings
     @PostMapping("/create-investment")
-    public AccountDTO createInvestmentAccount(@RequestBody CreateInvestmentAccountDTO dto) {
+    public AccountDTO createInvestmentAccount(@RequestBody CreateInvestmentAccountDTO dto) {        
         return accountService.createInvestmentAccount(dto);
+    }
+
+    @PostMapping("/add-investment")
+    public AccountDTO addInvestmentAccount(@RequestBody CreateInvestmentAccountDTO dto) {
+        return accountService.addInvestmentAccount(dto);
     }
 
     // Add holding to existing investment account

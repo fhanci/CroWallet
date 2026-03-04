@@ -27,7 +27,6 @@ import {
   ListItemButton,
   IconButton,
   Chip,
-  Paper,
 } from "@mui/material";
 import axios from "axios";
 import SaveIcon from "@mui/icons-material/Save";
@@ -39,17 +38,17 @@ import ViewInArIcon from "@mui/icons-material/ViewInAr";
 import ShowChartIcon from "@mui/icons-material/ShowChart";
 import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
-import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../config/UserStore";
 import { useTheme } from "../config/ThemeContext";
 import { backendUrl } from "../utils/envVariables";
-import {TURKISH_BANKS} from "../data/bankData"
-import {CURRENCIES} from "../data/currencies"
-import {GOLD_TYPES} from "../data/goldData"
-import {STOCKS} from "../data/stocksData"
+import { TURKISH_BANKS } from "../data/bankData"
+import { CURRENCIES } from "../data/currencies"
+import { GOLD_TYPES } from "../data/goldData"
+import { STOCKS } from "../data/stocksData"
+import { BuyInvestmentGold } from "../components/BuyInvestmentGold";
+import { BuyInvestmentStock } from "../components/BuyInvestmentStock";
 
 
 
@@ -57,7 +56,6 @@ const AccountCreatePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useUser();
-  const { isDarkMode } = useTheme();
   const token = localStorage.getItem("token");
 
   // Main account type: CURRENCY or INVESTMENT
@@ -116,15 +114,6 @@ const AccountCreatePage = () => {
     return available;
   }, [stockSearch, stockItems]);
 
-  // Get available gold types (exclude already selected)
-  const getAvailableGoldTypes = (currentItemId) => {
-    const selectedTypes = goldItems
-      .filter((item) => item.id !== currentItemId && item.goldType)
-      .map((item) => item.goldType);
-
-    return GOLD_TYPES.filter((type) => !selectedTypes.includes(type.value));
-  };
-
   const handleAccountTypeChange = (event, newType) => {
     if (newType !== null) {
       setAccountType(newType);
@@ -160,51 +149,7 @@ const AccountCreatePage = () => {
     }
   };
 
-  // Gold item handlers
-  const addGoldItem = () => {
-    const newId = Math.max(...goldItems.map((item) => item.id)) + 1;
-    setGoldItems([
-      ...goldItems,
-      { id: newId, goldType: "", quantity: "", price: "" },
-    ]);
-  };
 
-  const removeGoldItem = (id) => {
-    if (goldItems.length > 1) {
-      setGoldItems(goldItems.filter((item) => item.id !== id));
-    }
-  };
-
-  const updateGoldItem = (id, field, value) => {
-    setGoldItems(
-      goldItems.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
-    );
-  };
-
-  // Stock item handlers
-  const addStockItem = () => {
-    const newId = Math.max(...stockItems.map((item) => item.id)) + 1;
-    setStockItems([
-      ...stockItems,
-      { id: newId, stock: null, quantity: "", price: "" },
-    ]);
-  };
-
-  const removeStockItem = (id) => {
-    if (stockItems.length > 1) {
-      setStockItems(stockItems.filter((item) => item.id !== id));
-    }
-  };
-
-  const updateStockItem = (id, field, value) => {
-    setStockItems(
-      stockItems.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
-    );
-  };
 
   const handleStockSelect = (stock) => {
     if (activeStockItemId) {
@@ -215,10 +160,6 @@ const AccountCreatePage = () => {
     setActiveStockItemId(null);
   };
 
-  const openStockDialog = (itemId) => {
-    setActiveStockItemId(itemId);
-    setStockDialogOpen(true);
-  };
 
   // Generate account name based on selections
   const generateCurrencyAccountName = () => {
@@ -243,25 +184,7 @@ const AccountCreatePage = () => {
     }
   }, [holdingType, selectedBank, currency, accountType]);
 
-  // Calculate total value for gold items
-  const calculateGoldTotal = () => {
-    return goldItems.reduce((total, item) => {
-      if (item.quantity && item.price) {
-        return total + parseFloat(item.quantity) * parseFloat(item.price);
-      }
-      return total;
-    }, 0);
-  };
 
-  // Calculate total value for stock items
-  const calculateStockTotal = () => {
-    return stockItems.reduce((total, item) => {
-      if (item.quantity && item.price) {
-        return total + parseFloat(item.quantity) * parseFloat(item.price);
-      }
-      return total;
-    }, 0);
-  };
 
   // Validation checks
   const isCurrencyFormValid = () => {
@@ -333,24 +256,24 @@ const AccountCreatePage = () => {
         // Create single investment account with multiple holdings
         const holdings = assetType === "GOLD"
           ? goldItems.map((item) => {
-              const goldTypeInfo = GOLD_TYPES.find(
-                (g) => g.value === item.goldType
-              );
-              return {
-                assetSymbol: item.goldType,
-                assetName: goldTypeInfo?.label || item.goldType,
-                quantity: parseFloat(item.quantity),
-                purchasePrice: parseFloat(item.price),
-                currentPrice: parseFloat(item.price),
-              };
-            })
-          : stockItems.map((item) => ({
-              assetSymbol: item.stock.symbol,
-              assetName: item.stock.name,
+            const goldTypeInfo = GOLD_TYPES.find(
+              (g) => g.value === item.goldType
+            );
+            return {
+              assetSymbol: item.goldType,
+              assetName: goldTypeInfo?.label || item.goldType,
               quantity: parseFloat(item.quantity),
               purchasePrice: parseFloat(item.price),
               currentPrice: parseFloat(item.price),
-            }));
+            };
+          })
+          : stockItems.map((item) => ({
+            assetSymbol: item.stock.symbol,
+            assetName: item.stock.name,
+            quantity: parseFloat(item.quantity),
+            purchasePrice: parseFloat(item.price),
+            currentPrice: parseFloat(item.price),
+          }));
 
         await axios.post(
           `${backendUrl}/api/accounts/create-investment`,
@@ -380,11 +303,6 @@ const AccountCreatePage = () => {
     }
   };
 
-  // Check if we can add more gold types
-  const canAddMoreGold = goldItems.length < GOLD_TYPES.length;
-
-  // Check if we can add more stocks
-  const canAddMoreStocks = stockItems.length < STOCKS.length;
 
   return (
     <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
@@ -443,7 +361,7 @@ const AccountCreatePage = () => {
           <Divider sx={{ my: 2 }} />
 
           {/* CURRENCY ACCOUNT FORM */}
-          <Fade in={accountType === "CURRENCY"} unmountOnExit>
+          {accountType === "CURRENCY" ? <Fade in={accountType === "CURRENCY"} unmountOnExit>
             <Box>
               {/* Holding Type Selection */}
               <Box sx={{ mb: 3 }}>
@@ -553,6 +471,7 @@ const AccountCreatePage = () => {
               />
 
               {/* Account Name */}
+              {console.log("AccountNmae: " + accountName)}
               <TextField
                 label={t("accountName")}
                 fullWidth
@@ -568,498 +487,81 @@ const AccountCreatePage = () => {
                 }}
               />
             </Box>
+
           </Fade>
 
-          {/* INVESTMENT ACCOUNT FORM */}
-          <Fade in={accountType === "INVESTMENT"} unmountOnExit>
-            <Box>
-              {/* Account Name - at the top for investment accounts - Hesap Adı*/}
-              <TextField
-                label="Hesap Adı"
-                fullWidth
-                value={accountName}
-                onChange={(e) => setAccountName(e.target.value)}
-                margin="normal"
-                placeholder="Örn: Altın Yatırımlarım veya Hisse Portföyüm"
-                sx={{
-                  mb: 3,
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 2,
-                  },
-                }}
-              />
-
-              {/* Asset Type Selection - Yatırım Türü??*/}
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 500 }}>
-                  Yatırım Türü
-                </Typography>
-                <ToggleButtonGroup
-                  value={assetType}
-                  exclusive
-                  onChange={handleAssetTypeChange}
-                  fullWidth
-                  sx={{
-                    "& .MuiToggleButton-root": {
-                      py: 1.5,
-                      borderRadius: 2,
-                      "&.Mui-selected": {
-                        bgcolor: "#d4af37",
-                        color: "white",
-                        "&:hover": {
-                          bgcolor: "#c9a227",
-                        },
+            : accountType === "INVESTMENT" ?
+              <Fade in={true} unmountOnExit>
+                <Box>
+                  {/* Account Name - at the top for investment accounts - Hesap Adı*/}
+                  <TextField
+                    label="Hesap Adı"
+                    fullWidth
+                    value={accountName}
+                    onChange={(e) => setAccountName(e.target.value)}
+                    margin="normal"
+                    placeholder="Örn: Altın Yatırımlarım veya Hisse Portföyüm"
+                    sx={{
+                      mb: 3,
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 2,
                       },
-                    },
-                  }}
-                >
-                  <ToggleButton value="GOLD" sx={{ gap: 1 }}>
-                    <ViewInArIcon />
-                    Altın
-                  </ToggleButton>
-                  <ToggleButton value="STOCK" sx={{ gap: 1 }}>
-                    <ShowChartIcon />
-                    Hisse Senedi
-                  </ToggleButton>
-                </ToggleButtonGroup>
-              </Box>
+                    }}
+                  />
 
-              {/* GOLD FORM */}
-              <Fade in={assetType === "GOLD"} unmountOnExit>
-                <Box>
-                  {/* Gold Items */}
-                  {goldItems.map((item, index) => (
-                    <Paper
-                      key={item.id}
-                      elevation={1}
-                      sx={{
-                        p: 2,
-                        mb: 2,
-                        borderRadius: 2,
-                        border: "1px solid",
-                        borderColor: "divider",
-                        position: "relative",
-                      }}
-                    >
-                      {goldItems.length > 1 && (
-                        <IconButton
-                          size="small"
-                          onClick={() => removeGoldItem(item.id)}
-                          sx={{
-                            position: "absolute",
-                            top: 8,
-                            right: 8,
-                            color: "error.main",
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      )}
-
-                      <Typography
-                        variant="subtitle2"
-                        sx={{ mb: 1.5, color: "text.secondary" }}
-                      >
-                        Altın #{index + 1}
-                      </Typography>
-
-                      {/* Gold Type Selection */}
-                      <FormControl fullWidth sx={{ mb: 2 }}>
-                        <InputLabel id={`gold-type-label-${item.id}`}>
-                          Altın Türü
-                        </InputLabel>
-                        <Select
-                          labelId={`gold-type-label-${item.id}`}
-                          label="Altın Türü"
-                          value={item.goldType}
-                          onChange={(e) =>
-                            updateGoldItem(item.id, "goldType", e.target.value)
-                          }
-                          sx={{ borderRadius: 2 }}
-                        >
-                          {getAvailableGoldTypes(item.id).map((gold) => (
-                            <MenuItem key={gold.value} value={gold.value}>
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 1,
-                                }}
-                              >
-                                <ViewInArIcon
-                                  sx={{ fontSize: 20, color: "#d4af37" }}
-                                />
-                                {gold.label}
-                              </Box>
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-
-                      <Box sx={{ display: "flex", gap: 2 }}>
-                        {/* Gold Quantity */}
-                        <TextField
-                          label="Miktar"
-                          type="number"
-                          fullWidth
-                          value={item.quantity}
-                          onChange={(e) =>
-                            updateGoldItem(item.id, "quantity", e.target.value)
-                          }
-                          placeholder="0"
-                          InputProps={{
-                            endAdornment: item.goldType && (
-                              <InputAdornment position="end">
-                                {GOLD_TYPES.find(
-                                  (g) => g.value === item.goldType
-                                )?.symbol || "adet"}
-                              </InputAdornment>
-                            ),
-                          }}
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              borderRadius: 2,
-                            },
-                          }}
-                        />
-
-                        {/* Gold Price */}
-                        <TextField
-                          label="Birim Fiyat"
-                          type="number"
-                          fullWidth
-                          value={item.price}
-                          onChange={(e) =>
-                            updateGoldItem(item.id, "price", e.target.value)
-                          }
-                          placeholder="0.00"
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">₺</InputAdornment>
-                            ),
-                          }}
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              borderRadius: 2,
-                            },
-                          }}
-                        />
-                      </Box>
-
-                      {/* Item Total */}
-                      {item.quantity && item.price && (
-                        <Box
-                          sx={{
-                            mt: 1.5,
-                            p: 1,
-                            bgcolor: isDarkMode ? "rgba(212, 175, 55, 0.15)" : "#fef9e7",
-                            borderRadius: 1,
-                            display: "flex",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <Typography variant="body2" sx={{ color: isDarkMode ? "rgba(255, 255, 255, 0.7)" : "text.secondary" }}>
-                            Değer:
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{ fontWeight: 600, color: "#d4af37" }}
-                          >
-                            ₺
-                            {(
-                              parseFloat(item.quantity) * parseFloat(item.price)
-                            ).toLocaleString("tr-TR", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Paper>
-                  ))}
-
-                  {/* Add Gold Button */}
-                  {canAddMoreGold && (
-                    <Button
+                  {/* Asset Type Selection - Yatırım Türü??*/}
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 500 }}>
+                      Yatırım Türü
+                    </Typography>
+                    <ToggleButtonGroup
+                      value={assetType}
+                      exclusive
+                      onChange={handleAssetTypeChange}
                       fullWidth
-                      variant="outlined"
-                      startIcon={<AddIcon />}
-                      onClick={addGoldItem}
                       sx={{
-                        mb: 2,
-                        py: 1.5,
-                        borderRadius: 2,
-                        borderStyle: "dashed",
-                        borderColor: "#d4af37",
-                        color: "#d4af37",
-                        "&:hover": {
-                          borderColor: "#c9a227",
-                          bgcolor: "rgba(212, 175, 55, 0.05)",
-                        },
-                      }}
-                    >
-                      Altın Ekle
-                    </Button>
-                  )}
-
-                  {/* Total Value Preview */}
-                  {calculateGoldTotal() > 0 && (
-                    <Card
-                      sx={{
-                        bgcolor: isDarkMode ? "rgba(212, 175, 55, 0.15)" : "#fef9e7",
-                        border: "2px solid #d4af37",
-                        borderRadius: 2,
-                        mb: 2,
-                      }}
-                    >
-                      <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <Typography variant="body1" sx={{ fontWeight: 500, color: isDarkMode ? "#fff" : "inherit" }}>
-                            Toplam Hesap Değeri:
-                          </Typography>
-                          <Typography
-                            variant="h6"
-                            sx={{ fontWeight: 600, color: "#d4af37" }}
-                          >
-                            ₺
-                            {calculateGoldTotal().toLocaleString("tr-TR", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </Typography>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  )}
-                </Box>
-              </Fade>
-
-              {/* STOCK FORM */}
-              <Fade in={assetType === "STOCK"} unmountOnExit>
-                <Box>
-                  {/* Stock Items */}
-                  {stockItems.map((item, index) => (
-                    <Paper
-                      key={item.id}
-                      elevation={1}
-                      sx={{
-                        p: 2,
-                        mb: 2,
-                        borderRadius: 2,
-                        border: "1px solid",
-                        borderColor: "divider",
-                        position: "relative",
-                      }}
-                    >
-                      {stockItems.length > 1 && (
-                        <IconButton
-                          size="small"
-                          onClick={() => removeStockItem(item.id)}
-                          sx={{
-                            position: "absolute",
-                            top: 8,
-                            right: 8,
-                            color: "error.main",
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      )}
-
-                      <Typography
-                        variant="subtitle2"
-                        sx={{ mb: 1.5, color: "text.secondary" }}
-                      >
-                        Hisse #{index + 1}
-                      </Typography>
-
-                      {/* Stock Selection Button */}
-                      <Button
-                        fullWidth
-                        variant="outlined"
-                        onClick={() => openStockDialog(item.id)}
-                        startIcon={<SearchIcon />}
-                        sx={{
-                          mb: 2,
+                        "& .MuiToggleButton-root": {
                           py: 1.5,
                           borderRadius: 2,
-                          justifyContent: "flex-start",
-                          borderColor: item.stock ? "primary.main" : "grey.300",
-                          bgcolor: item.stock ? "primary.50" : "transparent",
-                        }}
-                      >
-                        {item.stock ? (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <Chip
-                              label={item.stock.symbol}
-                              size="small"
-                              color="primary"
-                            />
-                            <Typography variant="body2" noWrap>
-                              {item.stock.name}
-                            </Typography>
-                          </Box>
-                        ) : (
-                          "Hisse senedi ara..."
-                        )}
-                      </Button>
-
-                      <Box sx={{ display: "flex", gap: 2 }}>
-                        {/* Stock Price */}
-                        <TextField
-                          label="Hisse Fiyatı"
-                          type="number"
-                          fullWidth
-                          value={item.price}
-                          onChange={(e) =>
-                            updateStockItem(item.id, "price", e.target.value)
-                          }
-                          placeholder="0.00"
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">₺</InputAdornment>
-                            ),
-                          }}
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              borderRadius: 2,
+                          "&.Mui-selected": {
+                            bgcolor: "#d4af37",
+                            color: "white",
+                            "&:hover": {
+                              bgcolor: "#c9a227",
                             },
-                          }}
-                        />
-
-                        {/* Stock Quantity */}
-                        <TextField
-                          label="Miktar"
-                          type="number"
-                          fullWidth
-                          value={item.quantity}
-                          onChange={(e) =>
-                            updateStockItem(item.id, "quantity", e.target.value)
-                          }
-                          placeholder="0"
-                          InputProps={{
-                            endAdornment: (
-                              <InputAdornment position="end">adet</InputAdornment>
-                            ),
-                          }}
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              borderRadius: 2,
-                            },
-                          }}
-                        />
-                      </Box>
-
-                      {/* Item Total */}
-                      {item.quantity && item.price && (
-                        <Box
-                          sx={{
-                            mt: 1.5,
-                            p: 1,
-                            bgcolor: isDarkMode ? "rgba(76, 175, 80, 0.15)" : "#e8f5e9",
-                            borderRadius: 1,
-                            display: "flex",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <Typography variant="body2" sx={{ color: isDarkMode ? "rgba(255, 255, 255, 0.7)" : "text.secondary" }}>
-                            Değer:
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{ fontWeight: 600, color: "#4caf50" }}
-                          >
-                            ₺
-                            {(
-                              parseFloat(item.quantity) * parseFloat(item.price)
-                            ).toLocaleString("tr-TR", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Paper>
-                  ))}
-
-                  {/* Add Stock Button */}
-                  {canAddMoreStocks && (
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      startIcon={<AddIcon />}
-                      onClick={addStockItem}
-                      sx={{
-                        mb: 2,
-                        py: 1.5,
-                        borderRadius: 2,
-                        borderStyle: "dashed",
-                        borderColor: "#4caf50",
-                        color: "#4caf50",
-                        "&:hover": {
-                          borderColor: "#388e3c",
-                          bgcolor: "rgba(76, 175, 80, 0.05)",
+                          },
                         },
                       }}
                     >
-                      Hisse Ekle
-                    </Button>
-                  )}
+                      <ToggleButton value="GOLD" sx={{ gap: 1 }}>
+                        <ViewInArIcon />
+                        Altın
+                      </ToggleButton>
+                      <ToggleButton value="STOCK" sx={{ gap: 1 }}>
+                        <ShowChartIcon />
+                        Hisse Senedi
+                      </ToggleButton>
+                    </ToggleButtonGroup>
 
-                  {/* Total Value Preview */}
-                  {calculateStockTotal() > 0 && (
-                    <Card
-                      sx={{
-                        bgcolor: isDarkMode ? "rgba(76, 175, 80, 0.15)" : "#e8f5e9",
-                        border: "2px solid #4caf50",
-                        borderRadius: 2,
-                        mb: 2,
-                      }}
-                    >
-                      <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <Typography variant="body1" sx={{ fontWeight: 500, color: isDarkMode ? "#fff" : "inherit" }}>
-                            Toplam Hesap Değeri:
-                          </Typography>
-                          <Typography
-                            variant="h6"
-                            sx={{ fontWeight: 600, color: "#4caf50" }}
-                          >
-                            ₺
-                            {calculateStockTotal().toLocaleString("tr-TR", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </Typography>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  )}
+                    {assetType === "GOLD" ?
+                      <BuyInvestmentGold setGoldItems = {setGoldItems} goldItems = {goldItems}></BuyInvestmentGold> : assetType === "STOCK" ?
+                        <BuyInvestmentStock setStockItems= {setStockItems} stockItems= {stockItems}></BuyInvestmentStock> :
+                        <Box></Box>}
+
+
+                  </Box>
                 </Box>
               </Fade>
-            </Box>
-          </Fade>
+              : <Box></Box>
+          }
 
-          {error && (
-            <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>
-              {error}
-            </Alert>
-          )}
+            {error && (
+                <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>
+                    {error}
+                </Alert>
+            )}
 
+          {console.log("AccountType: " + accountType)}
           {accountType && (
             <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
               <Button

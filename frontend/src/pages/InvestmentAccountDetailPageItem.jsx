@@ -1,20 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { useUpdateHoldingMutation, useDeleteHoldingMutation } from "../api/holdingsApi";
+import { useUpdateHoldingMutation, useDeleteHoldingMutation, useAddHoldingMutation } from "../api/holdingsApi";
 
-// Gold types for display
-const GOLD_TYPES = {
-    GRAM: { label: "Gram Altın", symbol: "gr" },
-    CEYREK: { label: "Çeyrek Altın", symbol: "adet" },
-    YARIM: { label: "Yarım Altın", symbol: "adet" },
-    TAM: { label: "Tam Altın", symbol: "adet" },
-    CUMHURIYET: { label: "Cumhuriyet Altını", symbol: "adet" },
-};
 
 import {
     Container,
     Typography,
     Box,
-    Stack,
     Card,
     CardContent,
     CircularProgress,
@@ -32,17 +23,9 @@ import {
     DialogActions,
     TextField,
     InputAdornment,
-    Alert,
-    DialogContentText,
-    OutlinedInput,
-    Select,
-    MenuItem,
-    FormControl,
-    FormHelperText,
-    InputLabel
+    Alert, OutlinedInput, Stack, FormControl, InputLabel, Select, MenuItem
 } from "@mui/material";
 import { FaPlus } from "react-icons/fa";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
 import ShowChartIcon from "@mui/icons-material/ShowChart";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
@@ -53,15 +36,23 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "../config/ThemeContext";
 import axios from "axios";
 import { backendUrl } from "../utils/envVariables";
+import { BuyInvestmentGold } from "../components/BuyInvestmentGold";
+import { GOLD_TYPES } from "../data/goldData";
+import { useUser } from "../config/UserStore";
+import { BuyInvestmentStock } from "../components/BuyInvestmentStock";
 
 const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
+    // Gold types for display
+
     console.log(`Ben Bir ${title} Hesabıyım. Itemlerım: ${JSON.stringify(item, 4, 4)}`);
+
     // const { t } = useTranslation();
 
     const { isDarkMode } = useTheme();
     const token = localStorage.getItem("token");
     const [error, setError] = useState("");
+    const { user } = useUser();
 
     // Edit dialog state
     const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -70,50 +61,103 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     const [editPrice, setEditPrice] = useState("");
     const [showAddDialog, setShowAddDialog] = useState(false);
 
-    //       // Delete confirmation state
+    // Delete confirmation state
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deletingHoldingId, setDeletingHoldingId] = useState(null);
 
     //Update
     const [updateHolding] = useUpdateHoldingMutation()
 
+    const [addHolding] = useAddHoldingMutation()
+
     //Delete
     const [deleteHolding, { isLoading }] = useDeleteHoldingMutation();
 
     const isGold = (title == "Altın")
 
+    const [goldItems, setGoldItems] = useState([
+        { id: 1, goldType: "", quantity: "", price: "" },
+]);
+
+    // Multiple stock items
+    const [stockItems, setStockItems] = useState([
+        { id: 1, stock: null, quantity: "", price: "" },
+    ]);
 
 
+    console.log(goldItems)
 
-    //Add Investment
-    // const [goldList, setGoldList] = useState([]);
     // const [selectedGold, setSelectedGold] = useState(-1);
     // const [goldId, setGoldId] = useState(0);
 
-
     // useEffect(() => {
-    //     console.log("Aha Burda: " + selectedGold);
-    //     console.log("Gold List Burda: " + JSON.stringify(goldList, 4, 4))
-    // }, [selectedGold])
+    //     setGoldId(() => goldId + 1);
+    //     setSelectedGold(-1);
+    // }, [])
+
+
+    const addInvestment = async () => {
+        const holdings = item[0].assetType === "GOLD"
+          ? goldItems.map((item) => {
+            const goldTypeInfo = GOLD_TYPES.find(
+              (g) => g.value === item.goldType
+            );
+            return {
+              assetSymbol: item.goldType,
+              assetName: goldTypeInfo?.label || item.goldType,
+              quantity: parseFloat(item.quantity),
+              purchasePrice: parseFloat(item.price),
+              currentPrice: parseFloat(item.price),
+            };
+          })
+          : stockItems.map((item) => ({
+            assetSymbol: item.stock.symbol,
+            assetName: item.stock.name,
+            quantity: parseFloat(item.quantity),
+            purchasePrice: parseFloat(item.price),
+            currentPrice: parseFloat(item.price),
+          }));
+
+        {console.log("AAHAAAA")}
+        {console.log(JSON.parse(JSON.stringify({userId: user.id,
+            accountName: item[0].accountName,
+            assetType: item[0].assetType,
+            holdings,
+          })))}
+        await addHolding({userId: user.id,
+            accountName: item[0].accountName,
+            assetType: item[0].assetType,
+            holdings,
+          }).unwrap();
+        
+        // await axios.post(
+        //   `${backendUrl}/api/accounts/add-investment`,
+        //   {
+        //     userId: user.id,
+        //     accountName: item[0].accountName,
+        //     assetType: item[0].assetType,
+        //     holdings,
+        //   },
+        //   {
+        //     headers: {
+        //       Authorization: token ? `Bearer ${token}` : undefined,
+        //       "Content-Type": "application/json",
+        //     },
+        //   }
+        // );
+
+        closeShowAddDialog();        
+    }
+
+
+    const closeShowAddDialog = () => {
+        setShowAddDialog(false);
+        setGoldItems([{ id: 1, goldType: "", quantity: "", price: "" },])
+        setStockItems([{ id: 1, stock: "", quantity: "", price: "" },])
+    }
 
     // const handleAddShowDialog = () => {
 
-    // }
-
-    const openShowAddDialog = () => {
-        setShowAddDialog(true);
-        // setSelectedGold(-1);
-        // setGoldList([{
-        //     id: goldId,
-        //     goldTpye: "",
-        //     goldQuantity: 0,
-        //     goldPrice: 0,
-        // }])
-        // setGoldId(() => goldId + 1);
-    }
-
-    // const closeShowAddDialog = () => {
-    //     setShowAddDialog(false);
     // }
 
     // const getPrice = (item) => {
@@ -123,6 +167,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     // const getTotalPrice = () => {
     //     return goldList.reduce(((sum, item) => sum + (item.goldQuantity * item.goldPrice)), 0)
     // }
+
 
     // const addGold = () => {
     //     const data = {
@@ -150,7 +195,6 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     // }
 
     // const updateGoldItem = (id, field, value) => {
-
     //     setGoldList(
     //         goldList.map((item) =>
     //             item.id === id ? { ...item, [field]: value } : item
@@ -158,6 +202,17 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     //     );
     // }
 
+    const checkItemsGold = () => {
+        return !goldItems.every((goldData) => goldData.goldType !== "" && goldData.price !== "" && goldData.quantity !== "")
+    }
+
+    const checkItemsStock = () => {
+        return !stockItems.every((stockData) => stockData.price !== "" && stockData.quantity !== "" && stockData.stock !== "")
+    }
+
+    const openShowAddDialog = () => {
+        setShowAddDialog(true);
+    }
 
     const handleEditClick = (holding) => {
         setEditingHolding(holding);
@@ -521,113 +576,21 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
             </Card>
 
 
-
             {/* Add Investment*/}
             {/* */}
-                {/* <Dialog open={showAddDialog} onClose={closeShowAddDialog} sx={{ height: "100%" }}>
-                    <DialogTitle>{isGold ? "Altın Ekleme Yap" : "Hisse Ekleme Yap"}</DialogTitle>
-                    {goldList.map((item, index) => {
 
-                        console.log("AAAAA");
-                        console.log(item)
-                        return <DialogContent key={index} sx={{height:"100%", overflow:"clip    "}}>
-                            <form onSubmit={handleAddShowDialog} id="addGold-form">
-                                <Stack>
-                                    <Box>
-                                        <FormControl sx={{ width: "100%", marginTop: "10px" }}>
-                                            <InputLabel id="gold-label">Altın Türleri</InputLabel>
-                                            <Select
-                                                labelId="gold-label"
-                                                id="gold-select"
-                                                value={item.goldType}
-                                                onChange={(e) => updateGoldItem(item.id, "goldTpye", (e.target.value))}
-                                                label="Altın Türleri"
-                                            >
-                                                <MenuItem value={-1}></MenuItem>
-                                                {Object.keys(GOLD_TYPES).map((gold, idx) => {
+            <Dialog onClose={closeShowAddDialog} open={showAddDialog}>
+                {item[0].assetType === "GOLD" ? <BuyInvestmentGold goldItems={goldItems} setGoldItems={setGoldItems}></BuyInvestmentGold> : 
+                item[0].assetType === "STOCK" ? <BuyInvestmentStock stockItems={stockItems} setStockItems={setStockItems}></BuyInvestmentStock> : ""}
+                <DialogActions>
+                    <Button onClick={closeShowAddDialog} sx={{color: "red", ":hover": {color:"black"}}}>Kapat</Button>
+                    <Button type="button" sx={{color:"green"}} onClick={addInvestment} disabled = {item[0].assetType === "GOLD" ? checkItemsGold() : checkItemsStock()}>
+                        Satın Al
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
-                                                    return <MenuItem value={idx}>
-                                                        <ViewInArIcon sx={{ fontSize: 20, color: "#d4af37", marginRight: "15px   " }} />
-                                                        {GOLD_TYPES[gold].label} </MenuItem>
-                                                })
-                                                }
-                                            </Select>
-                                        </FormControl>
-
-                                        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                                            <FormControl sx={{ width: "45%", marginTop: "10px" }}>
-                                                <InputLabel id="gold-label">Miktar</InputLabel>
-                                                <OutlinedInput
-                                                    id="alim-adedi"
-                                                    type="number"
-                                                    endAdornment={<InputAdornment position="end">{item.goldTpye === 0 ? "gr" : "adet"}</InputAdornment>}
-                                                    label="Miktar"
-                                                    value={item.goldQuantity}
-                                                    onChange={(e) => updateGoldItem(item.id, "goldQuantity", parseFloat(e.target.value))}
-
-                                                />
-                                            </FormControl>
-
-
-                                            <FormControl sx={{ width: "45%", marginTop: "10px" }}>
-                                                <InputLabel id="birim-label">Birim Fiyatı</InputLabel>
-                                                <OutlinedInput
-                                                    id="birim-adet"
-                                                    type="number"
-                                                    value={item.goldPrice}
-                                                    onChange={(e) => updateGoldItem(item.id, "goldPrice", parseFloat(e.target.value))}
-                                                    endAdornment={<InputAdornment position="end">₺</InputAdornment>}
-                                                    label="Birim Fiyatı"
-                                                />
-                                            </FormControl>
-
-                                        </Box>
-                                        <Box sx={{ display: getPrice(item) <= 0 ? "none" : "flex", flexDirection: "row", justifyContent: "space-between", fontWeight: 600, color: "white", backgroundColor: "#d4af37", borderRadius: "7px", my: "10px" }}>
-                                            <Typography variant="body2" sx={{ my: "10px", mx: "10px" }}>
-                                                Değer:
-                                            </Typography>
-                                            <Typography variant="body2" sx={{ my: "10px", mx: "10px" }}>
-                                                ₺{getPrice(item).toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                    <Box sx={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignContent: "space-evenly" }}>
-                                        <Button variant="contained" sx={{
-                                            width: "45%", my: "10px", border: "1px dashed #d4af37", background: "none",
-                                            color: "#d4af37", ":hover": { background: "#efede6ff" }
-                                        }} onClick={addGold}>Altın Ekle</Button>
-
-                                        <Button variant="contained" sx={{
-                                            width: "45%", my: "10px", border: "1px dashed #ff0000ff", background: "none",
-                                            color: "#cc2525ff", ":hover": { background: "#efede6ff" }
-                                        }} onClick={() => removeGold(item)}>Altını Kaldır</Button>
-                                    </Box>
-                                </Stack>
-
-                            </form>
-                            <Divider sx={{mt:"3px", }}></Divider>
-                        </DialogContent>
-                        
-                    })}
-                    <Box sx={{ display: getTotalPrice <= 0 ? "none" : "flex", flexDirection: "row", justifyContent: "space-between", fontWeight: 600, color: "white", backgroundColor: "#24ac3fff", borderRadius: "7px", my: "10px", margin:"10px 10px"}}>
-                        <Typography variant="body2" sx={{ my: "10px", mx: "10px" }}>
-                            Toplam Tutar:
-                        </Typography>
-                        <Typography variant="body2" sx={{ my: "10px", mx: "10px" }}>
-                            ₺{getTotalPrice().toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </Typography>
-                    </Box>
-                    <DialogActions>
-                        <Button onClick={closeShowAddDialog} sx={{ color: "red" }}>İptal Et</Button>
-                        <Button type="submit" form="subscription-form" sx={{ color: "green" }}>
-                            Onayla
-                        </Button>
-                    </DialogActions>
-                </Dialog> */}
-
-
-
-
+            {/* {<BuyInvestment isGold={isGold} showAddDialog={showAddDialog} setShowAddDialog={setShowAddDialog}></BuyInvestment>} */}
 
             {/* Edit Dialog */}
             <Dialog

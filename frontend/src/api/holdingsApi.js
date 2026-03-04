@@ -62,8 +62,22 @@ export const holdingApi = createApi({
                 {type:"Holding", id:"LIST"},
             ],
         }),
+
+        addHolding: builder.mutation({
+            query:(body) => ({
+                url: '/api/accounts/add-investment',
+                method: "POST",
+                body
+            }),
+
+            invalidatesTags: () => [
+
+                {type:"Holding", id:"LIST"},
+            ],
+
+        })
     }),
 });
 
 
-export const { useGetUserHoldingQuery,useUpdateHoldingMutation,useDeleteHoldingMutation } = holdingApi;
+export const { useGetUserHoldingQuery,useUpdateHoldingMutation,useDeleteHoldingMutation, useAddHoldingMutation } = holdingApi;

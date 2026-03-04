@@ -136,6 +136,50 @@ public class AccountService {
     }
 
     @Transactional
+    public AccountDTO addInvestmentAccount(CreateInvestmentAccountDTO dto){
+        User user = userRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new GeneralException("User not found: " + dto.getUserId()));
+
+        //Find accountName
+        String accounName = dto.getAccountName();
+        Account account = accountRepository.findByAccountName(accounName);
+
+        
+        account.setUpdateDate(LocalDateTime.now());
+
+        // Save account first to get ID
+        account = accountRepository.save(account);
+
+        // Create holdings
+        BigDecimal totalValue = BigDecimal.ZERO;
+        for (CreateInvestmentAccountDTO.HoldingItemDTO item : dto.getHoldings()) {
+            InvestmentHolding holding = new InvestmentHolding();
+            holding.setAccount(account);
+            holding.setAssetType(AssetType.valueOf(dto.getAssetType()));
+            holding.setAssetSymbol(item.getAssetSymbol());
+            holding.setAssetName(item.getAssetName());
+            holding.setQuantity(BigDecimal.valueOf(item.getQuantity()));
+            holding.setPurchasePrice(BigDecimal.valueOf(item.getPurchasePrice()));
+            holding.setCurrentPrice(BigDecimal.valueOf(item.getCurrentPrice()));
+            holding.setUser(user);
+            
+            holdingRepository.save(holding);
+            account.getHoldings().add(holding);
+
+            // Calculate total value
+            totalValue = totalValue.add(holding.getTotalValue());
+        }
+
+        // Update account balance to total value
+        totalValue = totalValue.add(account.getBalance());
+        account.setBalance(totalValue);
+        account = accountRepository.save(account);
+
+        return AccountMapper.INSTANCE.toAccountDTO(account);
+
+    }
+
+    @Transactional
     public InvestmentHoldingDTO addHoldingToAccount(Long accountId, CreateInvestmentAccountDTO.HoldingItemDTO item) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new GeneralException("Account not found: " + accountId));
