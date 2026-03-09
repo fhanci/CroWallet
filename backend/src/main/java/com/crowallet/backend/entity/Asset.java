@@ -2,6 +2,8 @@ package com.crowallet.backend.entity;
 
 import org.hibernate.annotations.Collate;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -47,8 +49,7 @@ public class Asset {
     @Column(name = "asset_type", nullable = true)
     private AssetType assetType;
 
-
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 

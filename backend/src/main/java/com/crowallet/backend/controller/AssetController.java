@@ -3,15 +3,15 @@ package com.crowallet.backend.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.crowallet.backend.dto.AssetDTO;
+import com.crowallet.backend.dto.PositionDTO;
+import com.crowallet.backend.dto.TransactionDTO;
 import com.crowallet.backend.entity.Asset;
 import com.crowallet.backend.entity.Positions;
 import com.crowallet.backend.entity.Transactions;
 import com.crowallet.backend.service.AssetService;
 
 import java.util.List;
-import java.util.Optional;
-
-import org.aspectj.weaver.Position;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,20 +29,18 @@ public class AssetController {
     }
 
     @PostMapping("/create-asset")
-    public Long createAsset(@RequestBody Asset asset) {    
-        Long createdAssetId = assetService.createAsset(asset);
-        return createdAssetId;
-    }
+    public Long createAsset(@RequestBody AssetDTO asset) { 
+        return assetService.createAsset(asset);
+    }   
 
     @PostMapping("/create-transaction")
-    public ResponseEntity<List<Transactions>> createTransaction(@RequestBody List<Transactions> transactions) {
-        List<Transactions> transactionList = assetService.createTransaction(transactions);
-        return ResponseEntity.ok(transactionList);
+    public ResponseEntity<List<TransactionDTO>> createTransaction(@RequestBody List<TransactionDTO> transactions) {
+        List<TransactionDTO> transactionDTOList = assetService.createTransaction(transactions);
+        return ResponseEntity.ok(transactionDTOList);
     }
-
     @PostMapping("/create-position")
-    public ResponseEntity<Positions> createPosition(@RequestBody Positions position) {
-        Positions savedPosition = assetService.createPosition(position);        
+    public ResponseEntity<PositionDTO> createPosition(@RequestBody PositionDTO position) {
+        PositionDTO savedPosition = assetService.createPosition(position);        
         return ResponseEntity.ok(savedPosition);
     }
 

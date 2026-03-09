@@ -29,7 +29,7 @@ public class Positions {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "asset_id")
+    @JoinColumn(name = "asset_id", referencedColumnName = "id")
     private Asset asset;
 
     // FOR INVESTMENT ACCOUNT

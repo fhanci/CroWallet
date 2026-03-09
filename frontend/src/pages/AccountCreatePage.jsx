@@ -275,6 +275,21 @@ const AccountCreatePage = () => {
             currentPrice: parseFloat(item.price),
           }));
 
+                  await axios.post(
+          `${backendUrl}/api/accounts/create-investment`,
+          {
+            userId: user.id,
+            accountName,
+            assetType,
+            holdings,
+          },
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
         const response = await axios.post(`${backendUrl}/api/asset/create-asset`,
         { 
@@ -296,7 +311,7 @@ const AccountCreatePage = () => {
               (g) => g.value === item.goldType
             );
             return {
-              asset: response.data.id,
+              assetId: response.data,
               transactionType: "CREATE",
               assetSymbol: item.goldType,
               unitPrice: parseFloat(item.price),
@@ -304,7 +319,7 @@ const AccountCreatePage = () => {
             };
           })
           : stockItems.map((item) => ({
-            asset: response.data.id,
+            asset: response.data,
             transactionType: "CREATE",
             assetSymbol: item.stock.symbol,
             quantity: parseFloat(item.quantity),
@@ -321,7 +336,7 @@ const AccountCreatePage = () => {
 
 
         await axios.post(`${backendUrl}/api/asset/create-position`, {
-          asset: response.data.id,
+          assetId: response.data,
           costBasis: holdings2.reduce((sum,cur) => sum + (cur.quantity * cur.unitPrice) , 0),
           currentValue: holdings2.reduce((sum,cur) => sum + (cur.quantity * cur.unitPrice) , 0),
           profitLoss: 0
@@ -330,21 +345,7 @@ const AccountCreatePage = () => {
               "Content-Type": "application/json",
         }})
 
-        await axios.post(
-          `${backendUrl}/api/accounts/create-investment`,
-          {
-            userId: user.id,
-            accountName,
-            assetType,
-            holdings,
-          },
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+
       }
 
       setOpenSnackbar(true);
