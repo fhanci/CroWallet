@@ -275,6 +275,61 @@ const AccountCreatePage = () => {
             currentPrice: parseFloat(item.price),
           }));
 
+
+        const response = await axios.post(`${backendUrl}/api/asset/create-asset`,
+        { 
+          assetName: accountName,
+          accountType:  accountType,
+          assetType: assetType,
+          user: user.id,
+        },
+        {headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+        }}
+        )
+
+
+        const holdings2 = assetType === "GOLD"
+          ? goldItems.map((item) => {
+            const goldTypeInfo = GOLD_TYPES.find(
+              (g) => g.value === item.goldType
+            );
+            return {
+              asset: response.data.id,
+              transactionType: "CREATE",
+              assetSymbol: item.goldType,
+              unitPrice: parseFloat(item.price),
+              quantity: parseFloat(item.quantity),
+            };
+          })
+          : stockItems.map((item) => ({
+            asset: response.data.id,
+            transactionType: "CREATE",
+            assetSymbol: item.stock.symbol,
+            quantity: parseFloat(item.quantity),
+            unitPrice: parseFloat(item.price),
+          }));
+
+
+        await axios.post(`${backendUrl}/api/asset/create-transaction`, holdings2, 
+          {headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+        }}
+        )
+
+
+        await axios.post(`${backendUrl}/api/asset/create-position`, {
+          asset: response.data.id,
+          costBasis: holdings2.reduce((sum,cur) => sum + (cur.quantity * cur.unitPrice) , 0),
+          currentValue: holdings2.reduce((sum,cur) => sum + (cur.quantity * cur.unitPrice) , 0),
+          profitLoss: 0
+        }, {headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+        }})
+
         await axios.post(
           `${backendUrl}/api/accounts/create-investment`,
           {
