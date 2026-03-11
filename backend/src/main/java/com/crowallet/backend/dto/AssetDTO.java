@@ -12,5 +12,4 @@ public class AssetDTO {
     private AccountType accountType;
     private HoldingType holdingType;    
     private AssetType assetType;
-    // private Long userId;
 }

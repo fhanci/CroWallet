@@ -1,6 +1,11 @@
 package com.crowallet.backend.entity;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import org.springframework.data.annotation.CreatedDate;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -22,7 +27,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Transactions {
+public class Transactions extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,5 +52,12 @@ public class Transactions {
     // FOR INVESTMENT ACCOUNT
     @Column(name = "quantity")
     private BigDecimal quantity;
+
+    @Column(name = "asset-name")
+    private String assetName;
+
+    @Column(name = "total-value")
+    private BigDecimal totalValue;
+
     
 }

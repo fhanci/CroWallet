@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useUpdateHoldingMutation, useDeleteHoldingMutation, useAddHoldingMutation } from "../api/holdingsApi";
+import {useUpdateAssetMutation, useDeleteTransactionMutation,useAddTransactionMutation } from "../api/holdingsApi";
 
 
 import {
@@ -66,12 +66,15 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     const [deletingHoldingId, setDeletingHoldingId] = useState(null);
 
     //Update
-    const [updateHolding] = useUpdateHoldingMutation()
+    // const [updateHolding] = useUpdateHoldingMutation()
+    const [updateAsset] = useUpdateAssetMutation();
 
-    const [addHolding] = useAddHoldingMutation()
+    // const [addHolding] = useAddHoldingMutation();
+    const [addHolding] = useAddTransactionMutation();
 
     //Delete
-    const [deleteHolding, { isLoading }] = useDeleteHoldingMutation();
+    // const [deleteHolding, { isLoading }] = useDeleteHoldingMutation();
+    const [deleteTransaction, {isLoading}] = useDeleteTransactionMutation();
 
     const isGold = (title == "Altın")
 
@@ -98,37 +101,34 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
     const addInvestment = async () => {
         const holdings = item[0].assetType === "GOLD"
-          ? goldItems.map((item) => {
+          ? goldItems.map((goldItem) => {
             const goldTypeInfo = GOLD_TYPES.find(
-              (g) => g.value === item.goldType
+              (g) => g.value === goldItem.goldType
             );
             return {
-              assetSymbol: item.goldType,
-              assetName: goldTypeInfo?.label || item.goldType,
-              quantity: parseFloat(item.quantity),
-              purchasePrice: parseFloat(item.price),
-              currentPrice: parseFloat(item.price),
+              assetId:item[0].accountId,
+              transactionType:"BUY",
+              assetSymbol: goldItem.goldType,
+              assetName: goldTypeInfo?.label || goldItem.goldType,
+              quantity: parseFloat(goldItem.quantity),
+              unitPrice: parseFloat(goldItem.price),
+              totalValue: parseFloat(goldItem.quantity) * parseFloat(goldItem.price),
             };
           })
-          : stockItems.map((item) => ({
-            assetSymbol: item.stock.symbol,
-            assetName: item.stock.name,
-            quantity: parseFloat(item.quantity),
-            purchasePrice: parseFloat(item.price),
-            currentPrice: parseFloat(item.price),
+          : stockItems.map((stockItem) => ({
+            assetId:item[0].accountId,
+            transactionType:"BUY",
+            assetSymbol: stockItem.stock.symbol,
+            assetName: stockItem.stock.name,
+            quantity: parseFloat(stockItem.quantity),
+            unitPrice: parseFloat(stockItem.price),
+            totalValue: parseFloat(stockItem.quantity) * parseFloat(stockItem.price),
+            
           }));
 
         {console.log("AAHAAAA")}
-        {console.log(JSON.parse(JSON.stringify({userId: user.id,
-            accountName: item[0].accountName,
-            assetType: item[0].assetType,
-            holdings,
-          })))}
-        await addHolding({userId: user.id,
-            accountName: item[0].accountName,
-            assetType: item[0].assetType,
-            holdings,
-          }).unwrap();
+        {console.log(...holdings)}
+        await addHolding(holdings).unwrap();
         
         // await axios.post(
         //   `${backendUrl}/api/accounts/add-investment`,
@@ -227,10 +227,12 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
             console.log(editingHolding);
             console.log("purchase_price: " + parseFloat(editPrice))
             console.log("quantity: " + parseFloat(editQuantity))
-            await updateHolding({
-                id: editingHolding.id,
-                quantity: parseFloat(editQuantity),
-                purchasePrice: parseFloat(editPrice),
+            await updateAsset({
+                ...item,
+                transactionId: editingHolding.transactionId,
+                updatedId: editingHolding.id,
+                updatedQuantity: parseFloat(editQuantity),
+                updatedPurchasePrice: parseFloat(editPrice),
             }).unwrap();
             console.log("Güncellendi");
             // window.location.reload();
@@ -252,7 +254,10 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
         try {
 
             console.log("Silinecek ID: " + deletingHoldingId)
-            await deleteHolding(deletingHoldingId).unwrap();
+            const [assetResponse] = item.filter((data) => data.id === deletingHoldingId)
+            console.log(assetResponse)
+            console.log("bURDA")
+            await deleteTransaction({...assetResponse}).unwrap();
             console.log("Kişi Başarıyla Silindi");
             console.log("İtem Uzunluğu: " + item.length);
             console.log(item);

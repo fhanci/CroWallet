@@ -275,7 +275,7 @@ const AccountCreatePage = () => {
             currentPrice: parseFloat(item.price),
           }));
 
-                  await axios.post(
+          await axios.post(
           `${backendUrl}/api/accounts/create-investment`,
           {
             userId: user.id,
@@ -296,7 +296,7 @@ const AccountCreatePage = () => {
           assetName: accountName,
           accountType:  accountType,
           assetType: assetType,
-          user: user.id,
+          holdingType: accountType === "INVESTMENT" ? null : holdingType,
         },
         {headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
@@ -316,14 +316,16 @@ const AccountCreatePage = () => {
               assetSymbol: item.goldType,
               unitPrice: parseFloat(item.price),
               quantity: parseFloat(item.quantity),
+              assetName: goldTypeInfo?.label || item.goldType
             };
           })
           : stockItems.map((item) => ({
-            asset: response.data,
+            assetId: response.data,
             transactionType: "CREATE",
             assetSymbol: item.stock.symbol,
             quantity: parseFloat(item.quantity),
             unitPrice: parseFloat(item.price),
+            assetName: item.stock.name,
           }));
 
 
@@ -337,7 +339,7 @@ const AccountCreatePage = () => {
 
         await axios.post(`${backendUrl}/api/asset/create-position`, {
           assetId: response.data,
-          costBasis: holdings2.reduce((sum,cur) => sum + (cur.quantity * cur.unitPrice) , 0),
+          costBasis: 0,
           currentValue: holdings2.reduce((sum,cur) => sum + (cur.quantity * cur.unitPrice) , 0),
           profitLoss: 0
         }, {headers: {

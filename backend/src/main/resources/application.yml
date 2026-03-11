@@ -11,6 +11,9 @@ spring:
   liquibase:
     change-log: classpath:db/changelog-master.xml
     enabled: false
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
 server:
   port: 8082
 

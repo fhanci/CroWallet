@@ -2,14 +2,13 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 
 import { useGetUserIDQuery } from "../api/accountApi";
-import { useGetUserHoldingQuery } from "../api/holdingsApi";
+import { useGetUserAssetQuery } from "../api/holdingsApi";
 import InvestmentAccountDetailPageItem from "./InvestmentAccountDetailPageItem";
 import Divider from '@mui/material/Divider';
 import {
   Container,
   Alert,
 } from "@mui/material";
-
 
 
 
@@ -24,7 +23,10 @@ const InvestmentAccountDetailPage = () => {
   const { data: userID, isLoading: userLoading } = useGetUserIDQuery();
 
   //Holding Toolkit Query
-  const { data: holdings, isLoading: holdingsLoading, } = useGetUserHoldingQuery(userID, { skip: userID === undefined || userID === null || userID === 0 });
+  // const { data: holdings, isLoading: holdingsLoading, } = useGetUserHoldingQuery(userID, { skip: userID === undefined || userID === null || userID === 0 });
+
+  // //Asset Toolkit Query
+  const {data: holdings, isLoading: holdingsLoading,} = useGetUserAssetQuery();
 
 
   useEffect(() => {
@@ -58,6 +60,7 @@ const InvestmentAccountDetailPage = () => {
 
       console.log("Holdings: ");
       console.log(holdings);
+
 
       const newData = { GOLD: {}, STOCK: {} }
 
@@ -105,8 +108,6 @@ const InvestmentAccountDetailPage = () => {
               title={"Yatırım"} key={key} item={value}></InvestmentAccountDetailPageItem>
           </div>
         ))
-
-
       }
 
     </div>
