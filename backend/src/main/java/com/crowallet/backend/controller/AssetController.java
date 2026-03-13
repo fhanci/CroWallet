@@ -10,8 +10,10 @@ import com.crowallet.backend.dto.TransactionDTO;
 import com.crowallet.backend.entity.Asset;
 import com.crowallet.backend.entity.Positions;
 import com.crowallet.backend.entity.Transactions;
+import com.crowallet.backend.requests.SellInvestmentRequest;
 import com.crowallet.backend.requests.UpdateTransaction;
 import com.crowallet.backend.service.AssetService;
+import com.crowallet.backend.service.StockService;
 
 import java.util.List;
 
@@ -19,6 +21,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,15 +31,19 @@ import org.springframework.web.bind.annotation.PutMapping;
 
 
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/asset")
+
 public class AssetController {
 
 
     private AssetService assetService;
+    private StockService stockService;
 
-    public AssetController(AssetService assetService){
+    public AssetController(AssetService assetService, StockService stockService){
         this.assetService = assetService;
+        this.stockService = stockService;
     }
 
     @PostMapping("/create-asset")
@@ -84,6 +91,20 @@ public class AssetController {
         return transactionDTOs;
         
     }
+
+    @GetMapping("/getYahoo/{symbol}")
+    public String getStock(@PathVariable String symbol) {
+        return stockService.getYahooStock(symbol);
+    }
+
+    @PostMapping("/sellInvestment")
+    public List<SellInvestmentRequest> sellInvestments(@RequestBody List<SellInvestmentRequest> sellInvestmentRequestsList) {
+        System.out.println("Datalar Gedli Artık Bende");
+        System.out.println(sellInvestmentRequestsList);
+        return assetService.sellInvestments(sellInvestmentRequestsList);
+    }
+    
+    
     
     
 

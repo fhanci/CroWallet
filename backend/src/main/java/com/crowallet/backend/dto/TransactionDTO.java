@@ -13,6 +13,5 @@ public class TransactionDTO {
     private BigDecimal unitPrice;
     private BigDecimal quantity;
     private String assetName;
-    private BigDecimal totalValue;
-    
+    private BigDecimal totalValue;    
 }

@@ -110,6 +110,18 @@ export const holdingApi = createApi({
             ],
         }),
 
+        sellTransaction: builder.mutation({
+            query:(body) => ({
+                url: '/api/asset/sellInvestment',
+                method:"POST",
+                body
+            }),
+
+            invalidatesTags: () => [
+                {type:"Holding", id:"LIST"},
+            ],
+        })
+
         // addHolding: builder.mutation({
         //     query:(body) => ({
         //         url: '/api/accounts/add-investment',
@@ -127,4 +139,4 @@ export const holdingApi = createApi({
 });
 
 
-export const { useGetUserAssetQuery,useUpdateAssetMutation,useAddTransactionMutation,useDeleteTransactionMutation } = holdingApi;
+export const { useGetUserAssetQuery,useUpdateAssetMutation,useAddTransactionMutation,useDeleteTransactionMutation,useSellTransactionMutation } = holdingApi;

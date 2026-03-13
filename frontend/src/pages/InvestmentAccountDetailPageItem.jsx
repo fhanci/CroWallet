@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {useUpdateAssetMutation, useDeleteTransactionMutation,useAddTransactionMutation } from "../api/holdingsApi";
+import { useUpdateAssetMutation, useDeleteTransactionMutation, useAddTransactionMutation, useSellTransactionMutation } from "../api/holdingsApi";
 
 
 import {
@@ -8,7 +8,7 @@ import {
     Box,
     Card,
     CardContent,
-    CircularProgress,
+    Tooltip,
     IconButton,
     Chip,
     Divider,
@@ -23,23 +23,27 @@ import {
     DialogActions,
     TextField,
     InputAdornment,
-    Alert, OutlinedInput, Stack, FormControl, InputLabel, Select, MenuItem
+    Alert, Stack, InputLabel, Select, MenuItem,
+
 } from "@mui/material";
 import { FaPlus } from "react-icons/fa";
+import { GiSellCard } from "react-icons/gi";
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
 import ShowChartIcon from "@mui/icons-material/ShowChart";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useTranslation } from "react-i18next";
 import { useTheme } from "../config/ThemeContext";
 import axios from "axios";
-import { backendUrl } from "../utils/envVariables";
+import { backendUrl, stockApiKey } from "../utils/envVariables";
 import { BuyInvestmentGold } from "../components/BuyInvestmentGold";
 import { GOLD_TYPES } from "../data/goldData";
-import { useUser } from "../config/UserStore";
 import { BuyInvestmentStock } from "../components/BuyInvestmentStock";
+import Marquee from "react-fast-marquee";
+
+
+
 
 const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
@@ -49,10 +53,11 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
     // const { t } = useTranslation();
 
+
+    const goldTypeKey = ["GRA", "CEYREKALTIN", "YARIMALTIN", "TAMALTIN", "CUMHURIYETALTINI"]
     const { isDarkMode } = useTheme();
     const token = localStorage.getItem("token");
     const [error, setError] = useState("");
-    const { user } = useUser();
 
     // Edit dialog state
     const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -60,93 +65,181 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     const [editQuantity, setEditQuantity] = useState("");
     const [editPrice, setEditPrice] = useState("");
     const [showAddDialog, setShowAddDialog] = useState(false);
+    const [showSellDialog, setShowSellDialog] = useState(false);
 
     // Delete confirmation state
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deletingHoldingId, setDeletingHoldingId] = useState(null);
 
     //Update
-    // const [updateHolding] = useUpdateHoldingMutation()
     const [updateAsset] = useUpdateAssetMutation();
 
-    // const [addHolding] = useAddHoldingMutation();
+    //Add Holding
     const [addHolding] = useAddTransactionMutation();
+
+    //Sell Investment
+    const [sellTransaction] = useSellTransactionMutation();
 
     //Delete
     // const [deleteHolding, { isLoading }] = useDeleteHoldingMutation();
-    const [deleteTransaction, {isLoading}] = useDeleteTransactionMutation();
+    const [deleteTransaction, { isLoading }] = useDeleteTransactionMutation();
+
+    //GoldPrice
+    const [goldPrice, setGoldPrice] = useState([])
+
+
 
     const isGold = (title == "Altın")
 
     const [goldItems, setGoldItems] = useState([
         { id: 1, goldType: "", quantity: "", price: "" },
-]);
+    ]);
 
     // Multiple stock items
     const [stockItems, setStockItems] = useState([
         { id: 1, stock: null, quantity: "", price: "" },
     ]);
 
+    const [sellInvestmentList, setSellInvestmentList] = useState([
+        { key: 1, id: 1, assetName: "", quantity: 0, sellCount: 0, transactionId: 0, unitPrice: 0, totalPrice: 0 }
+    ])
 
-    console.log(goldItems)
+    const sellInvestment = async () => {
+        console.log("SATTT")
+        await sellTransaction(sellInvestmentList).unwrap();
+        closeSellInvestmentDialog();
+    }
 
-    // const [selectedGold, setSelectedGold] = useState(-1);
-    // const [goldId, setGoldId] = useState(0);
+    //Altın, Hisse Değişince Gerekli İşlemler Yapılır
+    const setTransactionId = (transactionId, id) => {
 
-    // useEffect(() => {
-    //     setGoldId(() => goldId + 1);
-    //     setSelectedGold(-1);
-    // }, [])
+        //GOLD
+        if (item[0].assetType === "GOLD") {
+            const itemData = item.find((data) => data.transactionId === transactionId)
 
+            const updatedData = sellInvestmentList.map((data) => {
+                if (data.id === id) {
+                    const goldPriceData = goldPrice.find((data) => data.Name.split("ALTIN")[0] === itemData.assetSymbol).Buying
+                    return { ...data, transactionId: transactionId, quantity: itemData.quantity, assetName: itemData.assetName, sellCount: 0, unitPrice: goldPriceData, totalPrice: 0 }
+                }
+                return data
+            })
+
+            setSellInvestmentList(updatedData);
+        }
+        //STOCK
+        else if (item[0].assetType === "STOCK") {
+            const itemData = item.find((data) => data.transactionId === transactionId)
+
+            const updatedData = sellInvestmentList.map((data) => {
+                if (data.id === id) {
+                    // const goldPriceData = goldPrice.find((data) => data.Name.split("ALTIN")[0] === itemData.assetSymbol).Buying
+                    return { ...data, transactionId: transactionId, quantity: itemData.quantity, assetName: itemData.assetName, sellCount: 0, unitPrice: itemData.purchasePrice, totalPrice: 0 }
+                }
+                return data
+            })
+
+            setSellInvestmentList(updatedData);
+        }
+
+
+    }
+
+    const setSellCount = (value, id) => {
+        if (item[0].assetType === "GOLD") {
+            const sellingData = sellInvestmentList.find((data) => data.id === id);
+            if (!sellingData)
+                return null;
+            if (value > sellingData.quantity)
+                return null;
+
+            const updatedData = sellInvestmentList.map((data) => {
+                if (data.id === id) {
+                    return { ...data, sellCount: parseFloat(value), totalPrice: data.unitPrice * value }
+                }
+                return data
+            })
+
+            setSellInvestmentList(updatedData)
+        }
+        else if (item[0].assetType === "STOCK") {
+            const sellingData = sellInvestmentList.find((data) => data.id === id);
+            if (!sellingData)
+                return null;
+            if (value > sellingData.quantity)
+                return null;
+
+            const updatedData = sellInvestmentList.map((data) => {
+                if (data.id === id) {
+                    return { ...data, sellCount: parseFloat(value), totalPrice: data.unitPrice * value }
+                }
+                return data
+            })
+
+            setSellInvestmentList(updatedData)
+        }
+
+    }
+
+
+    const removeSellInvestment = (id) => {
+        const newList = sellInvestmentList.filter((data) => data.id !== id);
+        setSellInvestmentList(newList);
+    }
+
+
+
+    const addSellInvestment = () => {
+
+        const sellInvestmentListTransactionIds = sellInvestmentList.map((data) => data.transactionId);
+        const itemTransactionList = item.map((data) => data.transactionId);
+
+        if (sellInvestmentListTransactionIds.length === itemTransactionList.length) {
+            return;
+        }
+
+        console.log("Burdayız: ")
+        console.log(sellInvestmentList)
+
+        const maxId = Math.max(...sellInvestmentList.map((data) => data.id));
+        const newItem = { key: maxId + 1, id: maxId + 1, assetName: "", quantity: 0, sellCount: 0, transactionId: 0, unitPrice: 0, totalPrice: 0 };
+        const updateList = [...sellInvestmentList, newItem];
+
+        setSellInvestmentList(updateList)
+
+        console.log("Yeni Bir Seller Eklendi")
+        console.log(sellInvestmentList)
+    }
 
     const addInvestment = async () => {
         const holdings = item[0].assetType === "GOLD"
-          ? goldItems.map((goldItem) => {
-            const goldTypeInfo = GOLD_TYPES.find(
-              (g) => g.value === goldItem.goldType
-            );
-            return {
-              assetId:item[0].accountId,
-              transactionType:"BUY",
-              assetSymbol: goldItem.goldType,
-              assetName: goldTypeInfo?.label || goldItem.goldType,
-              quantity: parseFloat(goldItem.quantity),
-              unitPrice: parseFloat(goldItem.price),
-              totalValue: parseFloat(goldItem.quantity) * parseFloat(goldItem.price),
-            };
-          })
-          : stockItems.map((stockItem) => ({
-            assetId:item[0].accountId,
-            transactionType:"BUY",
-            assetSymbol: stockItem.stock.symbol,
-            assetName: stockItem.stock.name,
-            quantity: parseFloat(stockItem.quantity),
-            unitPrice: parseFloat(stockItem.price),
-            totalValue: parseFloat(stockItem.quantity) * parseFloat(stockItem.price),
-            
-          }));
+            ? goldItems.map((goldItem) => {
+                const goldTypeInfo = GOLD_TYPES.find(
+                    (g) => g.value === goldItem.goldType
+                );
+                return {
+                    assetId: item[0].accountId,
+                    transactionType: "BUY",
+                    assetSymbol: goldItem.goldType,
+                    assetName: goldTypeInfo?.label || goldItem.goldType,
+                    quantity: parseFloat(goldItem.quantity),
+                    unitPrice: parseFloat(goldItem.price),
+                    totalValue: parseFloat(goldItem.quantity) * parseFloat(goldItem.price),
+                };
+            })
+            : stockItems.map((stockItem) => ({
+                assetId: item[0].accountId,
+                transactionType: "BUY",
+                assetSymbol: stockItem.stock.symbol,
+                assetName: stockItem.stock.name,
+                quantity: parseFloat(stockItem.quantity),
+                unitPrice: parseFloat(stockItem.price),
+                totalValue: parseFloat(stockItem.quantity) * parseFloat(stockItem.price),
 
-        {console.log("AAHAAAA")}
-        {console.log(...holdings)}
+            }));
+        { console.log(...holdings) }
         await addHolding(holdings).unwrap();
-        
-        // await axios.post(
-        //   `${backendUrl}/api/accounts/add-investment`,
-        //   {
-        //     userId: user.id,
-        //     accountName: item[0].accountName,
-        //     assetType: item[0].assetType,
-        //     holdings,
-        //   },
-        //   {
-        //     headers: {
-        //       Authorization: token ? `Bearer ${token}` : undefined,
-        //       "Content-Type": "application/json",
-        //     },
-        //   }
-        // );
-
-        closeShowAddDialog();        
+        closeShowAddDialog();
     }
 
 
@@ -155,52 +248,6 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
         setGoldItems([{ id: 1, goldType: "", quantity: "", price: "" },])
         setStockItems([{ id: 1, stock: "", quantity: "", price: "" },])
     }
-
-    // const handleAddShowDialog = () => {
-
-    // }
-
-    // const getPrice = (item) => {
-    //     return item.goldQuantity * item.goldPrice;
-    // }
-
-    // const getTotalPrice = () => {
-    //     return goldList.reduce(((sum, item) => sum + (item.goldQuantity * item.goldPrice)), 0)
-    // }
-
-
-    // const addGold = () => {
-    //     const data = {
-    //         id: goldId,
-    //         goldTpye: "",
-    //         goldQuantity: 0,
-    //         goldPrice: 0
-    //     }
-    //     setGoldList(
-    //         [...goldList, data]
-    //     );
-
-    //     console.log("Tüm Data");
-    //     console.log(JSON.stringify(goldList, 4, 4))
-    //     setGoldId(() => goldId + 1)
-    // }
-
-    // const removeGold = (item) => {
-    //     console.log("İtem Burda" + JSON.stringify(item, 4, 4))
-    //     const newList = goldList.filter((goldItem) => goldItem.id !== item.id)
-    //     console.log("Item: " + newList)
-    //     setGoldList(
-    //         [...newList]
-    //     )
-    // }
-
-    // const updateGoldItem = (id, field, value) => {
-    //     setGoldList(
-    //         goldList.map((item) =>
-    //             item.id === id ? { ...item, [field]: value } : item
-    //         )
-    //     );
-    // }
 
     const checkItemsGold = () => {
         return !goldItems.every((goldData) => goldData.goldType !== "" && goldData.price !== "" && goldData.quantity !== "")
@@ -212,6 +259,35 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
     const openShowAddDialog = () => {
         setShowAddDialog(true);
+    }
+
+    const openSellInvestmentDialog = () => {
+        setShowSellDialog(true);
+    }
+
+    const closeSellInvestmentDialog = () => {
+        setShowSellDialog(false);
+        setSellInvestmentList([
+            { key: 1, id: 1, assetName: "", quantity: 0, sellCount: 0, transactionId: 0, unitPrice: 0, totalPrice: 0 }]
+        )
+    }
+
+    const getTransactionsByAsset = async () => {
+        axios.get('https://finans.truncgil.com/v4/today.json')
+            .then(response => {
+                const goldPrices = (Object.entries(response.data).filter(([key]) => goldTypeKey.includes(key)).map(data => data[1]))
+                setGoldPrice(goldPrices)
+            })
+            .catch(error => console.error(error));
+
+
+        //TESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+        console.log("APİ KEY: " + "11478b8fefe54c9f8c7fd17ff7942d7e")
+        axios.get(`${backendUrl}/api/asset/getYahoo/THYAO.IS`)
+            .then(response => {
+                console.log("Yahoo Verisi:", response.data);
+            })
+            .catch(err => console.error("Hata:", err));
     }
 
     const handleEditClick = (holding) => {
@@ -257,7 +333,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
             const [assetResponse] = item.filter((data) => data.id === deletingHoldingId)
             console.log(assetResponse)
             console.log("bURDA")
-            await deleteTransaction({...assetResponse}).unwrap();
+            await deleteTransaction({ ...assetResponse }).unwrap();
             console.log("Kişi Başarıyla Silindi");
             console.log("İtem Uzunluğu: " + item.length);
             console.log(item);
@@ -331,6 +407,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     const totalProfitLoss = item.reduce(
         (sum, currentValue) => sum + parseFloat(currentValue.purchasePrice - currentValue.currentPrice || 0),
         0);
+
 
 
 
@@ -437,13 +514,28 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                             {item.length} farklı {isGold ? "altın türü" : "hisse senedi"}
                         </Typography>
 
-                        <IconButton
-                            size="small"
-                            onClick={() => openShowAddDialog()}
-                            sx={{ color: "green" }}
-                        >
-                            <FaPlus fontSize="large" />
-                        </IconButton>
+                        <Stack sx={{ display: "flex", flexDirection: "row", marginX: "5px" }}>
+                            <Tooltip title="Satın Al">
+                                <IconButton
+                                    size="small"
+                                    onClick={() => openShowAddDialog()}
+                                    sx={{ color: "green", marginX: "5px" }}
+                                >
+                                    <FaPlus fontSize="large" />
+                                </IconButton>
+                            </Tooltip>
+
+                            <Tooltip title="Sat">
+                                <IconButton
+                                    size="small"
+                                    color="error"
+                                    onClick={() => openSellInvestmentDialog()}
+                                    sx={{ marginX: "5px" }}
+                                >
+                                    <GiSellCard fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        </Stack>
                     </Box>
                 </CardContent>
             </Card>
@@ -474,20 +566,25 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                                     }}
                                     secondaryAction={
                                         <Box sx={{ display: "flex", gap: 1 }}>
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => handleEditClick(holding)}
-                                                sx={{ color: "primary.main" }}
-                                            >
-                                                <EditIcon fontSize="small" />
-                                            </IconButton>
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => handleDeleteClick(holding.id)}
-                                                sx={{ color: "error.main" }}
-                                            >
-                                                <DeleteIcon fontSize="small" />
-                                            </IconButton>
+                                            <Tooltip title="Satın Al">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handleEditClick(holding)}
+                                                    sx={{ color: "primary.main" }}
+                                                >
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Sil">
+                                                <IconButton
+                                                    size="small"
+                                                    color="warning"
+                                                    onClick={() => handleDeleteClick(holding.id)}
+                                                >
+                                                    <DeleteIcon fontSize="small" />
+                                                </IconButton>
+
+                                            </Tooltip>
                                         </Box>
                                     }
                                 >
@@ -585,11 +682,11 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
             {/* */}
 
             <Dialog onClose={closeShowAddDialog} open={showAddDialog}>
-                {item[0].assetType === "GOLD" ? <BuyInvestmentGold goldItems={goldItems} setGoldItems={setGoldItems}></BuyInvestmentGold> : 
-                item[0].assetType === "STOCK" ? <BuyInvestmentStock stockItems={stockItems} setStockItems={setStockItems}></BuyInvestmentStock> : ""}
+                {item[0].assetType === "GOLD" ? <BuyInvestmentGold goldItems={goldItems} setGoldItems={setGoldItems}></BuyInvestmentGold> :
+                    item[0].assetType === "STOCK" ? <BuyInvestmentStock stockItems={stockItems} setStockItems={setStockItems}></BuyInvestmentStock> : ""}
                 <DialogActions>
-                    <Button onClick={closeShowAddDialog} sx={{color: "red", ":hover": {color:"black"}}}>Kapat</Button>
-                    <Button type="button" sx={{color:"green"}} onClick={addInvestment} disabled = {item[0].assetType === "GOLD" ? checkItemsGold() : checkItemsStock()}>
+                    <Button onClick={closeShowAddDialog} sx={{ color: "red", ":hover": { color: "black" } }}>Kapat</Button>
+                    <Button type="button" sx={{ color: "green" }} onClick={addInvestment} disabled={item[0].assetType === "GOLD" ? checkItemsGold() : checkItemsStock()}>
                         Satın Al
                     </Button>
                 </DialogActions>
@@ -654,11 +751,6 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
             </Dialog>
 
 
-
-
-
-
-
             {/* Delete Confirmation Dialog */}
             <Dialog
                 open={deleteDialogOpen}
@@ -684,6 +776,290 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                         Sil
                     </Button>
                 </DialogActions>
+            </Dialog>
+
+
+            {/*Sell Investment */}
+            <Dialog
+                open={showSellDialog}
+                onClose={closeSellInvestmentDialog}
+                onTransitionEnter={getTransactionsByAsset}
+                fullWidth={true}
+                maxWidth="sm"
+            >
+                <DialogTitle sx={{ p: 0, overflow: "hidden" }}>
+                    <Box sx={{ backgroundColor: "#fdfbf0", borderBottom: "1px solid #e0e0e0" }}>
+                        <Marquee
+                            gradient={false}
+                            speed={40}
+                            style={{ padding: "10px 0" }}
+                        >
+                            {goldPrice.map((goldPriceItem, index) => (
+                                <Box key={index} sx={{ display: "flex", alignItems: "center", marginRight: "50px" }}>
+                                    <Typography sx={{ color: "#5d4037", fontSize: "13px", fontWeight: "600" }}>
+                                        {goldPriceItem.Name.split("ALTIN")[0]}
+                                    </Typography>
+                                    <Typography sx={{ color: "#d32f2f", fontSize: "13px", fontWeight: "bold", ml: 1 }}>
+                                        {goldPriceItem.Buying.toLocaleString()} ₺
+                                    </Typography>
+                                </Box>
+                            ))}
+                        </Marquee>
+                    </Box>
+
+
+                    <Box sx={{ p: 3, textAlign: "center" }}>
+                        <Typography
+                            variant="h5"
+                            sx={{
+                                fontWeight: "bold",
+                                color: "#1a237e",
+                                letterSpacing: "0.5px"
+                            }}
+                        >
+                            Varlık Satış İşlemi
+                        </Typography>
+                        <Typography
+                            sx={{
+                                color: "#616161",
+                                fontSize: "15px",
+                                mt: 1,
+                                fontStyle: "italic"
+                            }}
+                        >
+                            Hangi <span style={{ color: "#d32f2f", fontWeight: "bold" }}>{isGold ? "Altın" : "Hisse"}</span> Varlıklarınızı Satmak İstiyorsunuz?
+                        </Typography>
+                    </Box>
+                </DialogTitle>
+
+                <DialogContent
+                    sx={{ overflowX: "auto" }}>
+                    {console.log(sellInvestmentList.length)}
+                    {sellInvestmentList.length > 0 ? (
+                        sellInvestmentList.map((sellData, index) => (
+                            <Box
+                                key={index}
+                                sx={{
+                                    background: "#fff",
+                                    border: "1px solid #eef0f2",
+                                    borderRadius: "16px",
+                                    minWidth: "100%",
+                                    padding: "24px",
+                                    marginY: "24px",
+                                    boxShadow: "0px 10px 20px rgba(0,0,0,0.04)",
+                                    position: "relative",
+                                    transition: "transform 0.2s",
+                                    "&:hover": { transform: "translateY(-2px)" }
+                                }}
+                            >
+                                {/* Üst Bilgi ve Aksiyonlar */}
+                                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                                    <Typography
+                                        sx={{
+                                            backgroundColor: "#f5f5f5",
+                                            px: 1.5, py: 0.5,
+                                            borderRadius: "6px",
+                                            fontSize: "11px",
+                                            fontWeight: "bold",
+                                            color: "#757575",
+                                            textTransform: "uppercase"
+                                        }}
+                                    >
+                                        #İşlem Seçimi {index + 1}
+                                    </Typography>
+
+                                    <Box>
+                                        <Tooltip title="Ekle">
+                                            <IconButton onClick={() => addSellInvestment()} sx={{ color: "#2e7d32", backgroundColor: "#e8f5e9", mr: 1, "&:hover": { backgroundColor: "#c8e6c9" } }}>
+                                                <FaPlus size={14} />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Kaldır">
+                                            <IconButton onClick={() => removeSellInvestment(sellData.id)} sx={{ color: "#d32f2f", backgroundColor: "#ffebee", "&:hover": { backgroundColor: "#ffcdd2" } }}>
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Box>
+                                </Box>
+
+                                {/* Seçim Alanı */}
+                                <Box sx={{ mb: 2 }}>
+                                    <InputLabel sx={{ fontSize: "13px", fontWeight: "600", mb: 0.5, color: "#444" }}>
+                                        {isGold ? "Altın Türü" : "Hisse Senedi"}
+                                    </InputLabel>
+                                    <Select
+                                        value={sellData.transactionId || ""}
+                                        onChange={(e) => setTransactionId(e.target.value, sellData.id)}
+                                        fullWidth
+                                        size="small"
+                                        sx={{ borderRadius: "8px", backgroundColor: "#fafafa" }}
+                                    >
+                                        <MenuItem value=""><em>Seçiniz...</em></MenuItem>
+                                        {item.map((data) => {
+                                            const isSelected = sellInvestmentList.some(s => s.transactionId === data.transactionId);
+                                            const isThisRow = sellData.transactionId === data.transactionId;
+                                            if (!isSelected || isThisRow) {
+                                                return (
+                                                    <MenuItem key={data.transactionId} value={data.transactionId}>
+                                                        <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
+                                                            <span>{data.assetName}</span>
+                                                            <span style={{ color: "#757575", fontSize: "0.8rem" }}>Maliyet: {data.purchasePrice}₺</span>
+                                                        </Box>
+                                                    </MenuItem>
+                                                );
+                                            }
+                                            return null;
+                                        })}
+                                    </Select>
+                                </Box>
+
+                                {/* Miktar Girişi */}
+                                <TextField
+                                    label="Satış Miktarı"
+                                    fullWidth
+                                    size="small"
+                                    type="number"
+                                    value={sellData.sellCount || 0}
+                                    onChange={(e) => setSellCount(e.target.value, sellData.id)}
+                                    inputProps={{ min: 0, max: sellData.quantity }}
+                                    InputProps={{
+                                        startAdornment: <InputAdornment position="start" sx={{ fontSize: "12px" }}>{sellData.assetName?.includes("Çeyrek") ? "Adet" : "Gr"}</InputAdornment>,
+                                    }}
+                                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                                />
+
+                                {/* Uyarı ve Özet Bölümü */}
+                                <Box sx={{ mt: 2 }}>
+                                    <Typography
+                                        sx={{
+                                            color: "#c62828",
+                                            backgroundColor: "#fff5f5",
+                                            p: 1.5,
+                                            borderRadius: "10px",
+                                            fontSize: "0.75rem",
+                                            border: "1px dashed #ffcdd2",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 1
+                                        }}
+                                    >
+                                        ⚠️ Maksimum <strong>{sellData.quantity}</strong> adet/gr satabilirsiniz.
+                                    </Typography>
+
+                                    {sellData.totalPrice > 0 && (
+                                        <Box
+                                            sx={{
+                                                mt: 1.5,
+                                                p: 2,
+                                                background: "linear-gradient(135deg, #fffde7 0%, #fff9c4 100%)",
+                                                borderRadius: "10px",
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                border: "1px solid #fff59d"
+                                            }}
+                                        >
+                                            <Typography sx={{ color: "#5d4037", fontWeight: "600", fontSize: "0.85rem" }}>Tahmini Tahsilat:</Typography>
+                                            <Typography sx={{ color: "#2e7d32", fontWeight: "800", fontSize: "1.1rem" }}>
+                                                {sellData.totalPrice.toLocaleString()} ₺
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                </Box>
+                            </Box>
+                        ))
+                    ) : (
+                        <Typography sx={{ textAlign: "center", color: "#999", my: 4 }}>Henüz bir yatırım seçilmedi.</Typography>
+                    )}
+                    {sellInvestmentList.reduce((sum, cur) => sum + cur.totalPrice, 0) > 0 && (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "row",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                mt: 2,
+                                p: 2,
+                                borderRadius: "12px",
+                                background: "linear-gradient(90deg, #fff9c4 0%, #fff176 100%)",
+                                boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.05)",
+                                border: "1px solid #fbc02d",
+                            }}
+                        >
+                            <Typography
+                                sx={{
+                                    color: "#5f4339",
+                                    fontWeight: "600",
+                                    fontSize: "0.95rem"
+                                }}
+                            >
+                                Toplam Satış Bedeli:
+                            </Typography>
+
+                            <Typography
+                                sx={{
+                                    color: "#d32f2f",
+                                    fontWeight: "bold",
+                                    fontSize: "1.1rem"
+                                }}
+                            >
+                                {sellInvestmentList.reduce((sum, cur) => sum + cur.totalPrice, 0).toLocaleString()} ₺
+                            </Typography>
+                        </Box>
+                    )}
+
+
+                </DialogContent>
+
+                <DialogActions sx={{ marginRight: "20px", marginBottom: "15px", gap: "10px" }}>
+                    <Button
+                        variant="contained"
+                        onClick={() => sellInvestment()}
+                        sx={{
+                            backgroundColor: "rgba(255, 0, 0, 0.08)",
+                            color: "#d32f2f",
+                            border: "1.5px solid #d32f2f",
+                            fontWeight: "bold",
+                            borderRadius: "8px",
+                            padding: "6px 20px",
+                            boxShadow: "none",
+                            textTransform: "none", 
+                            '&:hover': {
+                                backgroundColor: "#d32f2f",
+                                color: "white",
+                                boxShadow: "0px 4px 10px rgba(211, 47, 47, 0.3)",
+                                border: "1.5px solid #d32f2f",
+                            }
+                        }}
+                    >
+                        Sat
+                    </Button>
+
+                    <Button
+                        variant="contained"
+                        onClick={closeSellInvestmentDialog}
+                        sx={{
+                            backgroundColor: "rgba(0, 128, 0, 0.08)", // Hafif yeşil arka plan
+                            color: "#2e7d32",
+                            border: "1.5px solid #2e7d32",
+                            fontWeight: "bold",
+                            borderRadius: "8px",
+                            padding: "6px 20px",
+                            boxShadow: "none",
+                            textTransform: "none",
+                            '&:hover': {
+                                backgroundColor: "#2e7d32",
+                                color: "white",
+                                boxShadow: "0px 4px 10px rgba(46, 125, 50, 0.3)",
+                                border: "1.5px solid #2e7d32",
+                            }
+                        }}
+                    >
+                        İptal
+                    </Button>
+                </DialogActions>
+
+
             </Dialog>
         </Container>
     )

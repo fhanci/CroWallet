@@ -42,14 +42,14 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .authorizeHttpRequests(auth -> auth
                         // Artık sadece /api/** üzerine tanımlı kurallar gelir:
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/asset/**").permitAll()
                         .requestMatchers("/api/currencies/**").permitAll()
                         .requestMatchers("/api/market/**").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/users/delete/**").authenticated()
                         .requestMatchers("/api/messages/image").permitAll()
                         .requestMatchers("/api/messages/files").permitAll()
                         .requestMatchers("/api/messages/audio/").permitAll()
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
