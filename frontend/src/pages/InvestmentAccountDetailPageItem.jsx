@@ -36,11 +36,12 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useTheme } from "../config/ThemeContext";
 import axios from "axios";
-import { backendUrl, stockApiKey } from "../utils/envVariables";
+import { backendUrl } from "../utils/envVariables";
 import { BuyInvestmentGold } from "../components/BuyInvestmentGold";
 import { GOLD_TYPES } from "../data/goldData";
 import { BuyInvestmentStock } from "../components/BuyInvestmentStock";
 import Marquee from "react-fast-marquee";
+import { getStocksValue, STOCKS } from "../data/stocksData";
 
 
 
@@ -87,6 +88,9 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     //GoldPrice
     const [goldPrice, setGoldPrice] = useState([])
 
+    //Stock Price
+    const [stockPrice, setStockPrice] = useState([])
+
 
 
     const isGold = (title == "Altın")
@@ -105,7 +109,6 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     ])
 
     const sellInvestment = async () => {
-        console.log("SATTT")
         await sellTransaction(sellInvestmentList).unwrap();
         closeSellInvestmentDialog();
     }
@@ -133,8 +136,8 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
             const updatedData = sellInvestmentList.map((data) => {
                 if (data.id === id) {
-                    // const goldPriceData = goldPrice.find((data) => data.Name.split("ALTIN")[0] === itemData.assetSymbol).Buying
-                    return { ...data, transactionId: transactionId, quantity: itemData.quantity, assetName: itemData.assetName, sellCount: 0, unitPrice: itemData.purchasePrice, totalPrice: 0 }
+                    const stockPriceData = stockPrice.find((data) => data.symbol === itemData.assetSymbol).value
+                    return { ...data, transactionId: transactionId, quantity: itemData.quantity, assetName: itemData.assetName, sellCount: 0, unitPrice: stockPriceData , totalPrice: 0 }
                 }
                 return data
             })
@@ -273,6 +276,8 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     }
 
     const getTransactionsByAsset = async () => {
+
+        //Altın Fiyatlarını Çekme İşlemi
         axios.get('https://finans.truncgil.com/v4/today.json')
             .then(response => {
                 const goldPrices = (Object.entries(response.data).filter(([key]) => goldTypeKey.includes(key)).map(data => data[1]))
@@ -281,13 +286,16 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
             .catch(error => console.error(error));
 
 
-        //TESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
-        console.log("APİ KEY: " + "11478b8fefe54c9f8c7fd17ff7942d7e")
-        axios.get(`${backendUrl}/api/asset/getYahoo/THYAO.IS`)
-            .then(response => {
-                console.log("Yahoo Verisi:", response.data);
+
+        //Stock Fiyatlarını Çekme İşlemi
+        const stockItem = []
+        await Promise.all(
+            STOCKS.map(async (stock) => {
+                stockItem.push({ symbol: stock.symbol, value: await getStocksValue(stock.symbol) })
             })
-            .catch(err => console.error("Hata:", err));
+        );
+
+        setStockPrice(stockItem);
     }
 
     const handleEditClick = (holding) => {
@@ -807,6 +815,25 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                         </Marquee>
                     </Box>
 
+                    <Box sx={{ backgroundColor: "#fdfbf0", borderBottom: "1px solid #e0e0e0", mt:"15px" }}>
+                        <Marquee
+                            gradient={false}
+                            speed={40}
+                            style={{ padding: "10px 0" }}
+                        >
+                            {stockPrice.map((stockPriceItem, index) => (
+                                <Box key={index} sx={{ display: "flex", alignItems: "center", marginRight: "50px" }}>
+                                    <Typography sx={{ color: "#5d4037", fontSize: "13px", fontWeight: "600" }}>
+                                        {stockPriceItem.symbol}
+                                    </Typography>
+                                    <Typography sx={{ color: "#d32f2f", fontSize: "13px", fontWeight: "bold", ml: 1 }}>
+                                        {stockPriceItem.value.toLocaleString()} ₺
+                                    </Typography>
+                                </Box>
+                            ))}
+                        </Marquee>
+                    </Box>
+
 
                     <Box sx={{ p: 3, textAlign: "center" }}>
                         <Typography
@@ -923,7 +950,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                                     onChange={(e) => setSellCount(e.target.value, sellData.id)}
                                     inputProps={{ min: 0, max: sellData.quantity }}
                                     InputProps={{
-                                        startAdornment: <InputAdornment position="start" sx={{ fontSize: "12px" }}>{sellData.assetName?.includes("Çeyrek") ? "Adet" : "Gr"}</InputAdornment>,
+                                        startAdornment: <InputAdornment position="start" sx={{ fontSize: "12px" }}>{sellData.assetName?.includes("Gram") ? "Gr" : "Adet"}</InputAdornment>,
                                     }}
                                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                                 />
@@ -943,7 +970,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                                             gap: 1
                                         }}
                                     >
-                                        ⚠️ Maksimum <strong>{sellData.quantity}</strong> adet/gr satabilirsiniz.
+                                        ⚠️ Maksimum <strong>{sellData.quantity}</strong> {item[0].assetType === "STOCK" ? "adet" : "adet/gr"} satabilirsiniz.
                                     </Typography>
 
                                     {sellData.totalPrice > 0 && (
@@ -1015,6 +1042,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                     <Button
                         variant="contained"
                         onClick={() => sellInvestment()}
+                        disabled={sellInvestmentList.some(s => s.sellCount <= 0 || !s.transactionId)}
                         sx={{
                             backgroundColor: "rgba(255, 0, 0, 0.08)",
                             color: "#d32f2f",
@@ -1023,7 +1051,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                             borderRadius: "8px",
                             padding: "6px 20px",
                             boxShadow: "none",
-                            textTransform: "none", 
+                            textTransform: "none",
                             '&:hover': {
                                 backgroundColor: "#d32f2f",
                                 color: "white",

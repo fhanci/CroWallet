@@ -1,4 +1,7 @@
-export const STOCKS = [
+import axios from "axios";
+import { backendUrl } from "../utils/envVariables";
+
+export const STOCKS = [  
   { symbol: "AKBNK", name: "Akbank T.A.Ş." },
   { symbol: "GARAN", name: "Garanti BBVA" },
   { symbol: "ISCTR", name: "Türkiye İş Bankası (C)" },
@@ -26,7 +29,7 @@ export const STOCKS = [
   { symbol: "YKBNK", name: "Yapı ve Kredi Bankası A.Ş." },
   { symbol: "GUBRF", name: "Gübre Fabrikaları T.A.Ş." },
   { symbol: "ENJSA", name: "Enerjisa Enerji A.Ş." },
-  { symbol: "KOZAL", name: "Koza Altın İşletmeleri A.Ş." },
+  { symbol: "TRALT", name: "Koza Altın İşletmeleri A.Ş." },
   { symbol: "DOAS", name: "Doğuş Otomotiv Servis ve Ticaret A.Ş." },
   { symbol: "ALARK", name: "Alarko Holding A.Ş." },
   { symbol: "ASTOR", name: "Astor Enerji A.Ş." },
@@ -50,3 +53,13 @@ export const STOCKS = [
   { symbol: "CIMSA", name: "Çimsa Çimento Sanayi ve Ticaret A.Ş." },
   { symbol: "DOHOL", name: "Doğan Holding A.Ş." },
 ];
+
+
+export const getStocksValue = async (symbol) => {
+    console.log(`Veriler çekiliyor: ${symbol}.IS`);
+    const response = await axios.get(`${backendUrl}/api/asset/getYahoo/${symbol}.IS`);
+    const stockValues = response.data;
+    console.log(`Veriler çekildi: ${symbol}.IS`);
+    console.log(stockValues)
+    return response.data.chart.result[0].meta.regularMarketPrice;
+}

@@ -11,11 +11,15 @@ import org.springframework.web.client.RestTemplate;
 public class StockService {
 
     public String getYahooStock(String symbol) {
-        String url = "https://query1.finance.yahoo.com/v7/finance/quote?symbols=" + symbol;
+        String url = "https://query1.finance.yahoo.com/v8/finance/chart/" + symbol;
 
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
-        headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"); // Kritik!
+        headers.set("User-Agent", "Mozilla/5.0");
+        headers.set("Accept", "application/json, text/plain, */*");
+        headers.set("Accept-Language", "en-US,en;q=0.9");
+        headers.set("Referer", "https://finance.yahoo.com/");
+        headers.set("Origin", "https://finance.yahoo.com");
 
         HttpEntity<String> entity = new HttpEntity<>(headers);
 

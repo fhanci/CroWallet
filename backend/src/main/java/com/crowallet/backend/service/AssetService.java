@@ -151,6 +151,10 @@ public class AssetService {
                         System.out.println("Toplam Quantity Bu Çıktı");
                     }
                     System.out.println("Toplam Quantity Bu Çıktı " + quantity );
+                    if (transaction.getQuantity().subtract(quantity) == BigDecimal.ZERO) {
+                        System.out.println("BUNU NET GÖRMEM LAZIM 2");
+                        continue;
+                    }
 
                     // Long bigId = 0L;
 
