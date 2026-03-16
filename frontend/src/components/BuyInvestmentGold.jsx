@@ -12,7 +12,6 @@ import axios from 'axios';
 import Marquee from "react-fast-marquee";
 
 
-
 export const BuyInvestmentGold = ({ goldItems, setGoldItems }) => {
 
     const { isDarkMode } = useTheme();
@@ -25,12 +24,18 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems }) => {
     const goldTypeKey = ["GRA", "CEYREKALTIN", "YARIMALTIN", "TAMALTIN", "CUMHURIYETALTINI"]
 
     useEffect(() => {
-        axios.get('https://finans.truncgil.com/v4/today.json')
-            .then(response => {
-                const goldPrices = (Object.entries(response.data).filter(([key]) => goldTypeKey.includes(key)).map(data => data[1]))
-                setGoldPrice(goldPrices)
-            })
-            .catch(error => console.error(error));
+
+        console.log(GOLD_TYPES.map((goldType) => ({Name: `${goldType.value}ALTIN`, Buying: goldType.price})));
+        setGoldPrice(GOLD_TYPES.map((goldType) => ({Name: `${goldType.value}ALTIN`, Buying: goldType.price})))
+        console.log("Satın Alım İşlemi İçin Altın Fiyatları Çekildi")
+        // console.log(goldPrice)
+
+        // axios.get('https://finans.truncgil.com/v4/today.json')
+        //     .then(response => {
+        //         const goldPrices = (Object.entries(response.data).filter(([key]) => goldTypeKey.includes(key)).map(data => data[1]))
+        //         setGoldPrice(goldPrices)
+        //     })
+        //     .catch(error => console.error(error));
     }, [])
 
     // Get available gold types (exclude already selected)
@@ -61,7 +66,7 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems }) => {
         console.log(`Updating gold item ${id}: setting ${field} to ${value}`);
         setGoldItems(
             goldItems.map((item) =>
-                item.id === id ? { ...item, [field]: value, price: ["GRAM", "CEYREK", "YARIM", "TAM", "CUMHURIYET"].includes(value) ? goldPrice.find((data) => data.Name.split("ALTIN")[0] === value).Buying : item.price } : item
+                item.id === id ? { ...item, [field]: value, price: ["GRAM", "CEYREK", "YARIM", "TAM", "CUMHURIYET"].includes(value) ? goldPrice.find((data) => data.Name.split("ALTIN")[0] === value).Buying : item.price} : item
             )
         );
     };
@@ -84,7 +89,6 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems }) => {
         <Box sx={{ padding: "15px" }}>
             {/* INVESTMENT ACCOUNT FORM */}
             {/*/////////////////////////////////////////////////////////////////////////////////////////////////*/}
-
             <Box sx={{ backgroundColor: "#fdfbf0", borderBottom: "1px solid #e0e0e0" }}>
                 <Marquee
                     gradient={false}

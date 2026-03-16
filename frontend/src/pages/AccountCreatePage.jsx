@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Container,
   Typography,
@@ -275,7 +275,7 @@ const AccountCreatePage = () => {
             currentPrice: parseFloat(item.price),
           }));
 
-          await axios.post(
+        await axios.post(
           `${backendUrl}/api/accounts/create-investment`,
           {
             userId: user.id,
@@ -292,18 +292,22 @@ const AccountCreatePage = () => {
         );
 
         const response = await axios.post(`${backendUrl}/api/asset/create-asset`,
-        { 
-          assetName: accountName,
-          accountType:  accountType,
-          assetType: assetType,
-          holdingType: accountType === "INVESTMENT" ? null : holdingType,
-        },
-        {headers: {
+          {
+            assetName: accountName,
+            accountType: accountType,
+            assetType: assetType,
+            holdingType: accountType === "INVESTMENT" ? null : holdingType,
+          },
+          {
+            headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
               "Content-Type": "application/json",
-        }}
+            }
+          }
         )
 
+        console.log("holdings2 İçeriği")
+        console.log(JSON.stringify(holdings))
 
         const holdings2 = assetType === "GOLD"
           ? goldItems.map((item) => {
@@ -317,6 +321,7 @@ const AccountCreatePage = () => {
               unitPrice: parseFloat(item.price),
               quantity: parseFloat(item.quantity),
               assetName: goldTypeInfo?.label || item.goldType
+
             };
           })
           : stockItems.map((item) => ({
@@ -329,23 +334,27 @@ const AccountCreatePage = () => {
           }));
 
 
-        await axios.post(`${backendUrl}/api/asset/create-transaction`, holdings2, 
-          {headers: {
+        await axios.post(`${backendUrl}/api/asset/create-transaction`, holdings2,
+          {
+            headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
               "Content-Type": "application/json",
-        }}
+            }
+          }
         )
 
 
         await axios.post(`${backendUrl}/api/asset/create-position`, {
           assetId: response.data,
-          costBasis: 0,
-          currentValue: holdings2.reduce((sum,cur) => sum + (cur.quantity * cur.unitPrice) , 0),
+          costBasis: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.unitPrice), 0),
+          currentValue: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.unitPrice), 0),
           profitLoss: 0
-        }, {headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-              "Content-Type": "application/json",
-        }})
+        }, {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
+          }
+        })
 
 
       }
@@ -602,8 +611,8 @@ const AccountCreatePage = () => {
                     </ToggleButtonGroup>
 
                     {assetType === "GOLD" ?
-                      <BuyInvestmentGold setGoldItems = {setGoldItems} goldItems = {goldItems}></BuyInvestmentGold> : assetType === "STOCK" ?
-                        <BuyInvestmentStock setStockItems= {setStockItems} stockItems= {stockItems}></BuyInvestmentStock> :
+                      <BuyInvestmentGold setGoldItems={setGoldItems} goldItems={goldItems}></BuyInvestmentGold> : assetType === "STOCK" ?
+                        <BuyInvestmentStock setStockItems={setStockItems} stockItems={stockItems}></BuyInvestmentStock> :
                         <Box></Box>}
 
 
@@ -613,11 +622,11 @@ const AccountCreatePage = () => {
               : <Box></Box>
           }
 
-            {error && (
-                <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>
-                    {error}
-                </Alert>
-            )}
+          {error && (
+            <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>
+              {error}
+            </Alert>
+          )}
 
           {console.log("AccountType: " + accountType)}
           {accountType && (

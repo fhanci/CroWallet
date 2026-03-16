@@ -21,18 +21,16 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems }) => {
     const [stockPrice, setStockPrice] = useState([])
 
     useEffect(() => {
-        const fetchStockPrices = async () => {
+        const fetchStockPrices = () => {
             const stockItem = []
-            await Promise.all(
-                STOCKS.map(async (stock) => {
-                    stockItem.push({ symbol: stock.symbol, value: await getStocksValue(stock.symbol) })
-                })
-            );
-
+            STOCKS.map((stock) => {
+                stockItem.push({ symbol: stock.symbol, value: stock.price })
+            })
             setStockPrice(stockItem);
         };
 
         fetchStockPrices();
+        console.log("Satın Alım İşlemi İçin Hisse Fiyatları Çekildi")
     }, [])
 
     // Check if we can add more stocks

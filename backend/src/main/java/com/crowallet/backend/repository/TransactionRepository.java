@@ -8,11 +8,14 @@ import com.crowallet.backend.entity.Transactions;
 import java.util.List;
 
 
+
 @Repository
 public interface TransactionRepository extends JpaRepository<Transactions, Long>{
     List<Transactions> findByAsset(Asset asset);
 
     List<Transactions> findAllByAsset(Asset asset);
-    
+
+
+    List<Transactions> findByAssetSymbolOrderByIdDesc(String assetSymbol);
     
 }

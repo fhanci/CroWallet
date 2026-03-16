@@ -46,6 +46,7 @@ import { getStocksValue, STOCKS } from "../data/stocksData";
 
 
 
+
 const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
     // Gold types for display
@@ -137,7 +138,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
             const updatedData = sellInvestmentList.map((data) => {
                 if (data.id === id) {
                     const stockPriceData = stockPrice.find((data) => data.symbol === itemData.assetSymbol).value
-                    return { ...data, transactionId: transactionId, quantity: itemData.quantity, assetName: itemData.assetName, sellCount: 0, unitPrice: stockPriceData , totalPrice: 0 }
+                    return { ...data, transactionId: transactionId, quantity: itemData.quantity, assetName: itemData.assetName, sellCount: 0, unitPrice: stockPriceData, totalPrice: 0 }
                 }
                 return data
             })
@@ -253,11 +254,11 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     }
 
     const checkItemsGold = () => {
-        return !goldItems.every((goldData) => goldData.goldType !== "" && goldData.price !== "" && goldData.quantity !== "")
+        return !goldItems.every((goldData) => goldData.goldType !== "" && goldData.price !== "" && goldData.price !== 0  && goldData.quantity !== "")
     }
 
     const checkItemsStock = () => {
-        return !stockItems.every((stockData) => stockData.price !== "" && stockData.quantity !== "" && stockData.stock !== "")
+        return !stockItems.every((stockData) => stockData.price !== ""  && stockData.price !== 0  && stockData.quantity !== "" && stockData.quantity !== 0 && stockData.stock !== "")
     }
 
     const openShowAddDialog = () => {
@@ -427,10 +428,12 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                 {/* <IconButton onClick={() => navigate("/account")} sx={{ p: 1 }}>
           <ArrowBackIcon />
         </IconButton> */}
-                <Box sx={{ flex: 1 }}>
+                <Box sx={{ flexDirection: 1 }}>
+
                     <Typography variant="h5" sx={{ fontWeight: 600 }}>
                         {item[0].accountName}
                     </Typography>
+
                     <Chip
                         icon={isGold ? <ViewInArIcon /> : <ShowChartIcon />}
                         label={isGold ? "Altın Hesabı" : "Hisse Hesabı"}
@@ -443,6 +446,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                         }}
                     />
                 </Box>
+
             </Box>
 
 
@@ -668,12 +672,12 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                                             variant="body2"
                                             sx={{
                                                 color:
-                                                    parseFloat(holding.profitLoss) >= 0
+                                                    parseFloat((holding.currentPrice * holding.quantity) - (holding.purchasePrice * holding.quantity)) >= 0
                                                         ? "#4caf50"
                                                         : "#f44336",
                                             }}
                                         >
-                                            {parseFloat(holding.profitLoss) >= 0 ? "+ Kar " : "- Zarar "}
+                                            {parseFloat((holding.currentPrice * holding.quantity) - (holding.purchasePrice * holding.quantity)) >= 0 ? "+ Kar " : "- Zarar "}
                                             {formatCurrency((holding.currentPrice * holding.quantity) - (holding.purchasePrice * holding.quantity))}
                                         </Typography>
                                     </Box>
@@ -815,7 +819,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                         </Marquee>
                     </Box>
 
-                    <Box sx={{ backgroundColor: "#fdfbf0", borderBottom: "1px solid #e0e0e0", mt:"15px" }}>
+                    <Box sx={{ backgroundColor: "#fdfbf0", borderBottom: "1px solid #e0e0e0", mt: "15px" }}>
                         <Marquee
                             gradient={false}
                             speed={40}
