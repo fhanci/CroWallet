@@ -41,7 +41,7 @@ import { BuyInvestmentGold } from "../components/BuyInvestmentGold";
 import { GOLD_TYPES } from "../data/goldData";
 import { BuyInvestmentStock } from "../components/BuyInvestmentStock";
 import Marquee from "react-fast-marquee";
-import { getStocksValue, STOCKS } from "../data/stocksData";
+import { getStocksValue, getStocksValueApi, STOCKS } from "../data/stocksData";
 
 
 
@@ -110,6 +110,15 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     ])
 
     const sellInvestment = async () => {
+        // const wait = async () => {
+        //     const data = sellInvestmentList.map((data) => ({ ...data, unitPrice: 30000, totalPrice: data.sellCount * 30000 }));
+        //     setSellInvestmentList(data)
+        //     console.log("Data burda: " + JSON.stringify(data))
+        //     console.log("setSellInvestmentList burda: " + JSON.stringify(sellInvestmentList))
+        //     return data;
+        // }
+        // const data = await wait();
+        // console.log("Satış listesi hazırlandı.\n" + JSON.stringify(data))
         await sellTransaction(sellInvestmentList).unwrap();
         closeSellInvestmentDialog();
     }
@@ -254,11 +263,11 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     }
 
     const checkItemsGold = () => {
-        return !goldItems.every((goldData) => goldData.goldType !== "" && goldData.price !== "" && goldData.price !== 0  && goldData.quantity !== "")
+        return !goldItems.every((goldData) => goldData.goldType !== "" && goldData.price !== "" && goldData.price !== 0 && goldData.quantity !== "")
     }
 
     const checkItemsStock = () => {
-        return !stockItems.every((stockData) => stockData.price !== ""  && stockData.price !== 0  && stockData.quantity !== "" && stockData.quantity !== 0 && stockData.stock !== "")
+        return !stockItems.every((stockData) => stockData.price !== "" && stockData.price !== 0 && stockData.quantity !== "" && stockData.quantity !== 0 && stockData.stock !== "")
     }
 
     const openShowAddDialog = () => {
@@ -292,7 +301,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
         const stockItem = []
         await Promise.all(
             STOCKS.map(async (stock) => {
-                stockItem.push({ symbol: stock.symbol, value: await getStocksValue(stock.symbol) })
+                stockItem.push({ symbol: stock.symbol, value: await getStocksValueApi(stock.symbol) })
             })
         );
 

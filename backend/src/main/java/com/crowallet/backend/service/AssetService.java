@@ -99,7 +99,7 @@ public class AssetService {
         }
         Asset asset = assetRepository.findById(assetId).orElseThrow(() -> new RuntimeException("Asset not found"));
         BigDecimal calculatedCostBasisBigDecimal = this.calculateCostBasis(position);
-        position.setCostBasis(calculatedCostBasisBigDecimal); // Yanlış Hesaplıyor. 
+        position.setCostBasis(calculatedCostBasisBigDecimal); // Yanlış Hesaplıyor.
         // costBasis: 0, currentValue: 600000
 
         Positions positionEntity = PositionsMapper.INSTANCE.toPosition(position);
@@ -312,74 +312,43 @@ public class AssetService {
         System.out.println(lastPrices);
 
         for (Transactions transactions : allTransactionByAsset) {
+            TransactionType type = transactions.getTransactionType();
+            if (type != TransactionType.SELL) {
 
-            if (transactions.getTransactionType() == TransactionType.BUY) {
-
-                // Maliyet = Maliyet + (Satın Alım Adedi * Alım Zamanı Birim Fiyatı)
-                costBasis = costBasis.add(
-                        transactions.getQuantity().multiply(transactions.getUnitPrice()));
-
-                // Güncel Değeri Bul
-                BigDecimal lastPrice = lastPrices.get(transactions.getAssetSymbol());
-
-                // Güncel Değer = Güncel Değer + (Satın Alım Adedi * En Güncel Fiyat)
-                currentValue = currentValue.add(// En Güncel Fiyatla Çarp
-                        transactions.getQuantity().multiply(lastPrice));
-
-            }
-
-            else if (transactions.getTransactionType() == TransactionType.CREATE
-                    || transactions.getTransactionType() == TransactionType.UPDATE) {
-
-                // Bu transaction üzerinde daha önceden satma işlemi gerçekleşmiş mi kontrolü
+                //ilgili transaction üzerinden bir satış olmuş mu
                 List<RelatedTransactions> bySourceTransactions = relatedTransactionsRepository
                         .findBySourceTransactions(transactions);
 
-                // Satılmış ise
-                if (bySourceTransactions.size() > 0) {
-                    BigDecimal quantity = BigDecimal.ZERO;
-                    System.out.println("Evet Satıldı");
+                BigDecimal soldQuantity = BigDecimal.ZERO;
 
-                    // Toplam Satılma Adedi
-                    for (RelatedTransactions sellingData : bySourceTransactions) {
-                        quantity = quantity.add(sellingData.getTargetTransactions().getQuantity());
+                //Eğer satış olduysa kaç adet satıldı hesaplanıyor
+                if (bySourceTransactions != null) {
+                    for (RelatedTransactions sellingData : bySourceTransactions) {                        
+                        soldQuantity = soldQuantity.add(sellingData.getTargetTransactions().getQuantity());
                     }
-
-                    // Maliyet = Maliyet + (Elde Kalan Alım Adedi * Alım Zamanı Birim Fiyatı)
-                    costBasis = costBasis.add(
-                            transactions.getQuantity().subtract(quantity).multiply(transactions.getUnitPrice()));
-
-                    // Güncel Değeri Bul
-
-                    BigDecimal lastPrice = lastPrices.get(transactions.getAssetSymbol());
-
-                    System.out.println("Kalan Adet: " + quantity);
-                    System.out.println("Yatırım Fiyatı: " + lastPrice);
-
-                    // Güncel Değer = Güncel Değer + (Elde Kalan Alım Adedi * En Güncel Fiyat)
-                    currentValue = currentValue.add(
-                            transactions.getQuantity().subtract(quantity).multiply(lastPrice));
-
-                    System.out.println("Satıldı ve costBasis: " + costBasis + " Current Value: " + currentValue);
-                }
-                // Satılmamış ise
-                else {
-                    System.out.println("Hayır Satıldı");
-                    // Maliyet = Maliyet + (Satın Alım Adedi * Alım Zamanı Birim Fiyatı)
-                    costBasis = costBasis.add(transactions.getQuantity().multiply(transactions.getUnitPrice()));
-
-                    BigDecimal lastPrice = lastPrices.get(transactions.getAssetSymbol());
-
-                    // Güncel Değer = Güncel Değer + (Satın Alım Adedi * En Güncel Fiyat)
-                    currentValue = currentValue.add(// En Güncel Fiyatla Çarp
-                            transactions.getQuantity().multiply(lastPrice));
-
-                    System.out.println("Satılmadı ve costBasis: " + costBasis + " Current Value: " + currentValue);
                 }
 
+                //Elde kalan adet
+                BigDecimal remainingQuantity = transactions.getQuantity().subtract(soldQuantity);
+
+                if (remainingQuantity.compareTo(BigDecimal.ZERO) > 0) {
+
+                    //Maliyet = Elde kalan adet * transaction alındığı zamanki fiyat
+                    costBasis = costBasis.add(remainingQuantity.multiply(transactions.getUnitPrice()));
+
+                    // Güncel değer = Kalan adet * en güncel fiyat
+                    BigDecimal lastPrice = lastPrices.get(transactions.getAssetSymbol());
+                    if (lastPrice != null) {
+                        currentValue = currentValue.add(remainingQuantity.multiply(lastPrice));
+                    }
+                }
             }
         }
+
         Positions newPosition = new Positions();
+        System.out.println("Güncel Maliyet: " + costBasis);
+        System.out.println("Güncel Değer: " + currentValue);
+        System.out.println("Profit Loss: " + currentValue.subtract(costBasis));
         newPosition.setAsset(asset);
         newPosition.setCostBasis(costBasis); // Maliyet --> Elde kalanlar * Maliyetleri
         newPosition.setCurrentValue(currentValue); // Elde Kalanlar * En sonuncu Altın Hise

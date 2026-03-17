@@ -25,8 +25,8 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems }) => {
 
     useEffect(() => {
 
-        console.log(GOLD_TYPES.map((goldType) => ({Name: `${goldType.value}ALTIN`, Buying: goldType.price})));
-        setGoldPrice(GOLD_TYPES.map((goldType) => ({Name: `${goldType.value}ALTIN`, Buying: goldType.price})))
+        console.log(GOLD_TYPES.map((goldType) => ({ Name: `${goldType.value}ALTIN`, Buying: goldType.price })));
+        setGoldPrice(GOLD_TYPES.map((goldType) => ({ Name: `${goldType.value}ALTIN`, Buying: goldType.price })))
         console.log("Satın Alım İşlemi İçin Altın Fiyatları Çekildi")
         // console.log(goldPrice)
 
@@ -64,11 +64,21 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems }) => {
 
     const updateGoldItem = (id, field, value) => {
         console.log(`Updating gold item ${id}: setting ${field} to ${value}`);
-        setGoldItems(
-            goldItems.map((item) =>
-                item.id === id ? { ...item, [field]: value, price: ["GRAM", "CEYREK", "YARIM", "TAM", "CUMHURIYET"].includes(value) ? goldPrice.find((data) => data.Name.split("ALTIN")[0] === value).Buying : item.price} : item
+        if (field !== "price") {
+            setGoldItems(
+                goldItems.map((item) =>
+                    item.id === id ? { ...item, [field]: value, price: ["GRAM", "CEYREK", "YARIM", "TAM", "CUMHURIYET"].includes(value) ? goldPrice.find((data) => data.Name.split("ALTIN")[0] === value).Buying : item.price } : item
+                )
+            );
+        }
+        else {
+            setGoldItems(
+                goldItems.map((item) =>
+                    item.id === id ? { ...item, [field]: value } : item)
             )
-        );
+
+
+        }
     };
 
     const calculateGoldTotal = () => {
@@ -213,7 +223,6 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems }) => {
                                     type="number"
                                     fullWidth
                                     value={item.price}
-                                    disabled
                                     onChange={(e) =>
                                         updateGoldItem(item.id, "price", e.target.value)
                                     }

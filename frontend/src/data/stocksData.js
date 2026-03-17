@@ -76,7 +76,7 @@ export const getStockCurrentValue = async () => {
   const stockItem = []
   await Promise.all(
     STOCKS.map(async (stock) => {
-      stockItem.push({ symbol: stock.symbol, value: await getStocksValue(stock.symbol) })
+      stockItem.push({ symbol: stock.symbol, value: await getStocksValueApi(stock.symbol) })
     })
   );
   return stockItem

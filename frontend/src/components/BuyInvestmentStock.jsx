@@ -48,11 +48,21 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems }) => {
 
     const updateStockItem = (id, field, value) => {
         console.log(`Updating stock item ${id}: setting ${field} to`, value);
-        setStockItems(
-            stockItems.map((item) =>
-                item.id === id ? { ...item, [field]: value, price: typeof value === "object" ? stockPrice.find((s) => s.symbol === value.symbol).value : item.price } : item
-            )
-        );
+        if (field === "price") {
+            setStockItems(
+                stockItems.map((item) =>
+                    item.id === id ? { ...item, [field]: value } : item
+                )
+            );
+        }
+        else {
+            setStockItems(
+                stockItems.map((item) =>
+                    item.id === id ? { ...item, [field]: value, price: typeof value === "object" ? stockPrice.find((s) => s.symbol === value.symbol).value : item.price } : item
+                )
+            );
+        }
+
     };
 
     const removeStockItem = (id) => {
@@ -217,7 +227,6 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems }) => {
                                         type="number"
                                         fullWidth
                                         value={item.price}
-                                        disabled
                                         onChange={(e) =>
                                             updateStockItem(item.id, "price", e.target.value)
                                         }
