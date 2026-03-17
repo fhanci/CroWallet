@@ -14,4 +14,5 @@ public class TransactionDTO {
     private BigDecimal quantity;
     private String assetName;
     private BigDecimal totalValue;
+    private BigDecimal currentValue;
 }

@@ -1,6 +1,8 @@
 package com.crowallet.backend.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -226,71 +228,156 @@ public class AssetService {
 
     @Transactional
     public UpdateTransaction updateAssetResponse(UpdateTransaction updateTransaction) {
-        Optional<Transactions> byId = transactionRepository.findById(updateTransaction.getTransactionId());
-        if (!byId.isPresent())
-            return null;
+        Transactions mainTransactions = transactionRepository.findById(updateTransaction.getTransactionId())
+                .orElseThrow(() -> new RuntimeException("Transaction Bulunamadı"));
 
-        // Transaction Güncellemesi
-        byId.get().setQuantity(updateTransaction.getUpdatedQuantity());
-        byId.get().setUnitPrice(updateTransaction.getUpdatedPurchasePrice());
-        byId.get().setTotalValue(byId.get().getQuantity().multiply(byId.get().getUnitPrice()));
-        byId.get().setTransactionType(TransactionType.UPDATE);
-        transactionRepository.save(byId.get());
+        
+        BigDecimal oldQuantity = mainTransactions.getQuantity();
+        BigDecimal oldPrice = mainTransactions.getUnitPrice();
 
-        // Position Güncellemesi
-        List<Transactions> byAssets = transactionRepository.findByAsset(byId.get().getAsset());
-        BigDecimal totalCostBasis = BigDecimal.ZERO;
-        for (Transactions transactions : byAssets) {
-            totalCostBasis = totalCostBasis.add(transactions.getTotalValue());
+        
+        BigDecimal totalSold = relatedTransactionsRepository.findBySourceTransactions(mainTransactions)
+                .stream().map(rt -> rt.getTargetTransactions().getQuantity())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (updateTransaction.getUpdatedQuantity().compareTo(totalSold) < 0) {
+            throw new RuntimeException("Hata: Yeni miktar satılan miktardan az olamaz!");
         }
-        Positions position = positionRepository.findByAsset(byId.get().getAsset());
-        position.setCostBasis(totalCostBasis);
-        position.setCurrentValue(totalCostBasis);
-        positionRepository.save(position);
 
-        updateTransaction.setQuantity(byId.get().getQuantity());
-        updateTransaction.setPurchasePrice(byId.get().getUnitPrice());
-        updateTransaction.setTotalValue(updateTransaction.getQuantity().add(updateTransaction.getPurchasePrice()));
+        // 2. TRANSACTION GÜNCELLE
+        mainTransactions.setQuantity(updateTransaction.getUpdatedQuantity());
+        mainTransactions.setUnitPrice(updateTransaction.getUpdatedPurchasePrice());
+        mainTransactions.setTransactionType(TransactionType.UPDATE);
+        transactionRepository.save(mainTransactions);
+
+        
+        //Satılmamış Adet
+        BigDecimal remainingQuantity = updateTransaction.getUpdatedQuantity().subtract(totalSold);
+
+        //Fiyat Farkı
+        BigDecimal oldCost = oldQuantity.subtract(totalSold).multiply(oldPrice);
+        BigDecimal newCost = remainingQuantity
+                .multiply(updateTransaction.getUpdatedPurchasePrice());
+        BigDecimal costDifference = newCost.subtract(oldCost);
+
+        // Güncel Değer Farkı
+        BigDecimal lastPrice = getLastPrices(List.of(mainTransactions)).get(mainTransactions.getAssetSymbol());
+        BigDecimal valueDifference = updateTransaction.getUpdatedQuantity().subtract(oldQuantity)
+                .multiply(lastPrice != null ? lastPrice : BigDecimal.ZERO);
+
+        List<Positions> affectedPositions = positionRepository.findAllByAssetAndCreatedDateGreaterThanEqual(
+                mainTransactions.getAsset(),
+                mainTransactions.getCreatedDate() // İşlemden sonraki pozisyonlar
+        );
+
+        for (Positions pos : affectedPositions) {
+            pos.setCostBasis(pos.getCostBasis().add(costDifference));
+            pos.setCurrentValue(pos.getCurrentValue().add(valueDifference));
+            pos.setProfitLoss(pos.getCurrentValue().subtract(pos.getCostBasis()));
+
+            positionRepository.save(pos);
+        }
+
         return updateTransaction;
     }
 
     @Transactional
     public Boolean deleteTransaction(AssetResponse assetResponse, Long transactionId) {
-        Optional<Transactions> byId = transactionRepository.findById(transactionId);
-        System.out.println("\n\nPAT1\n\n");
-        if (!byId.isPresent())
-            return false;
-        System.out.println("\n\nPAT2\n\n");
-        Transactions transaction = byId.get();
+        Transactions transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException("Transaction Bulunamadı"));
+
+        // İlgili Transaction (Buy ya da Create) Siliniyor.
         transactionRepository.delete(transaction);
-        System.out.println("\n\nPAT3\n\n");
+        transactionRepository.flush();
 
-        System.out.println("AccountID: " + assetResponse.getAccountId());
-        Optional<Asset> findAsset = assetRepository.findById(assetResponse.getAccountId());
-        if (!findAsset.isPresent())
-            return false;
-        System.out.println("\n\nPAT4\n\n");
-
-        List<Transactions> allTransactions = transactionRepository.findAllByAsset(findAsset.get());
-        BigDecimal sum = BigDecimal.ZERO;
-        System.out.println("\n\nPAT5\n\n");
-
-        for (Transactions transactions : allTransactions) {
-            sum = sum.add(transactions.getTotalValue());
+        // Buy ya da Create işlemi delete olduğu için related da sadece source'a
+        // bakıyoruz
+        // Targettaki transactionları ve relatedTransaction işlemini siliyoruz.
+        List<RelatedTransactions> bySourceTransactions = relatedTransactionsRepository
+                .findBySourceTransactions(transaction);
+        for (RelatedTransactions relatedTransactions : bySourceTransactions) {
+            transactionRepository.delete(relatedTransactions.getTargetTransactions());
+            relatedTransactionsRepository.delete(relatedTransactions);
         }
 
-        System.out.println("\n\nPAT6\n\n");
+        List<Positions> allPositions = positionRepository.findAllByAssetOrderByCreatedDateAsc(transaction.getAsset());
+        Map<String, BigDecimal> lastPrices = getLastPrices(
+                transactionRepository.findAllByAsset(transaction.getAsset()));
 
-        Positions position = positionRepository.findByAsset(findAsset.get());
-        position.setCostBasis(sum);
-        position.setCurrentValue(sum);
-        Positions savedPositions = positionRepository.save(position);
-        if (savedPositions.getCostBasis() == BigDecimal.ZERO) {
-            assetRepository.delete(findAsset.get());
-            positionRepository.delete(savedPositions);
+        LocalDateTime startOfTime = LocalDateTime.now().minusYears(60);
+        LocalDateTime controlTime = LocalDateTime.now().minusYears(60);
+        int controlFlag = 0;
+
+        for (Positions positions : allPositions) {
+            BigDecimal costBasis = BigDecimal.ZERO;
+            BigDecimal currentValue = BigDecimal.ZERO;
+
+            List<Transactions> historyCheck = transactionRepository
+                    .findAllByCreatedDateBetween(controlTime, positions.getCreatedDate());
+
+            // Demekki arada transaction yok. Haliyle işlem olmadığı için bu position'ın
+            // tutulmasına gerek yok
+            if (historyCheck.size() == 0) {
+                controlFlag += 1;
+                positionRepository.delete(positions);
+                continue;
+            }
+            List<Transactions> history = transactionRepository
+                    .findAllByCreatedDateBetween(startOfTime, positions.getCreatedDate());
+
+            for (Transactions t : history) {
+                if (t.getTransactionType() != TransactionType.SELL) {
+                    BigDecimal soldQuantity = relatedTransactionsRepository.findBySourceTransactions(t)
+                            .stream()
+                            .map(rt -> rt.getTargetTransactions().getQuantity())
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    BigDecimal remaining = t.getQuantity().subtract(soldQuantity);
+
+                    if (remaining.compareTo(BigDecimal.ZERO) > 0) {
+                        costBasis = costBasis.add(remaining.multiply(t.getUnitPrice()));
+                        BigDecimal lastPrice = lastPrices.get(t.getAssetSymbol());
+                        if (lastPrice != null) {
+                            currentValue = currentValue.add(remaining.multiply(lastPrice));
+                        }
+                    }
+                }
+            }
+
+            positions.setCostBasis(costBasis);
+            positions.setCurrentValue(currentValue);
+            positions.setProfitLoss(currentValue.subtract(costBasis));
+
+            if (costBasis.compareTo(BigDecimal.ZERO) == 0) {
+                positionRepository.delete(positions);
+            } else {
+                positionRepository.save(positions);
+            }
+
+            controlTime = positions.getCreatedDate();
         }
-        System.out.println("\n\nPAT7\n\n");
+
+        if (controlFlag == allPositions.size()) {
+            assetRepository.delete(transaction.getAsset());
+        }
         return true;
+    }
+
+    public Map<String, BigDecimal> getLastPrices(List<Transactions> allTransactionByAsset) {
+        Set<String> symbols = allTransactionByAsset.stream()
+                .map(Transactions::getAssetSymbol)
+                .collect(Collectors.toSet());
+
+        System.out.println("Semboller Burda");
+        System.out.println(symbols);
+        Map<String, BigDecimal> lastPrices = new HashMap<>();
+        for (String symbol : symbols) {
+            BigDecimal price = transactionRepository.findByAssetSymbolOrderByIdDesc(symbol)
+                    .get(0).getCurrentValue();
+            lastPrices.put(symbol, price);
+        }
+
+        return lastPrices;
     }
 
     public Positions createNewPositions(List<Transactions> allTransactionByAsset, Asset asset) {
@@ -301,10 +388,12 @@ public class AssetService {
                 .map(Transactions::getAssetSymbol)
                 .collect(Collectors.toSet());
 
+        System.out.println("Semboller Burda");
+        System.out.println(symbols);
         Map<String, BigDecimal> lastPrices = new HashMap<>();
         for (String symbol : symbols) {
             BigDecimal price = transactionRepository.findByAssetSymbolOrderByIdDesc(symbol)
-                    .get(0).getUnitPrice();
+                    .get(0).getCurrentValue();
             lastPrices.put(symbol, price);
         }
 
@@ -315,25 +404,25 @@ public class AssetService {
             TransactionType type = transactions.getTransactionType();
             if (type != TransactionType.SELL) {
 
-                //ilgili transaction üzerinden bir satış olmuş mu
+                // ilgili transaction üzerinden bir satış olmuş mu
                 List<RelatedTransactions> bySourceTransactions = relatedTransactionsRepository
                         .findBySourceTransactions(transactions);
 
                 BigDecimal soldQuantity = BigDecimal.ZERO;
 
-                //Eğer satış olduysa kaç adet satıldı hesaplanıyor
+                // Eğer satış olduysa kaç adet satıldı hesaplanıyor
                 if (bySourceTransactions != null) {
-                    for (RelatedTransactions sellingData : bySourceTransactions) {                        
+                    for (RelatedTransactions sellingData : bySourceTransactions) {
                         soldQuantity = soldQuantity.add(sellingData.getTargetTransactions().getQuantity());
                     }
                 }
 
-                //Elde kalan adet
+                // Elde kalan adet
                 BigDecimal remainingQuantity = transactions.getQuantity().subtract(soldQuantity);
 
                 if (remainingQuantity.compareTo(BigDecimal.ZERO) > 0) {
 
-                    //Maliyet = Elde kalan adet * transaction alındığı zamanki fiyat
+                    // Maliyet = Elde kalan adet * transaction alındığı zamanki fiyat
                     costBasis = costBasis.add(remainingQuantity.multiply(transactions.getUnitPrice()));
 
                     // Güncel değer = Kalan adet * en güncel fiyat
@@ -399,6 +488,7 @@ public class AssetService {
             transactions.setTotalValue(sellInvestmentRequest.getTotalPrice());
             transactions.setTransactionType(TransactionType.SELL);
             transactions.setUnitPrice(sellInvestmentRequest.getUnitPrice());
+            transactions.setCurrentValue(sellInvestmentRequest.getCurrentPrice());
             Transactions savedTransactions = transactionRepository.save(transactions);
 
             // Kimden Kime Satıldığı Loglandı

@@ -59,5 +59,9 @@ public class Transactions extends BaseEntity {
     @Column(name = "total-value")
     private BigDecimal totalValue;
 
+    @Column(name = "current_value")
+    private BigDecimal currentValue;
+
+
     
 }

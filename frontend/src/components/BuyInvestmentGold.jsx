@@ -64,6 +64,10 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems }) => {
 
     const updateGoldItem = (id, field, value) => {
         console.log(`Updating gold item ${id}: setting ${field} to ${value}`);
+
+        if (field === "price" || field === "quantity")
+            value = value < 0 ? value * -1 : value;
+
         if (field !== "price") {
             setGoldItems(
                 goldItems.map((item) =>

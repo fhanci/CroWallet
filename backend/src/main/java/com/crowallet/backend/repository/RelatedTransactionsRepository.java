@@ -11,4 +11,7 @@ import java.util.List;
 public interface RelatedTransactionsRepository extends JpaRepository<RelatedTransactions,Long>{
     List<RelatedTransactions> findBySourceTransactions(Transactions sourceTransactions);
     List<RelatedTransactions> findByTargetTransactions(Transactions targetTransactions);
+
+    void deleteAllBySourceTransactions(Transactions sourceTransactions);
+    void deleteAllByTargetTransactions(Transactions targetTransactions);
 }

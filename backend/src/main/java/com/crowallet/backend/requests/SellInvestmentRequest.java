@@ -14,4 +14,5 @@ public class SellInvestmentRequest {
     private Long transactionId;
     private BigDecimal unitPrice;
     private BigDecimal totalPrice;
+    private BigDecimal currentPrice;
 }

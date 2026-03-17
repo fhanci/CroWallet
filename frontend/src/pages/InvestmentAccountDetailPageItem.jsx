@@ -106,7 +106,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     ]);
 
     const [sellInvestmentList, setSellInvestmentList] = useState([
-        { key: 1, id: 1, assetName: "", quantity: 0, sellCount: 0, transactionId: 0, unitPrice: 0, totalPrice: 0 }
+        { key: 1, id: 1, assetName: "", quantity: 0, sellCount: 0, transactionId: 0, unitPrice: 0, totalPrice: 0, currentPrice: 0 }
     ])
 
     const sellInvestment = async () => {
@@ -119,6 +119,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
         // }
         // const data = await wait();
         // console.log("Satış listesi hazırlandı.\n" + JSON.stringify(data))
+        console.log("Satılacaklar Bunlar: " + JSON.stringify(sellInvestmentList))
         await sellTransaction(sellInvestmentList).unwrap();
         closeSellInvestmentDialog();
     }
@@ -133,7 +134,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
             const updatedData = sellInvestmentList.map((data) => {
                 if (data.id === id) {
                     const goldPriceData = goldPrice.find((data) => data.Name.split("ALTIN")[0] === itemData.assetSymbol).Buying
-                    return { ...data, transactionId: transactionId, quantity: itemData.quantity, assetName: itemData.assetName, sellCount: 0, unitPrice: goldPriceData, totalPrice: 0 }
+                    return { ...data, transactionId: transactionId, quantity: itemData.quantity, assetName: itemData.assetName, sellCount: 0, unitPrice: goldPriceData, currentPrice: goldPriceData, totalPrice: 0 }
                 }
                 return data
             })
@@ -147,7 +148,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
             const updatedData = sellInvestmentList.map((data) => {
                 if (data.id === id) {
                     const stockPriceData = stockPrice.find((data) => data.symbol === itemData.assetSymbol).value
-                    return { ...data, transactionId: transactionId, quantity: itemData.quantity, assetName: itemData.assetName, sellCount: 0, unitPrice: stockPriceData, totalPrice: 0 }
+                    return { ...data, transactionId: transactionId, quantity: itemData.quantity, assetName: itemData.assetName, sellCount: 0, unitPrice: stockPriceData, currentPrice: goldPriceData, totalPrice: 0 }
                 }
                 return data
             })
@@ -215,7 +216,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
         console.log(sellInvestmentList)
 
         const maxId = Math.max(...sellInvestmentList.map((data) => data.id));
-        const newItem = { key: maxId + 1, id: maxId + 1, assetName: "", quantity: 0, sellCount: 0, transactionId: 0, unitPrice: 0, totalPrice: 0 };
+        const newItem = { key: maxId + 1, id: maxId + 1, assetName: "", quantity: 0, sellCount: 0, transactionId: 0, unitPrice: 0, currentPrice: 0, totalPrice: 0 };
         const updateList = [...sellInvestmentList, newItem];
 
         setSellInvestmentList(updateList)
@@ -229,7 +230,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
             ? goldItems.map((goldItem) => {
                 const goldTypeInfo = GOLD_TYPES.find(
                     (g) => g.value === goldItem.goldType
-                );
+                )
                 return {
                     assetId: item[0].accountId,
                     transactionType: "BUY",
@@ -238,6 +239,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                     quantity: parseFloat(goldItem.quantity),
                     unitPrice: parseFloat(goldItem.price),
                     totalValue: parseFloat(goldItem.quantity) * parseFloat(goldItem.price),
+                    currentValue: parseFloat(goldTypeInfo.price)
                 };
             })
             : stockItems.map((stockItem) => ({
@@ -248,9 +250,10 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                 quantity: parseFloat(stockItem.quantity),
                 unitPrice: parseFloat(stockItem.price),
                 totalValue: parseFloat(stockItem.quantity) * parseFloat(stockItem.price),
+                currentValue: parseFloat(stockItem.stock.price)
 
             }));
-        { console.log(...holdings) }
+        console.log("Eklenmeden Önce Datalar: " + JSON.stringify(stockItems))
         await addHolding(holdings).unwrap();
         closeShowAddDialog();
     }
@@ -281,7 +284,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     const closeSellInvestmentDialog = () => {
         setShowSellDialog(false);
         setSellInvestmentList([
-            { key: 1, id: 1, assetName: "", quantity: 0, sellCount: 0, transactionId: 0, unitPrice: 0, totalPrice: 0 }]
+            { key: 1, id: 1, assetName: "", quantity: 0, sellCount: 0, transactionId: 0, unitPrice: 0, totalPrice: 0, currentPrice: 0 }]
         )
     }
 
@@ -587,7 +590,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                                     }}
                                     secondaryAction={
                                         <Box sx={{ display: "flex", gap: 1 }}>
-                                            <Tooltip title="Satın Al">
+                                            <Tooltip title="Item'ı Düzenle">
                                                 <IconButton
                                                     size="small"
                                                     onClick={() => handleEditClick(holding)}
@@ -596,7 +599,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                                                     <EditIcon fontSize="small" />
                                                 </IconButton>
                                             </Tooltip>
-                                            <Tooltip title="Sil">
+                                            <Tooltip title="Yanlışlıkla Alınan Item'ı Sil">
                                                 <IconButton
                                                     size="small"
                                                     color="warning"
@@ -627,69 +630,70 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                                     </ListItemIcon>
                                     <ListItemText
                                         primary={
-                                            <Typography sx={{ fontWeight: 500 }}>
+                                            <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", color: "text.primary" }}>
                                                 {getHoldingDisplayName(holding)}
                                             </Typography>
                                         }
                                         secondary={
+                                            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: 1 }}>
+                                                {/* Miktar Satırı */}
+                                                <Typography variant="body2" sx={{ color: "text.secondary", display: "flex", alignItems: "baseline", gap: 0.5 }}>
+                                                    Miktar:
+                                                    <Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
+                                                        {parseFloat(holding.quantity).toLocaleString("tr-TR")} {getQuantityUnit(holding)}
+                                                    </Box>
+                                                </Typography>
 
-                                            <Typography component={"div"} variant="body2" color="text.secondary">
-
-                                                <Box
-                                                    sx={{
-                                                        display: "flex",
-                                                        gap: 1,
-                                                        mt: 0.5,
-                                                        flexWrap: "wrap",
-
-                                                    }}
-                                                >
-                                                    <Typography component={"span"} variant="body2">
-                                                        Miktar:{" "}
-                                                        <strong>
-                                                            {parseFloat(holding.quantity).toLocaleString("tr-TR")}{" "}
-                                                            {getQuantityUnit(holding)}
-                                                        </strong>
+                                                {/* Fiyatlar Satırı */}
+                                                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                                                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                                        Maliyet: <Box component="span" sx={{ fontWeight: 600 }}>{formatCurrency(holding.purchasePrice)}</Box>
                                                     </Typography>
-                                                    <Typography component={"span"} variant="body2" color="text.secondary" sx={{
-                                                        display: "flex",
-                                                        gap: "5px"
-                                                    }}>
-                                                        Maliyet Fiyat:{" "}
-                                                        <strong>{formatCurrency(holding.purchasePrice)}</strong>
-
-                                                        Anlık Fiyat:{" "}
-                                                        <strong>{formatCurrency(holding.currentPrice)}</strong>
+                                                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                                        Anlık: <Box component="span" sx={{ fontWeight: 600, color: "info.main" }}>{formatCurrency(holding.currentPrice)}</Box>
                                                     </Typography>
-
-
                                                 </Box>
-
-                                            </Typography>
-
-
+                                            </Box>
                                         }
                                     />
-                                    <Box sx={{ textAlign: "left", mr: "10%", }}>
-                                        <Typography sx={{ fontWeight: 600, color: themeColor }}>
-                                            Toplam Değer: {formatCurrency(holding.quantity * holding.currentPrice)}
+
+                                    <Box sx={{ textAlign: "center", minWidth: "fit-content", ml: 2 }}>
+                                        {/* Toplam Değer */}
+                                        <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "text.primary" }}>
+                                            {formatCurrency(holding.quantity * holding.currentPrice)}
                                         </Typography>
-                                        <Typography sx={{ fontWeight: 600, color: themeColor }}>
-                                            Maliyet Tutarı: {formatCurrency(holding.quantity * holding.purchasePrice)}
+
+                                        {/* Maliyet Tutarı */}
+                                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 1 }}>
+                                            Maliyet: {formatCurrency(holding.quantity * holding.purchasePrice)}
                                         </Typography>
-                                        <Typography
-                                            variant="body2"
-                                            sx={{
-                                                color:
-                                                    parseFloat((holding.currentPrice * holding.quantity) - (holding.purchasePrice * holding.quantity)) >= 0
-                                                        ? "#4caf50"
-                                                        : "#f44336",
-                                            }}
-                                        >
-                                            {parseFloat((holding.currentPrice * holding.quantity) - (holding.purchasePrice * holding.quantity)) >= 0 ? "+ Kar " : "- Zarar "}
-                                            {formatCurrency((holding.currentPrice * holding.quantity) - (holding.purchasePrice * holding.quantity))}
-                                        </Typography>
+
+                                        {/* Kar/Zarar Rozeti */}
+                                        {(() => {
+                                            const profit = (holding.currentPrice * holding.quantity) - (holding.purchasePrice * holding.quantity);
+                                            const isProfit = profit >= 0;
+
+                                            return (
+                                                <Box
+                                                    sx={{
+                                                        display: "inline-flex",
+                                                        alignItems: "center",
+                                                        px: 1.5,
+                                                        py: 0.5,
+                                                        borderRadius: "6px",
+                                                        backgroundColor: isProfit ? "rgba(76, 175, 80, 0.1)" : "rgba(244, 67, 54, 0.1)",
+                                                        color: isProfit ? "#2e7d32" : "#d32f2f",
+                                                        fontWeight: 700,
+                                                        fontSize: "0.75rem",
+                                                        border: `1px solid ${isProfit ? "#4caf50" : "#f44336"}`
+                                                    }}
+                                                >
+                                                    {isProfit ? "▲" : "▼"} {isProfit ? "Kâr" : "Zarar"} {formatCurrency(Math.abs(profit))}
+                                                </Box>
+                                            );
+                                        })()}
                                     </Box>
+
                                 </ListItem>
                                 {index < item.length - 1 && <Divider />}
                             </React.Fragment>

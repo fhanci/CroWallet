@@ -34,10 +34,10 @@ public class Asset extends BaseEntity{
     @Enumerated(EnumType.STRING)
     private AccountType accountType;
 
-    // For CURRENCY accounts: BANK or CASH
-    @Enumerated(EnumType.STRING)
-    @Column(name = "holding_type", nullable = true)
-    private HoldingType holdingType;    
+    // // For CURRENCY accounts: BANK or CASH
+    // @Enumerated(EnumType.STRING)
+    // @Column(name = "holding_type", nullable = true)
+    // private HoldingType holdingType;    
     
     // For INVESTMENT accounts: STOCK or GOLD
     @Enumerated(EnumType.STRING)

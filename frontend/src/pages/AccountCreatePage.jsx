@@ -320,7 +320,8 @@ const AccountCreatePage = () => {
               assetSymbol: item.goldType,
               unitPrice: parseFloat(item.price),
               quantity: parseFloat(item.quantity),
-              assetName: goldTypeInfo?.label || item.goldType
+              assetName: goldTypeInfo?.label || item.goldType,
+              currentValue: parseFloat(goldTypeInfo.price)
 
             };
           })
@@ -331,6 +332,7 @@ const AccountCreatePage = () => {
             quantity: parseFloat(item.quantity),
             unitPrice: parseFloat(item.price),
             assetName: item.stock.name,
+            currentValue: parseFloat(item.stock.price)
           }));
 
 
@@ -344,11 +346,12 @@ const AccountCreatePage = () => {
         )
 
 
+        console.log("Burası çokemelli: " + JSON.stringify(holdings2))
         await axios.post(`${backendUrl}/api/asset/create-position`, {
           assetId: response.data,
           costBasis: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.unitPrice), 0),
-          currentValue: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.unitPrice), 0),
-          profitLoss: 0
+          currentValue: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.currentValue), 0),
+          profitLoss: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.currentValue), 0) - holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.unitPrice), 0)
         }, {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
