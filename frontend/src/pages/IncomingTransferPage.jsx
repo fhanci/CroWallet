@@ -51,19 +51,28 @@ const IncomingTransferPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await axios.get(
-          `${backendUrl}/api/accounts/get/${user.id}`,
+        // const res = await axios.get(
+        //   `${backendUrl}/api/accounts/get/${user.id}`,
+        //   {
+        //     headers: {
+        //       Authorization: token ? `Bearer ${token}` : undefined,
+        //     },
+        //   }
+        // );
+        // // Only show CURRENCY type accounts
+        // const currencyAccounts = res.data.filter(
+        //   acc => !acc.accountType || acc.accountType === "CURRENCY"
+        // );
+
+        const currencyAccounts = await axios.get(
+          `${backendUrl}/api/accounts/get-money-accounts?userId=${user.id}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
             },
           }
-        );
-        // Only show CURRENCY type accounts
-        const currencyAccounts = res.data.filter(
-          acc => !acc.accountType || acc.accountType === "CURRENCY"
-        );
-        setAccounts(currencyAccounts);
+        )
+        setAccounts(currencyAccounts.data);
       } catch (err) {
         console.error("Hesaplar alınamadı:", err);
       }
@@ -97,8 +106,8 @@ const IncomingTransferPage = () => {
 
   const handleSubmit = async () => {
     // Determine final category
-    const finalCategory = selectedTransfer.category === "Diğer" 
-      ? customCategory 
+    const finalCategory = selectedTransfer.category === "Diğer"
+      ? customCategory
       : selectedTransfer.category;
 
     if (
@@ -148,10 +157,29 @@ const IncomingTransferPage = () => {
       updateDate: createDate,
     };
 
+    const updatedAccount2 = {
+      ...selectedTransferAccount,
+      balance: currentBalance + amount,
+    };
+
+    console.log("selectedTransferAccount")
+    console.log(updatedAccount2)
+
     try {
       await axios.post(
         `${backendUrl}/api/transfers/create`,
         transferPayload,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      await axios.put(
+        `${backendUrl}/api/accounts/update-money-account`,
+        updatedAccount2,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
@@ -223,13 +251,13 @@ const IncomingTransferPage = () => {
               }
               sx={{ borderRadius: 2 }}
             >
-              {accounts.map((account) => (
+              {accounts.map((account, index) => (
                 <MenuItem key={account.id} value={account.id}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
                     <span>{account.accountName}</span>
-                    <Chip 
-                      label={`${account.balance} ${account.currency}`} 
-                      size="small" 
+                    <Chip
+                      label={`${account.balance} ${account.currency}`}
+                      size="small"
                       sx={{ ml: "auto" }}
                     />
                   </Box>
@@ -267,10 +295,10 @@ const IncomingTransferPage = () => {
 
           {/* Balance preview */}
           {newBalance !== null && selectedTransfer.amount && (
-            <Box sx={{ 
-              bgcolor: "success.light", 
-              p: 2, 
-              borderRadius: 2, 
+            <Box sx={{
+              bgcolor: "success.light",
+              p: 2,
+              borderRadius: 2,
               mb: 2,
               opacity: 0.9
             }}>
@@ -366,8 +394,8 @@ const IncomingTransferPage = () => {
           )}
 
           <Box display="flex" gap={2} mt={3}>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               onClick={() => navigate("/transfer")}
               sx={{ flex: 1, borderRadius: 2 }}
             >

@@ -6,6 +6,9 @@ import com.crowallet.backend.entity.User;
 import com.crowallet.backend.dto.AccountSummaryDTO;
 import com.crowallet.backend.dto.CreateInvestmentAccountDTO;
 import com.crowallet.backend.dto.InvestmentHoldingDTO;
+import com.crowallet.backend.dto.MoneyAccountRequestDTO;
+import com.crowallet.backend.dto.MoneyAccountResponseDTO;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -15,9 +18,19 @@ import java.util.List;
 import java.util.Map;
 
 import com.crowallet.backend.service.AccountService;
-import com.crowallet.backend.repository.UserRepository;;
+import com.crowallet.backend.repository.UserRepository;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
+
+;
 
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping("/api/accounts")
 public class AccountController {
 
@@ -34,7 +47,7 @@ public class AccountController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getMe(Authentication authentication) {
+    public ResponseEntity<Long> getMe(Authentication authentication) {
         String username = authentication.getName();
 
         User user = userRepository.findByUsername(username).orElseThrow();
@@ -86,6 +99,31 @@ public class AccountController {
     public AccountDTO createAccount(@RequestBody AccountDTO account) {
         return accountService.createAccount(account);
     }
+
+    @PostMapping("/create-money-account")
+    public ResponseEntity<MoneyAccountResponseDTO> createMoneyAccount(@RequestBody MoneyAccountRequestDTO moneyAccountRequestDTO) {        
+        MoneyAccountResponseDTO moneyAccounts = accountService.createMoneyAccount(moneyAccountRequestDTO);
+        return ResponseEntity.ok(moneyAccounts);
+    }
+
+    @GetMapping("/get-money-accounts")
+    public ResponseEntity<List<MoneyAccountResponseDTO>> getMethodName(@RequestParam(required = true) Long userId) {
+        List<MoneyAccountResponseDTO> moneyAccounts = accountService.getMoneyAccount(userId);
+        return ResponseEntity.ok(moneyAccounts);
+    }
+
+    @PutMapping("/update-money-account")
+    public ResponseEntity<MoneyAccountResponseDTO> updateMoneyAccount(@RequestBody MoneyAccountResponseDTO moneyAccountResponseDTO) {
+        MoneyAccountResponseDTO updateMoneyAccount = accountService.updateMoneyAccount(moneyAccountResponseDTO);
+        return ResponseEntity.ok(updateMoneyAccount);
+    }
+    
+    @GetMapping("/get-money-account")
+    public ResponseEntity<MoneyAccountResponseDTO> getMoneyAccountById(@RequestParam Long moneyAccountId) {
+        MoneyAccountResponseDTO moneyAccountById = accountService.getMoneyAccountById(moneyAccountId);
+        return ResponseEntity.ok(moneyAccountById);        
+    }   
+    
 
     // Create investment account with multiple holdings
     @PostMapping("/create-investment")

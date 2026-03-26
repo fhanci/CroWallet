@@ -41,7 +41,9 @@ import { BuyInvestmentGold } from "../components/BuyInvestmentGold";
 import { GOLD_TYPES } from "../data/goldData";
 import { BuyInvestmentStock } from "../components/BuyInvestmentStock";
 import Marquee from "react-fast-marquee";
-import { getStocksValue, getStocksValueApi, STOCKS } from "../data/stocksData";
+import { getStocksValueApi, STOCKS } from "../data/stocksData";
+import { exchangeRates } from "../data/currencies";
+import { useUser } from "../config/UserStore";
 
 
 
@@ -92,6 +94,12 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     //Stock Price
     const [stockPrice, setStockPrice] = useState([])
 
+    const [selectedMoneyAccount, setSelectedMoneyAccount] = useState(0)
+    const [exchangeRate, setExchangeRate] = useState({})
+    const [isButtonDisabled, setIsButtonDisabled] = useState(true);
+
+    const { user } = useUser();
+
 
 
     const isGold = (title == "Altın")
@@ -110,15 +118,6 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     ])
 
     const sellInvestment = async () => {
-        // const wait = async () => {
-        //     const data = sellInvestmentList.map((data) => ({ ...data, unitPrice: 30000, totalPrice: data.sellCount * 30000 }));
-        //     setSellInvestmentList(data)
-        //     console.log("Data burda: " + JSON.stringify(data))
-        //     console.log("setSellInvestmentList burda: " + JSON.stringify(sellInvestmentList))
-        //     return data;
-        // }
-        // const data = await wait();
-        // console.log("Satış listesi hazırlandı.\n" + JSON.stringify(data))
         console.log("Satılacaklar Bunlar: " + JSON.stringify(sellInvestmentList))
         await sellTransaction(sellInvestmentList).unwrap();
         closeSellInvestmentDialog();
@@ -225,7 +224,81 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
         console.log(sellInvestmentList)
     }
 
+    const getTotalPrice = () => {
+
+        let totalPrice;
+        if (title === "Altın") {
+            totalPrice = goldItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
+        }
+        else if (title === "Yatırım") {
+            totalPrice = stockItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
+        }
+
+        return totalPrice;
+    }
+
+
+
     const addInvestment = async () => {
+
+        const selectedAccount = await getAccountDetailInfo();
+
+        console.log(selectedAccount)
+
+        const nowTime = new Date().toISOString()
+        //TRANSFER APILACAK 
+        const transferPayload = {
+            type: "outgoing",            
+            account: { id: parseInt(selectedAccount.id) },
+            user: { id: user.id },
+            outputPreviousBalance: selectedAccount.balance,
+            outputNextBalance: selectedAccount.balance - getTotalPrice(),
+            exchangeRate: 1,
+            date: nowTime,
+            description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
+            createDate: nowTime,
+            category: "Satın Alım",
+            amount: getTotalPrice(),
+        };
+
+        const updatedAccount = {
+            ...selectedAccount,
+            balance: selectedAccount.balance - getTotalPrice(),
+        };
+
+        try {
+            await axios.post(
+                `${backendUrl}/api/transfers/create`,
+                transferPayload,
+                {
+                    headers: {
+                        Authorization: token ? `Bearer ${token}` : undefined,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            await axios.put(
+                `${backendUrl}/api/accounts/update-money-account`,
+                updatedAccount,
+                {
+                    headers: {
+                        Authorization: token ? `Bearer ${token}` : undefined,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+        }
+        catch (err) {
+            console.error("Transfer hatası:", err);
+            setError("Bir hata oluştu, lütfen tekrar deneyin.");
+        }
+
+
+
+
+
+
         const holdings = item[0].assetType === "GOLD"
             ? goldItems.map((goldItem) => {
                 const goldTypeInfo = GOLD_TYPES.find(
@@ -263,15 +336,91 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
         setShowAddDialog(false);
         setGoldItems([{ id: 1, goldType: "", quantity: "", price: "" },])
         setStockItems([{ id: 1, stock: "", quantity: "", price: "" },])
+        setSelectedMoneyAccount(0);
     }
 
-    const checkItemsGold = () => {
-        return !goldItems.every((goldData) => goldData.goldType !== "" && goldData.price !== "" && goldData.price !== 0 && goldData.quantity !== "")
+    const getAccountDetailInfo = async () => {
+        const response = await axios.get(
+            `${backendUrl}/api/accounts/get-money-account?moneyAccountId=${selectedMoneyAccount}`,
+            {
+                headers:
+                {
+                    Authorization: token ? `Bearer ${token}` : undefined,
+                },
+            }
+        );
+        return response.data
     }
 
-    const checkItemsStock = () => {
-        return !stockItems.every((stockData) => stockData.price !== "" && stockData.price !== 0 && stockData.quantity !== "" && stockData.quantity !== 0 && stockData.stock !== "")
-    }
+    useEffect(() => {
+        const validate = async () => {
+            if (!selectedMoneyAccount || selectedMoneyAccount === "0") {
+                setIsButtonDisabled(true);
+                return;
+            }
+
+            try {
+                const accountDetail = await getAccountDetailInfo();
+                const pay = accountDetail.currency === "TRY"
+                    ? accountDetail.balance
+                    : accountDetail.balance * (exchangeRate[accountDetail.currency]?.Buying || 0);
+
+
+                let totalPrice = 0;
+                let fieldsValid = false;
+
+                if (title === "Altın") {
+                    totalPrice = goldItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
+
+
+                    fieldsValid = goldItems.every((goldData) =>
+                        goldData.goldType !== "" &&
+                        goldData.price > 0 &&
+                        goldData.quantity > 0
+                    );
+
+                }
+                else if (title === "Yatırım") {
+                    totalPrice = stockItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
+
+                    fieldsValid = stockItems.every((stockData) =>
+                        stockData.price !== "" &&
+                        stockData.price !== 0 &&
+                        stockData.quantity !== "" &&
+                        stockData.quantity !== 0 &&
+                        stockData.stock !== ""
+                    )
+                }
+
+                setIsButtonDisabled((totalPrice > pay) || !fieldsValid);
+            } catch (error) {
+                console.error("Hesap detayı alınamadı", error);
+                setIsButtonDisabled(true);
+            }
+        };
+
+        validate();
+    }, [selectedMoneyAccount, goldItems, stockItems, exchangeRate]);
+
+
+
+    // const checkItemsGold = async () => {
+    //     if (selectedMoneyAccount !== 0) {
+    //         const accountDetail = await getAccountDetailInfo();
+    //         console.log("Dönen Data");
+    //         console.log(accountDetail)
+    //         const pay = accountDetail.currency === "TRY" ? accountDetail.balance : accountDetail.balance * (exchangeRate[accountDetail.currency]?.Buying || 0)
+    //         console.log("pay");
+    //         console.log(pay)
+    //         console.log((goldItems.reduce(((start, cur) => (cur.price * cur.quantity) + start), 0) > pay) || !goldItems.every((goldData) => goldData.goldType !== "" && goldData.price !== "" && goldData.price !== 0 && goldData.quantity !== ""))
+    //         return (goldItems.reduce(((start, cur) => (cur.price * cur.quantity) + start), 0) > pay) || !goldItems.every((goldData) => goldData.goldType !== "" && goldData.price !== "" && goldData.price !== 0 && goldData.quantity !== "")
+    //     }
+    //     return true;
+    // }
+
+    // const checkItemsStock = () => {
+    //     return selectedMoneyAccount === 0 || !stockItems.every((stockData) => stockData.price !== "" && stockData.price !== 0 && stockData.quantity !== "" && stockData.quantity !== 0 && stockData.stock !== "")
+    // }
 
     const openShowAddDialog = () => {
         setShowAddDialog(true);
@@ -429,6 +578,20 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
         (sum, currentValue) => sum + parseFloat(currentValue.purchasePrice - currentValue.currentPrice || 0),
         0);
 
+
+
+    useEffect(() => {
+        const getMoneyAccountOfPerson = async () => {
+
+            const exchangeRates2 = await exchangeRates();
+            console.log("Kur Fiyatları")
+            console.log(exchangeRates2);
+            setExchangeRate(exchangeRates2)
+        }
+
+        getMoneyAccountOfPerson();
+
+    }, [])
 
 
 
@@ -707,11 +870,12 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
             {/* */}
 
             <Dialog onClose={closeShowAddDialog} open={showAddDialog}>
-                {item[0].assetType === "GOLD" ? <BuyInvestmentGold goldItems={goldItems} setGoldItems={setGoldItems}></BuyInvestmentGold> :
-                    item[0].assetType === "STOCK" ? <BuyInvestmentStock stockItems={stockItems} setStockItems={setStockItems}></BuyInvestmentStock> : ""}
+                {item[0].assetType === "GOLD" ? <BuyInvestmentGold goldItems={goldItems} setGoldItems={setGoldItems} setSelectedMoneyAccount={setSelectedMoneyAccount} selectedMoneyAccount={selectedMoneyAccount}></BuyInvestmentGold> :
+                    item[0].assetType === "STOCK" ? <BuyInvestmentStock stockItems={stockItems} setStockItems={setStockItems} setSelectedMoneyAccount={setSelectedMoneyAccount} selectedMoneyAccount={selectedMoneyAccount} ></BuyInvestmentStock> : ""}
                 <DialogActions>
                     <Button onClick={closeShowAddDialog} sx={{ color: "red", ":hover": { color: "black" } }}>Kapat</Button>
-                    <Button type="button" sx={{ color: "green" }} onClick={addInvestment} disabled={item[0].assetType === "GOLD" ? checkItemsGold() : checkItemsStock()}>
+                    <Button type="button" sx={{ color: "green" }} onClick={addInvestment} disabled={isButtonDisabled}>
+                        {/* <Button type="button" sx={{ color: "green" }} onClick={addInvestment} disabled={item[0].assetType === "GOLD" ? checkItemsGold() : checkItemsStock()}> */}
                         Satın Al
                     </Button>
                 </DialogActions>

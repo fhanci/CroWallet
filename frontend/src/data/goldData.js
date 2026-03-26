@@ -15,9 +15,9 @@ export const getGoldCurrentValue = async () => {
   const response = await axios.get('https://finans.truncgil.com/v4/today.json');
   const goldPrices = (Object.entries(response.data).filter(([key]) => goldTypeKey.includes(key)).map(data => data[1]))
   // setGoldPrice(goldPrices)
-  // console.log("Bulunan Altın Fiyatları: ")
-  // console.log(goldPrices)
-  GOLD_TYPES.map((goldType) => goldType.price = goldPrices.find((data) => data.Name.split("ALTIN")[0] === goldType.value)?.Buying);
+  console.log("Bulunan Altın Fiyatları: ")
+  console.log(goldPrices)
+  GOLD_TYPES.map((goldType) => goldType.price = goldPrices.find((data) => data.Name.split("ALTIN")[0] === goldType.value)?.Selling);
   return GOLD_TYPES.map((goldType) => ({Name: `${goldType.value}ALTIN`, Buying: goldType.price }));
   // console.log("Altın Fiyatları Güncellendi")
   // console.log(GOLD_TYPES)

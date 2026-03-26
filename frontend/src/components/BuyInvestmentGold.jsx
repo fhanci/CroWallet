@@ -1,18 +1,17 @@
-import React, { useEffect, useState } from 'react'
-import { Button, Box, Fade, TextField, Typography, ToggleButtonGroup, Card, CardContent, IconButton, ToggleButton, Paper, FormControl, InputLabel, Select, MenuItem, InputAdornment } from '@mui/material'
+import { useEffect, useState } from 'react'
+import { Button, Box, Fade, TextField, Typography, FormLabel, RadioGroup, FormControlLabel, Radio, Card, CardContent, IconButton, Paper, FormControl, InputLabel, Select, MenuItem, InputAdornment } from '@mui/material'
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
-import ShowChartIcon from "@mui/icons-material/ShowChart";
-import { GOLD_TYPES } from '../data/goldData';
-import { STOCKS } from "../data/stocksData"
+import { getGoldCurrentValue, GOLD_TYPES } from '../data/goldData';
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
-import SearchIcon from "@mui/icons-material/Search";
 import { useTheme } from "../config/ThemeContext";
 import axios from 'axios';
 import Marquee from "react-fast-marquee";
+import { backendUrl } from '../utils/envVariables';
+import { exchangeRates } from '../data/currencies';
 
 
-export const BuyInvestmentGold = ({ goldItems, setGoldItems }) => {
+export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAccount, selectedMoneyAccount }) => {
 
     const { isDarkMode } = useTheme();
 
@@ -21,22 +20,38 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems }) => {
     // Check if we can add more gold types
     const canAddMoreGold = goldItems.length < GOLD_TYPES.length;
     const [goldPrice, setGoldPrice] = useState([])
-    const goldTypeKey = ["GRA", "CEYREKALTIN", "YARIMALTIN", "TAMALTIN", "CUMHURIYETALTINI"]
+    // const goldTypeKey = ["GRA", "CEYREKALTIN", "YARIMALTIN", "TAMALTIN", "CUMHURIYETALTINI"]
+    const token = localStorage.getItem("token");
 
+    // const [selectedMoneyAccount, setSelectedMoneyAccount] = useState(0)
+    const [moneyAccountPersons, setMoneyAccountPersons] = useState([{}])
+    const [exchangeRate, setExchangeRate] = useState({})
+
+    //BU
+    const [getPrices, setGetPrices] = useState(false)
+
+    //BU
     useEffect(() => {
+        console.log("Altın Fiyatları Güncellendi")
+        console.log(goldPrice)
+    }, [goldPrice])
 
-        console.log(GOLD_TYPES.map((goldType) => ({ Name: `${goldType.value}ALTIN`, Buying: goldType.price })));
-        setGoldPrice(GOLD_TYPES.map((goldType) => ({ Name: `${goldType.value}ALTIN`, Buying: goldType.price })))
-        console.log("Satın Alım İşlemi İçin Altın Fiyatları Çekildi")
-        // console.log(goldPrice)
-
-        // axios.get('https://finans.truncgil.com/v4/today.json')
-        //     .then(response => {
-        //         const goldPrices = (Object.entries(response.data).filter(([key]) => goldTypeKey.includes(key)).map(data => data[1]))
-        //         setGoldPrice(goldPrices)
-        //     })
-        //     .catch(error => console.error(error));
+    //BU
+    useEffect(() => {
+        setGetPrices(true);
     }, [])
+
+    //BU
+    useEffect(() => {
+        if (!getPrices) return;
+
+        const updateAllPrices = async () => {
+            const goldData = await getGoldCurrentValue();
+            setGoldPrice([...goldData]);
+            setGetPrices(false);
+        };
+        updateAllPrices();
+    }, [getPrices]);
 
     // Get available gold types (exclude already selected)
     const getAvailableGoldTypes = (currentItemId) => {
@@ -94,7 +109,52 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems }) => {
         }, 0);
     };
 
-    ////////////////////////////////////////////////// STOCKS //////////////////////////////////////////////////
+
+    const showMoneytoLocalString = (money) => {
+        return money.toLocaleString("tr-TR", { minimumFractionDigits: 2, })
+    }
+
+
+    useEffect(() => {
+        getMoneyAccountOfPerson();
+    }, [])
+
+    useEffect(() => {
+        console.log("Seçili Olan Hesap Değişti")
+        console.log(selectedMoneyAccount)
+    }, [selectedMoneyAccount])
+
+    const getMoneyAccountOfPerson = async () => {
+
+        const exchangeRates2 = await exchangeRates();
+        console.log("Kur Fiyatları")
+        console.log(exchangeRates2);
+        setExchangeRate(exchangeRates2)
+
+
+        const response = await axios.get(
+            `${backendUrl}/api/accounts/me`,
+            {
+                headers: {
+                    Authorization: token ? `Bearer ${token}` : undefined,
+                    "Content-Type": "application/json",
+                },
+            }
+        )
+
+        const responseMoneyAccount = await axios.get(
+            `${backendUrl}/api/accounts/get-money-accounts?userId=${response.data}`,
+            {
+                headers: {
+                    Authorization: token ? `Bearer ${token}` : undefined,
+                    "Content-Type": "application/json",
+                },
+            }
+        )
+
+        setMoneyAccountPersons(responseMoneyAccount.data);
+        console.log(moneyAccountPersons)
+    }
 
 
 
@@ -307,9 +367,16 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems }) => {
                                 border: "2px solid #d4af37",
                                 borderRadius: 2,
                                 mb: 2,
+
                             }}
                         >
-                            <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
+                            <CardContent sx={{
+                                py: 1.5,
+                                "&:last-child": { pb: 1.5 },
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "1rem"
+                            }}>
                                 <Box
                                     sx={{
                                         display: "flex",
@@ -330,6 +397,116 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems }) => {
                                         })}
                                     </Typography>
                                 </Box>
+
+                                {moneyAccountPersons.length === 0 ?
+                                    <Typography
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: 1.5,
+                                            p: 2,
+                                            my: 2,
+                                            border: "1px solid",
+                                            borderColor: 'error.light', 
+                                            borderRadius: "12px",
+                                            textAlign: "center",
+                                            color: "error.main",
+                                            bgcolor: "#fff5f5", 
+                                            fontWeight: '500',
+                                            fontSize: '0.95rem',
+                                            boxShadow: '0 2px 8px rgba(211, 47, 47, 0.1)', 
+                                            fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                                        }}
+                                    >
+                                    
+                                        <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                                        Lütfen öncelikle bir banka/para hesabı ekleyiniz. Aksi halde işleme devam edilemeyecektir.
+                                    </Typography>
+                                    : <FormControl component="fieldset" sx={{ width: '100%' }}>
+                                        <FormLabel id="selectMoneyAccount" sx={{ fontWeight: 'bold', mb: 2, color: 'text.primary' }}>
+                                            Banka Hesap Seçimi
+                                        </FormLabel>
+                                        <RadioGroup
+                                            aria-labelledby="selectMoneyAccount"
+                                            name="radio-buttons-group"
+                                            value={selectedMoneyAccount || ""}
+                                            onChange={(e) => setSelectedMoneyAccount(e.target.value)}
+                                        >
+                                            {moneyAccountPersons.map((data) => {
+                                                const isInsufficient = data.currency !== "TRY"
+                                                    ? (data.balance * (exchangeRate[data.currency]?.Buying || 0)) < calculateGoldTotal()
+                                                    : data.balance < calculateGoldTotal();
+
+                                                // Seçili olanı kontrol et (Vurgulamak için)
+                                                const isSelected = selectedMoneyAccount === String(data.id);
+
+                                                return (
+                                                    <FormControlLabel
+                                                        key={data.id}
+                                                        value={data.id}
+                                                        control={<Radio sx={{ display: 'none' }} />} // Radyo butonunu gizleyip kartı buton yapıyoruz
+                                                        sx={{
+                                                            margin: '0.5rem 0',
+                                                            width: '100%',
+                                                            border: '2px solid',
+                                                            borderColor: isSelected ? 'primary.main' : 'divider',
+                                                            borderRadius: '12px',
+                                                            padding: '12px 16px',
+                                                            transition: 'all 0.2s ease',
+                                                            backgroundColor: isSelected ? 'action.selected' : 'background.paper',
+                                                            '&:hover': {
+                                                                borderColor: 'primary.light',
+                                                                transform: 'translateY(-2px)',
+                                                                boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                                                            },
+                                                            // Label kısmını tüm genişliğe yay
+                                                            '& .MuiFormControlLabel-label': {
+                                                                width: '100%',
+                                                                fontFamily: 'monospace',
+                                                                whiteSpace: 'pre-wrap', // Alt satıra geçebilmesi için
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                gap: '4px'
+                                                            }
+                                                        }}
+                                                        label={
+                                                            <>
+                                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                    <Typography sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
+                                                                        {data.accountName.toUpperCase()}
+                                                                    </Typography>
+                                                                    <Typography sx={{
+                                                                        color: isInsufficient ? 'error.main' : 'success.main',
+                                                                        fontWeight: 'bold',
+                                                                        fontSize: '0.9rem',
+                                                                        bgcolor: isInsufficient ? '#ffebee' : '#e8f5e9',
+                                                                        px: 1, borderRadius: 1
+                                                                    }}>
+                                                                        {isInsufficient ? "Yetersiz Bakiye" : "Bakiye Uygun"}
+                                                                    </Typography>
+                                                                </Box>
+
+                                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, opacity: 0.8 }}>
+                                                                    <span>Tür: {data.currency}</span>
+                                                                    <span>Bakiye: {showMoneytoLocalString(data.balance)} {data.currency === "TRY" ? "₺" : data.currency === "EUR" ? "€" : "$"}</span>
+                                                                </Box>
+
+                                                                {data.currency !== "TRY" && (
+                                                                    <Box sx={{ textAlign: 'right', mt: 0.5, fontStyle: 'italic', fontSize: '0.8rem' }}>
+                                                                        TL Karşılığı: {showMoneytoLocalString(data.balance * (exchangeRate[data.currency]?.Buying || 0))} ₺
+                                                                    </Box>
+                                                                )}
+                                                            </>
+                                                        }
+                                                    />
+                                                );
+                                            })}
+                                        </RadioGroup>
+                                    </FormControl>}
+
+
+
                             </CardContent>
                         </Card>
                     )}
