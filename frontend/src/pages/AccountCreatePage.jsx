@@ -301,7 +301,7 @@ const AccountCreatePage = () => {
     return false;
   };
 
-  const getTotalPrice = () => {
+  const getTotalPrice = async (selectedAccount) => {
 
     let totalPrice;
     if (assetType === "GOLD") {
@@ -311,6 +311,17 @@ const AccountCreatePage = () => {
       totalPrice = stockItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
     }
 
+    console.log("SelectedAccount")
+    console.log(await exchangeRates())
+
+    if (selectedAccount.currency === "EUR") {
+      totalPrice = totalPrice / (await exchangeRates()).EUR.Selling
+      console.log("Bu bir EURO hesabı olduğu için para birimi düşme işlemi buna göre yapıdlı")
+    }
+    else if (selectedAccount.currency === "USD") {
+      totalPrice = totalPrice / (await exchangeRates()).USD.Selling
+      console.log("Bu bir USD hesabı olduğu için para birimi düşme işlemi buna göre yapıdlı")
+    }
     return totalPrice;
   }
 
@@ -391,18 +402,18 @@ const AccountCreatePage = () => {
           account: { id: parseInt(selectedAccount.id) },
           user: { id: user.id },
           outputPreviousBalance: selectedAccount.balance,
-          outputNextBalance: selectedAccount.balance - getTotalPrice(),
-          exchangeRate: 1,
+          outputNextBalance: selectedAccount.balance - await getTotalPrice(selectedAccount),
+          exchangeRate: selectedAccount.currency === "TRY" ? 1 : selectedAccount.currency === "USD" ? (await exchangeRates()).USD.Selling : (await exchangeRates()).EUR.Selling,
           date: nowTime,
           description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
           createDate: nowTime,
           category: "Satın Alım",
-          amount: getTotalPrice(),
+          amount: await getTotalPrice(selectedAccount),
         };
 
         const updatedAccount = {
           ...selectedAccount,
-          balance: selectedAccount.balance - getTotalPrice(),
+          balance: selectedAccount.balance - await getTotalPrice(selectedAccount),
         };
 
         try {
