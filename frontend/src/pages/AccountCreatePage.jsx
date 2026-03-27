@@ -132,27 +132,45 @@ const AccountCreatePage = () => {
     return response.data
   }
 
+
   useEffect(() => {
     const validate = async () => {
-      if (!selectedMoneyAccount || selectedMoneyAccount === "0") {
-        setIsButtonDisabled(true);
-        return;
+
+      //Kullanıcının Daha Önceden Hesabı Olacak
+      //Asset adı girecek
+      //Gold ya da Stock Seçecek
+      //Eğer fieldarı hiç doldurmadıysa buton aktif olacak
+      if (userAssets.length > 0 && accountName !== "" && (assetType === "GOLD" || assetType === "STOCK")) {
+        console.log("Fieldlar boş ve ilk hesabım değil");
+        let fieldsValid = true;
+        if (assetType === "GOLD") {
+          fieldsValid = goldItems.every((goldData) =>
+            (goldData.goldType === "" || goldData.goldType === 0) &&
+            (goldData.price === "" || goldData.price === 0) &&
+            (goldData.quantity === "" || goldData.quantity === 0)
+          );
+
+        }
+        else if (assetType === "STOCK") {
+          fieldsValid = stockItems.every((stockData) =>
+            (stockData.price === 0 || stockData.price === "" || stockData.price === null) &&
+            (stockData.quantity === 0 || stockData.quantity === "" || stockData.quantity === null) &&
+            (stockData.stock === 0 || stockData.stock === "" || stockData.stock === null)
+          )
+        }
+
+        if (fieldsValid) {
+          setIsButtonDisabled(!fieldsValid)
+          return;
+        }
       }
 
-      try {
-        const accountDetail = await getAccountDetailInfo();
-        const pay = accountDetail.currency === "TRY"
-          ? accountDetail.balance
-          : accountDetail.balance * (exchangeRate[accountDetail.currency]?.Buying || 0);
 
-
-        let totalPrice = 0;
+      //Kullanıcının daha önceden bir hesabı yoksa banka hesabından para çekmeden direkt olarak hesap açabilecek
+      if (userAssets.length === 0) {
+        console.log("Benim daha önceden bir hesabım yok");
         let fieldsValid = false;
-
         if (assetType === "GOLD") {
-          totalPrice = goldItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
-
-
           fieldsValid = goldItems.every((goldData) =>
             goldData.goldType !== "" &&
             goldData.price > 0 &&
@@ -161,8 +179,6 @@ const AccountCreatePage = () => {
 
         }
         else if (assetType === "STOCK") {
-          totalPrice = stockItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
-
           fieldsValid = stockItems.every((stockData) =>
             stockData.price !== "" &&
             stockData.price !== 0 &&
@@ -172,7 +188,67 @@ const AccountCreatePage = () => {
           )
         }
 
-        setIsButtonDisabled((totalPrice > pay) || !fieldsValid);
+        setIsButtonDisabled(!fieldsValid || accountName === "");
+        return;
+
+      }
+
+      //Kullanıcının daha önceden hesabı var
+      //Kullanıcı Hesap Seçmemiş
+      else if ((userAssets.length > 0 && selectedMoneyAccount === null) || (userAssets.length > 0 && selectedMoneyAccount === 0)) {
+
+        console.log("Burayı Gördüm mü1\n" + userAssets.length + "\n" + selectedMoneyAccount)
+        setIsButtonDisabled(true);
+        return;
+
+      }
+
+      console.log("Burayı Gördüm mü3");
+      //Kullanıcının daha önceden hesabı ver ve banka hesabı seçmiş
+      //Fieldları doldurmuş
+      //Hesap adı girmiş
+      //Seçilen banka hesabının parası ücreti karşılıyor
+      try {
+
+        if (userAssets.length > 0) {
+          const accountDetail = await getAccountDetailInfo();
+          const pay = accountDetail.currency === "TRY"
+            ? accountDetail.balance
+            : accountDetail.balance * (exchangeRate[accountDetail.currency]?.Buying || 0);
+
+
+          let totalPrice = 0;
+          let fieldsValid = false;
+
+          if (assetType === "GOLD") {
+            totalPrice = goldItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
+
+
+            fieldsValid = goldItems.every((goldData) =>
+              goldData.goldType !== "" &&
+              goldData.price > 0 &&
+              goldData.quantity > 0
+            );
+
+          }
+          else if (assetType === "STOCK") {
+            totalPrice = stockItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
+
+            fieldsValid = stockItems.every((stockData) =>
+              stockData.price !== "" &&
+              stockData.price !== 0 &&
+              stockData.quantity !== "" &&
+              stockData.quantity !== 0 &&
+              stockData.stock !== ""
+            )
+          }
+
+          console.log((totalPrice > pay))
+          console.log(console.log((totalPrice > pay)))
+          console.log(accountName)
+
+          setIsButtonDisabled((totalPrice > pay) || !fieldsValid || accountName === "");
+        }
       } catch (error) {
         console.error("Hesap detayı alınamadı", error);
         setIsButtonDisabled(true);
@@ -180,7 +256,7 @@ const AccountCreatePage = () => {
     };
 
     validate();
-  }, [selectedMoneyAccount, goldItems, stockItems, exchangeRate]);
+  }, [selectedMoneyAccount, goldItems, stockItems, exchangeRate, accountName, assetType]);
 
 
   useEffect(() => {
@@ -272,6 +348,26 @@ const AccountCreatePage = () => {
   }, [holdingType, selectedBank, currency, accountType]);
 
 
+  const [userAssets, setUserAsset] = useState([]);
+
+  useEffect(() => {
+    const getUserAssets = async () => {
+      const response = await axios.get(
+        `${backendUrl}/api/asset/my-assets`,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
+          },
+        }
+      )
+      setUserAsset(response.data);
+    }
+    getUserAssets();
+
+  }, [token])
+
+
 
   // Validation checks
   const isCurrencyFormValid = () => {
@@ -325,6 +421,28 @@ const AccountCreatePage = () => {
     return totalPrice;
   }
 
+  const checkItemsGoldandStocks = useMemo(() => {
+    let fieldsValid = false;
+    if (assetType === "GOLD") {
+      fieldsValid = goldItems.every((goldData) =>
+        (goldData.goldType === "" || goldData.goldType === 0) &&
+        (goldData.price === "" || goldData.price === 0) &&
+        (goldData.quantity === "" || goldData.quantity === 0)
+      );
+
+    }
+    else if (assetType === "STOCK") {
+      fieldsValid = stockItems.every((stockData) =>
+        (stockData.price === 0 || stockData.price === "" || stockData.price === null) &&
+        (stockData.quantity === 0 || stockData.quantity === "" || stockData.quantity === null) &&
+        (stockData.stock === 0 || stockData.stock === "" || stockData.stock === null)
+      )
+    }
+
+    return fieldsValid;
+
+  }, [stockItems, goldItems])
+
 
   // Add account
   const handleAddAccount = async () => {
@@ -333,10 +451,10 @@ const AccountCreatePage = () => {
       return;
     }
 
-    if (accountType === "INVESTMENT" && !isInvestmentFormValid()) {
-      setError("Lütfen tüm alanları doldurun!");
-      return;
-    }
+    // if (accountType === "INVESTMENT" && !isInvestmentFormValid()) {
+    //   setError("Lütfen tüm alanları doldurun!");
+    //   return;
+    // }
 
     try {
       if (accountType === "CURRENCY") {
@@ -390,63 +508,97 @@ const AccountCreatePage = () => {
         );
       } else if (accountType === "INVESTMENT") {
 
+        if (userAssets.length !== 0 && !checkItemsGoldandStocks) {
+          const selectedAccount = await getAccountDetailInfo();
 
-        const selectedAccount = await getAccountDetailInfo();
+          console.log(selectedAccount)
 
-        console.log(selectedAccount)
+          const nowTime = new Date().toISOString()
+          //TRANSFER APILACAK 
+          const transferPayload = {
+            type: "outgoing",
+            account: { id: parseInt(selectedAccount.id) },
+            user: { id: user.id },
+            outputPreviousBalance: selectedAccount.balance,
+            outputNextBalance: selectedAccount.balance - await getTotalPrice(selectedAccount),
+            exchangeRate: selectedAccount.currency === "TRY" ? 1 : selectedAccount.currency === "USD" ? (await exchangeRates()).USD.Selling : (await exchangeRates()).EUR.Selling,
+            date: nowTime,
+            description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
+            createDate: nowTime,
+            category: "Satın Alım",
+            amount: await getTotalPrice(selectedAccount),
+          };
 
-        const nowTime = new Date().toISOString()
-        //TRANSFER APILACAK 
-        const transferPayload = {
-          type: "outgoing",
-          account: { id: parseInt(selectedAccount.id) },
-          user: { id: user.id },
-          outputPreviousBalance: selectedAccount.balance,
-          outputNextBalance: selectedAccount.balance - await getTotalPrice(selectedAccount),
-          exchangeRate: selectedAccount.currency === "TRY" ? 1 : selectedAccount.currency === "USD" ? (await exchangeRates()).USD.Selling : (await exchangeRates()).EUR.Selling,
-          date: nowTime,
-          description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
-          createDate: nowTime,
-          category: "Satın Alım",
-          amount: await getTotalPrice(selectedAccount),
-        };
+          const updatedAccount = {
+            ...selectedAccount,
+            balance: selectedAccount.balance - await getTotalPrice(selectedAccount),
+          };
 
-        const updatedAccount = {
-          ...selectedAccount,
-          balance: selectedAccount.balance - await getTotalPrice(selectedAccount),
-        };
+          try {
+            await axios.post(
+              `${backendUrl}/api/transfers/create`,
+              transferPayload,
+              {
+                headers: {
+                  Authorization: token ? `Bearer ${token}` : undefined,
+                  "Content-Type": "application/json",
+                },
+              }
+            );
 
-        try {
-          await axios.post(
-            `${backendUrl}/api/transfers/create`,
-            transferPayload,
+            await axios.put(
+              `${backendUrl}/api/accounts/update-money-account`,
+              updatedAccount,
+              {
+                headers: {
+                  Authorization: token ? `Bearer ${token}` : undefined,
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+          }
+          catch (err) {
+            console.error("Transfer hatası:", err);
+            setError("Bir hata oluştu, lütfen tekrar deneyin.");
+          }
+        }
+
+        if (userAssets.length !== 0 && checkItemsGoldandStocks) {
+          const response = await axios.post(`${backendUrl}/api/asset/create-asset`,
+            {
+              assetName: accountName,
+              accountType: accountType,
+              assetType: assetType,
+              holdingType: accountType === "INVESTMENT" ? null : holdingType,
+            },
             {
               headers: {
                 Authorization: token ? `Bearer ${token}` : undefined,
                 "Content-Type": "application/json",
-              },
+              }
             }
-          );
+          )
 
-          await axios.put(
-            `${backendUrl}/api/accounts/update-money-account`,
-            updatedAccount,
-            {
-              headers: {
-                Authorization: token ? `Bearer ${token}` : undefined,
-                "Content-Type": "application/json",
-              },
+          await axios.post(`${backendUrl}/api/asset/create-position`, {
+            assetId: response.data,
+            costBasis: 0,
+            currentValue: 0,
+            profitLoss: 0
+          }, {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
             }
-          );
+          })
+
+
+          setOpenSnackbar(true);
+          setTimeout(() => {
+            navigate("/account");
+          }, 1000);
+          setAccountName("");
+          return;
         }
-        catch (err) {
-          console.error("Transfer hatası:", err);
-          setError("Bir hata oluştu, lütfen tekrar deneyin.");
-        }
-
-
-
-
 
         // Create single investment account with multiple holdings
         const holdings = assetType === "GOLD"

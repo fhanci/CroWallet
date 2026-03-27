@@ -124,19 +124,26 @@ const InvestmentAccountDetailPage = () => {
     }
   }, [holdings, getPrices])
 
-  const getInvestmentPrices = () => {
-    console.log("Fiyat Bilgileri Çekiliyor.")
-    setGetPrices(true)
-  }
+
+  useEffect(() => {
+    console.log("Final Holdings: ");
+    console.log(finalHoldings);
+  },[finalHoldings])
+
+  // const getInvestmentPrices = () => {
+  //   console.log("Fiyat Bilgileri Çekiliyor.")
+  //   setGetPrices(true)
+  // }
 
   if (userLoading && holdingsLoading && getPrices)
     return <div> Yükleniyor</div>
   return (
     <div>
-      <Tooltip title="Yatırım Fiyatlarını Çek">
+      {/* <Tooltip title="Yatırım Fiyatlarını Çek">
         <IoIosRefresh style={{position:"absolute",right:"22vw",marginTop:"4"}} onClick={() => getInvestmentPrices()} />
-      </Tooltip>
+      </Tooltip> */}
 
+      
       {Object.keys(finalHoldings.GOLD).length === 0 ? <Container sx={{ mt: 4, mb: 4 }}>
         <Alert severity="error">Altın Hesabı Bulunamadı.</Alert></Container> :
         Object.entries(finalHoldings.GOLD).map(([key, value]) => (

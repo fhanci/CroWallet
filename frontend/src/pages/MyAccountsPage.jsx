@@ -73,13 +73,15 @@ const MyAccountsPage = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `${backendUrl}/api/accounts/currency/${user.id}`,
+        `${backendUrl}/api/accounts/get-money-accounts?userId=${user.id}`,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         }
       );
+      console.log("Account Data")
+      console.log(response.data)
       setAccounts(response.data);
       setFilteredAccounts(response.data);
     } catch (error) {

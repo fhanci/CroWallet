@@ -71,6 +71,7 @@ public class AccountController {
     public List<AccountDTO> getUserCurrencyAccounts(@PathVariable Long userId) {
         return accountService.getUserCurrencyAccounts(userId);
     }
+    
 
     // Get only investment accounts
     @GetMapping("/investment/{userId}")

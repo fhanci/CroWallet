@@ -143,6 +143,17 @@ public class AssetService {
             List<Positions> positions = positionRepository.findAllByAssetOrderByIdAsc(asset);
             List<Transactions> transactions = transactionRepository.findByAsset(asset);
 
+            // if (transactions.size() == 0 && positions.size() == 0) {
+            //     AssetResponse rAssetResponse = new AssetResponse();
+            //     rAssetResponse.setAccountId(asset.getId());
+            //     rAssetResponse.setAccountName(asset.getAssetName());
+            //     rAssetResponse.setAssetType(asset.getAssetType());
+            //     countId = countId + Long.parseLong("1");
+            //     rAssetResponse.setId(countId);
+            //     rListAssetResponse.add(rAssetResponse);
+            //     continue;
+            // }
+
             for (Transactions transaction : transactions) {
                 AssetResponse rAssetResponse = new AssetResponse();
                 List<RelatedTransactions> bySourceTransactions = relatedTransactionsRepository
@@ -160,11 +171,8 @@ public class AssetService {
                     }
 
                     if (transaction.getQuantity().subtract(quantity) == BigDecimal.ZERO) {
-
                         continue;
                     }
-
-                    // Long bigId = 0L;
 
                     rAssetResponse.setAccountId(asset.getId());
                     rAssetResponse.setAccountName(asset.getAssetName());
@@ -231,11 +239,9 @@ public class AssetService {
         Transactions mainTransactions = transactionRepository.findById(updateTransaction.getTransactionId())
                 .orElseThrow(() -> new RuntimeException("Transaction Bulunamadı"));
 
-        
         BigDecimal oldQuantity = mainTransactions.getQuantity();
         BigDecimal oldPrice = mainTransactions.getUnitPrice();
 
-        
         BigDecimal totalSold = relatedTransactionsRepository.findBySourceTransactions(mainTransactions)
                 .stream().map(rt -> rt.getTargetTransactions().getQuantity())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -250,11 +256,10 @@ public class AssetService {
         mainTransactions.setTransactionType(TransactionType.UPDATE);
         transactionRepository.save(mainTransactions);
 
-        
-        //Satılmamış Adet
+        // Satılmamış Adet
         BigDecimal remainingQuantity = updateTransaction.getUpdatedQuantity().subtract(totalSold);
 
-        //Fiyat Farkı
+        // Fiyat Farkı
         BigDecimal oldCost = oldQuantity.subtract(totalSold).multiply(oldPrice);
         BigDecimal newCost = remainingQuantity
                 .multiply(updateTransaction.getUpdatedPurchasePrice());
