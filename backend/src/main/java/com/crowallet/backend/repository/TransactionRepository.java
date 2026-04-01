@@ -1,6 +1,4 @@
 package com.crowallet.backend.repository;
-
-import org.springframework.cglib.core.Local;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -19,6 +17,8 @@ public interface TransactionRepository extends JpaRepository<Transactions, Long>
     List<Transactions> findAllByAsset(Asset asset);
 
     List<Transactions> findAllByCreatedDateBetween(LocalDateTime startingDate, LocalDateTime finishingDateTime);
+
+    List<Transactions> findAllByCreatedDateBetweenAndAsset(LocalDateTime startingDate, LocalDateTime finishingDateTime,Asset asset);
 
     List<Transactions> findByAssetSymbolOrderByIdDesc(String assetSymbol);
     

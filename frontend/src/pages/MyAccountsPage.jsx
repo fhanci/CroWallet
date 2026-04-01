@@ -80,8 +80,6 @@ const MyAccountsPage = () => {
           },
         }
       );
-      console.log("Account Data")
-      console.log(response.data)
       setAccounts(response.data);
       setFilteredAccounts(response.data);
     } catch (error) {

@@ -49,6 +49,7 @@ import { GOLD_TYPES } from "../data/goldData"
 import { STOCKS } from "../data/stocksData"
 import { BuyInvestmentGold } from "../components/BuyInvestmentGold";
 import { BuyInvestmentStock } from "../components/BuyInvestmentStock";
+import dayjs from "dayjs";
 
 
 
@@ -72,12 +73,12 @@ const AccountCreatePage = () => {
 
   // Multiple gold items
   const [goldItems, setGoldItems] = useState([
-    { id: 1, goldType: "", quantity: "", price: "" },
+    { id: 1, goldType: "", quantity: "", price: "", buyingDateTime: dayjs() },
   ]);
 
   // Multiple stock items
   const [stockItems, setStockItems] = useState([
-    { id: 1, stock: null, quantity: "", price: "" },
+    { id: 1, stock: null, quantity: "", price: "", buyingDateTime: dayjs() },
   ]);
 
   // Common fields
@@ -141,7 +142,6 @@ const AccountCreatePage = () => {
       //Gold ya da Stock Seçecek
       //Eğer fieldarı hiç doldurmadıysa buton aktif olacak
       if (userAssets.length > 0 && accountName !== "" && (assetType === "GOLD" || assetType === "STOCK")) {
-        console.log("Fieldlar boş ve ilk hesabım değil");
         let fieldsValid = true;
         if (assetType === "GOLD") {
           fieldsValid = goldItems.every((goldData) =>
@@ -168,7 +168,6 @@ const AccountCreatePage = () => {
 
       //Kullanıcının daha önceden bir hesabı yoksa banka hesabından para çekmeden direkt olarak hesap açabilecek
       if (userAssets.length === 0) {
-        console.log("Benim daha önceden bir hesabım yok");
         let fieldsValid = false;
         if (assetType === "GOLD") {
           fieldsValid = goldItems.every((goldData) =>
@@ -196,14 +195,10 @@ const AccountCreatePage = () => {
       //Kullanıcının daha önceden hesabı var
       //Kullanıcı Hesap Seçmemiş
       else if ((userAssets.length > 0 && selectedMoneyAccount === null) || (userAssets.length > 0 && selectedMoneyAccount === 0)) {
-
-        console.log("Burayı Gördüm mü1\n" + userAssets.length + "\n" + selectedMoneyAccount)
         setIsButtonDisabled(true);
         return;
 
       }
-
-      console.log("Burayı Gördüm mü3");
       //Kullanıcının daha önceden hesabı ver ve banka hesabı seçmiş
       //Fieldları doldurmuş
       //Hesap adı girmiş
@@ -242,11 +237,6 @@ const AccountCreatePage = () => {
               stockData.stock !== ""
             )
           }
-
-          console.log((totalPrice > pay))
-          console.log(console.log((totalPrice > pay)))
-          console.log(accountName)
-
           setIsButtonDisabled((totalPrice > pay) || !fieldsValid || accountName === "");
         }
       } catch (error) {
@@ -263,8 +253,6 @@ const AccountCreatePage = () => {
     const getMoneyAccountOfPerson = async () => {
 
       const exchangeRates2 = await exchangeRates();
-      console.log("Kur Fiyatları")
-      console.log(exchangeRates2);
       setExchangeRate(exchangeRates2)
     }
 
@@ -285,8 +273,8 @@ const AccountCreatePage = () => {
       setCurrency("");
       setAssetType("");
       setSelectedMoneyAccount(0)
-      setGoldItems([{ id: 1, goldType: "", quantity: "", price: "" }]);
-      setStockItems([{ id: 1, stock: null, quantity: "", price: "" }]);
+      setGoldItems([{ id: 1, goldType: "", quantity: "", price: "", buyingDateTime: dayjs() }]);
+      setStockItems([{ id: 1, stock: null, quantity: "", price: "", buyingDateTime: dayjs() }]);
       setAccountName("");
       setError("");
     }
@@ -306,8 +294,8 @@ const AccountCreatePage = () => {
       setAssetType(newAssetType);
       setSelectedMoneyAccount(0)
       // Reset investment-specific fields
-      setGoldItems([{ id: 1, goldType: "", quantity: "", price: "" }]);
-      setStockItems([{ id: 1, stock: null, quantity: "", price: "" }]);
+      setGoldItems([{ id: 1, goldType: "", quantity: "", price: "", buyingDateTime: dayjs() }]);
+      setStockItems([{ id: 1, stock: null, quantity: "", price: "", buyingDateTime: dayjs() }]);
       // setAccountName("");
     }
   };
@@ -407,8 +395,6 @@ const AccountCreatePage = () => {
       totalPrice = stockItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
     }
 
-    console.log("SelectedAccount")
-    console.log(await exchangeRates())
 
     if (selectedAccount.currency === "EUR") {
       totalPrice = totalPrice / (await exchangeRates()).EUR.Selling
@@ -510,8 +496,6 @@ const AccountCreatePage = () => {
 
         if (userAssets.length !== 0 && !checkItemsGoldandStocks) {
           const selectedAccount = await getAccountDetailInfo();
-
-          console.log(selectedAccount)
 
           const nowTime = new Date().toISOString()
           //TRANSFER APILACAK 
@@ -653,8 +637,7 @@ const AccountCreatePage = () => {
           }
         )
 
-        console.log("holdings2 İçeriği")
-        console.log(JSON.stringify(holdings))
+
 
         const holdings2 = assetType === "GOLD"
           ? goldItems.map((item) => {
@@ -668,7 +651,8 @@ const AccountCreatePage = () => {
               unitPrice: parseFloat(item.price),
               quantity: parseFloat(item.quantity),
               assetName: goldTypeInfo?.label || item.goldType,
-              currentValue: parseFloat(goldTypeInfo.price)
+              currentValue: parseFloat(goldTypeInfo.Buying),
+              buyingDateTime: item.buyingDateTime.toISOString()
 
             };
           })
@@ -679,7 +663,8 @@ const AccountCreatePage = () => {
             quantity: parseFloat(item.quantity),
             unitPrice: parseFloat(item.price),
             assetName: item.stock.name,
-            currentValue: parseFloat(item.stock.price)
+            currentValue: parseFloat(item.stock.price),
+            buyingDateTime: item.buyingDateTime.toISOString()
           }));
 
 
@@ -692,8 +677,6 @@ const AccountCreatePage = () => {
           }
         )
 
-
-        console.log("Burası çokemelli: " + JSON.stringify(holdings2))
         await axios.post(`${backendUrl}/api/asset/create-position`, {
           assetId: response.data,
           costBasis: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.unitPrice), 0),
@@ -711,7 +694,7 @@ const AccountCreatePage = () => {
 
       setOpenSnackbar(true);
       setTimeout(() => {
-        navigate("/account");
+        navigate("/investment/stock_and_gold");
       }, 1000);
       setAccountName("");
     } catch (error) {
@@ -888,7 +871,6 @@ const AccountCreatePage = () => {
               />
 
               {/* Account Name */}
-              {console.log("AccountNmae: " + accountName)}
               <TextField
                 label={t("accountName")}
                 fullWidth
@@ -977,8 +959,6 @@ const AccountCreatePage = () => {
               {error}
             </Alert>
           )}
-
-          {console.log("AccountType: " + accountType)}
           {accountType && (
             <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
               <Button

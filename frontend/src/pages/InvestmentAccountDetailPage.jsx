@@ -31,7 +31,7 @@ const InvestmentAccountDetailPage = () => {
   // const { data: holdings, isLoading: holdingsLoading, } = useGetUserHoldingQuery(userID, { skip: userID === undefined || userID === null || userID === 0 });
 
   // //Asset Toolkit Query
-  const { data: holdings, isLoading: holdingsLoading, } = useGetUserAssetQuery();
+  const { data: holdings, isLoading: holdingsLoading } = useGetUserAssetQuery(undefined, { refetchOnMountOrArgChange: true });
   const [getPrices, setGetPrices] = useState(false)
   const [goldPrice, setGoldPrice] = useState([])
   // const goldTypeKey = ["GRA", "CEYREKALTIN", "YARIMALTIN", "TAMALTIN", "CUMHURIYETALTINI"]
@@ -47,7 +47,6 @@ const InvestmentAccountDetailPage = () => {
     if (!getPrices) return;
 
     const updateAllPrices = async () => {
-      console.log("İşlem başladı...");
 
 
       const goldData = await getGoldCurrentValue();
@@ -57,8 +56,6 @@ const InvestmentAccountDetailPage = () => {
       setStockPrice([...stockData]);
 
       setGetPrices(false);
-      console.log(stockPrice)
-      console.log("Her şey güncellendi ve ekran tazelendi.");
     };
 
     updateAllPrices();
@@ -89,33 +86,34 @@ const InvestmentAccountDetailPage = () => {
   useEffect(() => {
 
     if (!getPrices && goldPrice.length && stockPrice.length) {
-      console.log("Stock Data")
-      console.log(stockPrice)
-      console.log("Gold Data")
-      console.log(goldPrice)
       if (typeof holdings === "object" && holdings.length === 0) {
-        console.log("Girdim")
+
         setFinalHoldings({ GOLD: {}, STOCK: {} });
         return;
       }
 
       if (holdings !== undefined && typeof holdings === "object" && holdings.length > 0) {
 
-        console.log("Holdings: ");
-        console.log(holdings);
 
 
         const newData = { GOLD: {}, STOCK: {} }
 
         holdings.forEach(item => {
           const { assetType, accountId } = item;
-          console.log(item)
+
 
           if (!newData[assetType][accountId]) {
             newData[assetType][accountId] = [];
           }
-          newData[assetType][accountId].push({ ...item, profitLoss: (item.currentPrice * item.quantity) - (item.purchasePrice * item.quantity), currentPrice: item.assetType === "GOLD" ? goldPrice.find((data) => data.Name.split("ALTIN")[0] === item.assetSymbol)?.Buying : stockPrice.find((s) => s.symbol === item.assetSymbol).value });
-          // console.log("Test : " + {...item, profitLoss: (item.currentPrice * item.quantity) - (item.purchasePrice * item.quantity) , currentPrice: item.assetType === "GOLD" ?  goldPrice.find((data) => data.Name.split("ALTIN")[0] === item.assetSymbol)?.Buying : stockPrice.find((s) => s.symbol === value.symbol).value})
+          newData[assetType][accountId].push({ 
+            ...item, 
+            profitLoss: (item.currentPrice * item.quantity) - (item.purchasePrice * item.quantity), 
+            currentPrice: item.assetType === "GOLD" && item.assetSymbol 
+            ? goldPrice.find((data) => data.Name.split("ALTIN")[0] === item.assetSymbol)?.Buying 
+            : item.assetType === "STOCK" && item.assetSymbol 
+            ? stockPrice.find((s) => s.symbol === item.assetSymbol).value 
+            : 0 
+          });
 
         });
 
@@ -124,16 +122,6 @@ const InvestmentAccountDetailPage = () => {
     }
   }, [holdings, getPrices])
 
-
-  useEffect(() => {
-    console.log("Final Holdings: ");
-    console.log(finalHoldings);
-  },[finalHoldings])
-
-  // const getInvestmentPrices = () => {
-  //   console.log("Fiyat Bilgileri Çekiliyor.")
-  //   setGetPrices(true)
-  // }
 
   if (userLoading && holdingsLoading && getPrices)
     return <div> Yükleniyor</div>

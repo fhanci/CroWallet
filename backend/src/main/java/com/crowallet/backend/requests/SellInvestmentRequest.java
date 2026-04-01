@@ -1,6 +1,7 @@
 package com.crowallet.backend.requests;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import lombok.Data;
 
@@ -15,4 +16,6 @@ public class SellInvestmentRequest {
     private BigDecimal unitPrice;
     private BigDecimal totalPrice;
     private BigDecimal currentPrice;
+    private LocalDateTime buyingDateTime;
+    private BigDecimal salesPrice;
 }

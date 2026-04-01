@@ -62,6 +62,10 @@ public class Transactions extends BaseEntity {
     @Column(name = "current_value")
     private BigDecimal currentValue;
 
+    @Column(name = "buying_date_time")
+    private LocalDateTime buyingDateTime;
 
-    
+    @Column(name = "selling_price")
+    private BigDecimal sellingPrice;
+
 }

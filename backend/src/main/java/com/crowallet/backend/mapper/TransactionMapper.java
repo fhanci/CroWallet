@@ -17,9 +17,10 @@ public interface TransactionMapper {
 
     @Mapping(source = "assetId", target = "asset.id")
     @Mapping(target = "totalValue", expression = "java(transactionDTO.getUnitPrice().multiply(transactionDTO.getQuantity()))")
+    @Mapping(source = "buyingDateTime", target = "buyingDateTime")
     Transactions toTransaction(TransactionDTO transactionDTO);
 
-    // Entity -> DTO
+    
     @Mapping(source = "asset.id", target = "assetId")
     TransactionDTO toTransactionDTO(Transactions transaction);
 

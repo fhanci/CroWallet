@@ -118,7 +118,6 @@ const TransactionHistoryPage = () => {
 
     if (filterType) {
       filtered = filtered.filter((t) => t.type === filterType);
-      console.log(filterTyp)
     }
     if (startDate && endDate) {
       filtered = filtered.filter((t) => {

@@ -12,6 +12,7 @@ import com.crowallet.backend.requests.UpdateTransaction;
 import com.crowallet.backend.service.AssetService;
 import com.crowallet.backend.service.StockService;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.http.HttpStatusCode;
@@ -63,8 +64,42 @@ public class AssetController {
     public ResponseEntity<List<AssetResponse>> getMethodName() {
         List<AssetResponse> assetsByUserId = assetService.getAssetsByUserId();
         return ResponseEntity.status(200).body(assetsByUserId);
-
     }
+
+    @GetMapping("/get-asset-size-by-user-id")
+    public ResponseEntity<Long> getAssetSizeByUserId() {
+        Long assetExistsSize = assetService.findAssetByUserId();
+        return ResponseEntity.ok(assetExistsSize);
+    }
+    
+
+    @DeleteMapping("/delete-asset/{assetId}")
+    public ResponseEntity<Void> deleteAsset(@PathVariable Long assetId) {
+        boolean deleted = assetService.deleteAsset(assetId);
+        if (deleted) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/get-transaction-by-asset-id/{assetId}")
+    public ResponseEntity<List<TransactionDTO>> getTransactionByAssetId(@PathVariable Long assetId) {
+        List<TransactionDTO> transactions = assetService.getTransactionByAssetId(assetId);
+        return ResponseEntity.ok(transactions);
+    }
+    
+
+
+    // @GetMapping("/get-difference-total-sold-and-new-quantity")
+    // public Long getDifferenceTotalSoldAndNewQuantity(@RequestParam Long transactionId, @RequestParam BigDecimal newQuantity) {
+    //     return assetService.getDifferenceTotalSoldAndNewQuantity(transactionId, newQuantity);
+    // }
+
+    @GetMapping("/get-selling-count")
+    public Long getSellingCount(@RequestParam Long transactionId) {
+        return assetService.getSellingCount(transactionId);
+    } 
+    
 
     @PutMapping("/updateAsset")
     public UpdateTransaction updateTransaction(@RequestBody UpdateTransaction updateTransaction) {

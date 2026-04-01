@@ -162,8 +162,6 @@ const IncomingTransferPage = () => {
       balance: currentBalance + amount,
     };
 
-    console.log("selectedTransferAccount")
-    console.log(updatedAccount2)
 
     try {
       await axios.post(

@@ -10,6 +10,10 @@ import axios from 'axios';
 import Marquee from "react-fast-marquee";
 import { exchangeRates } from '../data/currencies';
 import { backendUrl } from '../utils/envVariables';
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs from "dayjs";
 
 
 export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoneyAccount, selectedMoneyAccount }) => {
@@ -31,11 +35,6 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
     const [exchangeRate, setExchangeRate] = useState({})
 
 
-    //BU
-    useEffect(() => {
-        console.log("Hisse Fiyatları Güncellendi")
-        console.log(stockPrice)
-    }, [stockPrice])
 
     //BU
     useEffect(() => {
@@ -43,10 +42,6 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
         getMoneyAccountOfPerson();
     }, [])
 
-    useEffect(() => {
-        console.log("Seçili Olan Hesap Değişti")
-        console.log(selectedMoneyAccount)
-    }, [selectedMoneyAccount])
 
     //BU
     useEffect(() => {
@@ -72,7 +67,7 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
         const newId = Math.max(...stockItems.map((item) => item.id)) + 1;
         setStockItems([
             ...stockItems,
-            { id: newId, stock: null, quantity: "", price: "" },
+            { id: newId, stock: null, quantity: "", price: "", buyingDateTime: dayjs() },
         ]);
     };
 
@@ -90,6 +85,11 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
             );
         }
         else {
+
+            if (field === "buyingDateTime") {
+                value = dayjs(value).format("YYYY-MM-DD");
+            }
+
             setStockItems(
                 stockItems.map((item) =>
                     item.id === id ? { ...item, [field]: value, price: typeof value === "object" ? stockPrice.find((s) => s.symbol === value.symbol).value : item.price } : item
@@ -143,6 +143,7 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
 
 
     const [userAssets, setUserAsset] = useState([]);
+    const [isExitsAssets, setIsExitsAssets] = useState(0);
 
     useEffect(() => {
         const getUserAssets = async () => {
@@ -156,6 +157,16 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
                 }
             )
             setUserAsset(response.data);
+
+            const response2 = await axios.get(
+                `${backendUrl}/api/asset/get-asset-size-by-user-id`,
+                {
+                    headers: {
+                        Authorization: token ? `Bearer ${token}` : undefined,
+                        "Content-Type": "application/json",
+                    },
+                })
+            setIsExitsAssets(response2.data);
         }
         getUserAssets();
 
@@ -179,8 +190,6 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
     const getMoneyAccountOfPerson = async () => {
 
         const exchangeRates2 = await exchangeRates();
-        console.log("Kur Fiyatları")
-        console.log(exchangeRates2);
         setExchangeRate(exchangeRates2)
 
 
@@ -205,10 +214,7 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
         )
 
         setMoneyAccountPersons(responseMoneyAccount.data);
-        console.log(moneyAccountPersons)
     }
-
-
 
 
     return (
@@ -356,6 +362,23 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
                                         }}
                                     />
                                 </Box>
+                                <Box sx={{ my: 3 }}>
+                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                        <DatePicker
+                                            label="Tarih Seç"
+                                            value={item.buyingDateTime}
+                                            onChange={(newValue) => updateStockItem(item.id, "buyingDateTime", newValue)}
+                                            disableFuture={true}
+
+                                            slotProps={{
+                                                textField: { fullWidth: true },
+
+                                            }}
+
+                                        />
+                                    </LocalizationProvider>
+
+                                </Box>
 
                                 {/* Item Total */}
                                 {item.quantity && item.price && (
@@ -444,7 +467,7 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
                                         </Typography>
                                     </Box>
 
-                                    {userAssets.length === 0 ? "" : moneyAccountPersons.length === 0 ?
+                                    {userAssets.length === 0 && isExitsAssets === 0 ? "" : (userAssets.length !== 0 || (userAssets.length === 0 && isExitsAssets !== 0)) && moneyAccountPersons.length === 0 ?
                                         <Typography
                                             sx={{
                                                 display: 'flex',
@@ -468,89 +491,89 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
                                             <span style={{ fontSize: '1.2rem' }}>⚠️</span>
                                             Lütfen öncelikle bir banka/para hesabı ekleyiniz. Aksi halde işleme devam edilemeyecektir.
                                         </Typography>
-                                        : 
+                                        :
 
-                                            < FormControl component="fieldset" sx={{ width: '100%' }}>
-                                                <FormLabel id="selectMoneyAccount" sx={{ fontWeight: 'bold', mb: 2, color: 'text.primary' }}>
-                                                    Banka Hesap Seçimi
-                                                </FormLabel>
-                                                <RadioGroup
-                                                    aria-labelledby="selectMoneyAccount"
-                                                    name="radio-buttons-group"
-                                                    value={selectedMoneyAccount || ""}
-                                                    onChange={(e) => setSelectedMoneyAccount(e.target.value)}
-                                                >
-                                                    {moneyAccountPersons.map((data) => {
-                                                        const isInsufficient = data.currency !== "TRY"
-                                                            ? (data.balance * (exchangeRate[data.currency]?.Buying || 0)) < calculateStockTotal()
-                                                            : data.balance < calculateStockTotal();
+                                        < FormControl component="fieldset" sx={{ width: '100%' }}>
+                                            <FormLabel id="selectMoneyAccount" sx={{ fontWeight: 'bold', mb: 2, color: 'text.primary' }}>
+                                                Banka Hesap Seçimi
+                                            </FormLabel>
+                                            <RadioGroup
+                                                aria-labelledby="selectMoneyAccount"
+                                                name="radio-buttons-group"
+                                                value={selectedMoneyAccount || ""}
+                                                onChange={(e) => setSelectedMoneyAccount(e.target.value)}
+                                            >
+                                                {moneyAccountPersons.map((data) => {
+                                                    const isInsufficient = data.currency !== "TRY"
+                                                        ? (data.balance * (exchangeRate[data.currency]?.Buying || 0)) < calculateStockTotal()
+                                                        : data.balance < calculateStockTotal();
 
-                                                        // Seçili olanı kontrol et (Vurgulamak için)
-                                                        const isSelected = selectedMoneyAccount === String(data.id);
+                                                    // Seçili olanı kontrol et (Vurgulamak için)
+                                                    const isSelected = selectedMoneyAccount === String(data.id);
 
-                                                        return (
-                                                            <FormControlLabel
-                                                                key={data.id}
-                                                                value={data.id}
-                                                                control={<Radio sx={{ display: 'none' }} />} // Radyo butonunu gizleyip kartı buton yapıyoruz
-                                                                sx={{
-                                                                    margin: '0.5rem 0',
+                                                    return (
+                                                        <FormControlLabel
+                                                            key={data.id}
+                                                            value={data.id}
+                                                            control={<Radio sx={{ display: 'none' }} />} // Radyo butonunu gizleyip kartı buton yapıyoruz
+                                                            sx={{
+                                                                margin: '0.5rem 0',
+                                                                width: '100%',
+                                                                border: '2px solid',
+                                                                borderColor: isSelected ? 'primary.main' : 'divider',
+                                                                borderRadius: '12px',
+                                                                padding: '12px 16px',
+                                                                transition: 'all 0.2s ease',
+                                                                backgroundColor: isSelected ? 'action.selected' : 'background.paper',
+                                                                '&:hover': {
+                                                                    borderColor: 'primary.light',
+                                                                    transform: 'translateY(-2px)',
+                                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                                                                },
+                                                                // Label kısmını tüm genişliğe yay
+                                                                '& .MuiFormControlLabel-label': {
                                                                     width: '100%',
-                                                                    border: '2px solid',
-                                                                    borderColor: isSelected ? 'primary.main' : 'divider',
-                                                                    borderRadius: '12px',
-                                                                    padding: '12px 16px',
-                                                                    transition: 'all 0.2s ease',
-                                                                    backgroundColor: isSelected ? 'action.selected' : 'background.paper',
-                                                                    '&:hover': {
-                                                                        borderColor: 'primary.light',
-                                                                        transform: 'translateY(-2px)',
-                                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                                                                    },
-                                                                    // Label kısmını tüm genişliğe yay
-                                                                    '& .MuiFormControlLabel-label': {
-                                                                        width: '100%',
-                                                                        fontFamily: 'monospace',
-                                                                        whiteSpace: 'pre-wrap', // Alt satıra geçebilmesi için
-                                                                        display: 'flex',
-                                                                        flexDirection: 'column',
-                                                                        gap: '4px'
-                                                                    }
-                                                                }}
-                                                                label={
-                                                                    <>
-                                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                            <Typography sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
-                                                                                {data.accountName.toUpperCase()}
-                                                                            </Typography>
-                                                                            <Typography sx={{
-                                                                                color: isInsufficient ? 'error.main' : 'success.main',
-                                                                                fontWeight: 'bold',
-                                                                                fontSize: '0.9rem',
-                                                                                bgcolor: isInsufficient ? '#ffebee' : '#e8f5e9',
-                                                                                px: 1, borderRadius: 1
-                                                                            }}>
-                                                                                {isInsufficient ? "Yetersiz Bakiye" : "Bakiye Uygun"}
-                                                                            </Typography>
-                                                                        </Box>
-
-                                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, opacity: 0.8 }}>
-                                                                            <span>Tür: {data.currency}</span>
-                                                                            <span>Bakiye: {showMoneytoLocalString(data.balance)} {data.currency === "TRY" ? "₺" : data.currency === "EUR" ? "€" : "$"}</span>
-                                                                        </Box>
-
-                                                                        {data.currency !== "TRY" && (
-                                                                            <Box sx={{ textAlign: 'right', mt: 0.5, fontStyle: 'italic', fontSize: '0.8rem' }}>
-                                                                                TL Karşılığı: {showMoneytoLocalString(data.balance * (exchangeRate[data.currency]?.Buying || 0))} ₺
-                                                                            </Box>
-                                                                        )}
-                                                                    </>
+                                                                    fontFamily: 'monospace',
+                                                                    whiteSpace: 'pre-wrap', // Alt satıra geçebilmesi için
+                                                                    display: 'flex',
+                                                                    flexDirection: 'column',
+                                                                    gap: '4px'
                                                                 }
-                                                            />
-                                                        );
-                                                    })}
-                                                </RadioGroup>
-                                            </FormControl>}
+                                                            }}
+                                                            label={
+                                                                <>
+                                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                        <Typography sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
+                                                                            {data.accountName.toUpperCase()}
+                                                                        </Typography>
+                                                                        <Typography sx={{
+                                                                            color: isInsufficient ? 'error.main' : 'success.main',
+                                                                            fontWeight: 'bold',
+                                                                            fontSize: '0.9rem',
+                                                                            bgcolor: isInsufficient ? '#ffebee' : '#e8f5e9',
+                                                                            px: 1, borderRadius: 1
+                                                                        }}>
+                                                                            {isInsufficient ? "Yetersiz Bakiye" : "Bakiye Uygun"}
+                                                                        </Typography>
+                                                                    </Box>
+
+                                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, opacity: 0.8 }}>
+                                                                        <span>Tür: {data.currency}</span>
+                                                                        <span>Bakiye: {showMoneytoLocalString(data.balance)} {data.currency === "TRY" ? "₺" : data.currency === "EUR" ? "€" : "$"}</span>
+                                                                    </Box>
+
+                                                                    {data.currency !== "TRY" && (
+                                                                        <Box sx={{ textAlign: 'right', mt: 0.5, fontStyle: 'italic', fontSize: '0.8rem' }}>
+                                                                            TL Karşılığı: {showMoneytoLocalString(data.balance * (exchangeRate[data.currency]?.Buying || 0))} ₺
+                                                                        </Box>
+                                                                    )}
+                                                                </>
+                                                            }
+                                                        />
+                                                    );
+                                                })}
+                                            </RadioGroup>
+                                        </FormControl>}
 
                                 </CardContent>
                             </Card>
