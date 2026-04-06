@@ -24,6 +24,9 @@ public interface MoneyAccountMapper {
     MoneyAccount toMoneyAccount(MoneyAccountRequestDTO moneyAccountRequestDTO);
 
 
+    MoneyAccount toMoneyAccount(MoneyAccountResponseDTO moneyAccountResponseDTO);
+
+
     List<MoneyAccountResponseDTO> toMoneyAccountResponseDTO(List<MoneyAccount> moneyAccount);
 
     List<MoneyAccount> toMoneyAccount(List<MoneyAccountRequestDTO> moneyAccountRequestDTO);

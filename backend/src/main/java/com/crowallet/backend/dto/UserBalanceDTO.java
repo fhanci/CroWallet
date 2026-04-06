@@ -18,4 +18,13 @@ public class UserBalanceDTO {
         this.totalEUR = totalEUR;
         this.totalTRY = totalTRY;
     }
+
+    @Override
+    public String toString() {
+        return "UserBalanceDTO{" +
+                "totalUSD=" + totalUSD +
+                ", totalEUR=" + totalEUR +
+                ", totalTRY=" + totalTRY +
+                '}';
+    }
 }

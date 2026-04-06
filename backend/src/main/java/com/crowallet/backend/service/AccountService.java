@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -46,6 +47,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import com.crowallet.backend.repository.InvestmentHoldingRepository;
 import com.crowallet.backend.repository.UserRepository;
+import com.crowallet.backend.security.CustomUserDetails;
 
 import jakarta.transaction.Transactional;
 
@@ -75,34 +77,34 @@ public class AccountService {
         this.moneyAccountMapper = moneyAccountMapper;
     }
 
-    @Transactional
-    public AccountDTO createAccount(AccountDTO accountDTO) {
-        Account account = AccountMapper.INSTANCE.toAccount(accountDTO);
-        if (accountDTO.getUserId() != null) {
-            User user = userRepository.findById(accountDTO.getUserId())
-                    .orElseThrow(() -> new GeneralException("User not found: " + accountDTO.getUserId()));
-            account.setUser(user);
-        }
-        account.setUpdateDate(LocalDateTime.now());
+    // @Transactional
+    // public AccountDTO createAccount(AccountDTO accountDTO) {
+    //     Account account = AccountMapper.INSTANCE.toAccount(accountDTO);
+    //     if (accountDTO.getUserId() != null) {
+    //         User user = userRepository.findById(accountDTO.getUserId())
+    //                 .orElseThrow(() -> new GeneralException("User not found: " + accountDTO.getUserId()));
+    //         account.setUser(user);
+    //     }
+    //     account.setUpdateDate(LocalDateTime.now());
 
-        accountRepository.save(account);
+    //     accountRepository.save(account);
 
-        Transfer transfer = new Transfer();
-        transfer.setAmount(account.getBalance());
-        transfer.setCategory("Başlangıç Bütçesi");
-        transfer.setDetails("Hesap oluşturulurken girilen bakiye");
-        transfer.setType("incoming");
-        transfer.setDate(LocalDate.now());
-        transfer.setCreateDate(LocalDateTime.now());
-        transfer.setUser(account.getUser());
-        transfer.setAccount(account);
-        transfer.setInputPreviousBalance(BigDecimal.ZERO);
-        transfer.setInputNextBalance(account.getBalance());
+    //     Transfer transfer = new Transfer();
+    //     transfer.setAmount(account.getBalance());
+    //     transfer.setCategory("Başlangıç Bütçesi");
+    //     transfer.setDetails("Hesap oluşturulurken girilen bakiye");
+    //     transfer.setType("incoming");
+    //     transfer.setDate(LocalDate.now());
+    //     transfer.setCreateDate(LocalDateTime.now());
+    //     transfer.setUser(account.getUser());
+    //     transfer.setAccount(account);
+    //     transfer.setInputPreviousBalance(BigDecimal.ZERO);
+    //     transfer.setInputNextBalance(account.getBalance());
 
-        transferRepository.save(transfer);
+    //     transferRepository.save(transfer);
 
-        return AccountMapper.INSTANCE.toAccountDTO(account);
-    }
+    //     return AccountMapper.INSTANCE.toAccountDTO(account);
+    // }
 
     @Transactional
     public MoneyAccountResponseDTO createMoneyAccount(MoneyAccountRequestDTO moneyAccountRequestDTO) {
@@ -111,6 +113,22 @@ public class AccountService {
         MoneyAccount moneyAccount = this.moneyAccountMapper.toMoneyAccount(moneyAccountRequestDTO);
         moneyAccount.setUser(user);
         MoneyAccount savedMoneyAccount = moneyAccountRepository.save(moneyAccount);
+
+
+        // Transfer transfer = new Transfer();
+        // transfer.setAmount(savedMoneyAccount.getBalance());
+        // transfer.setCategory("Başlangıç Bütçesi");
+        // transfer.setDetails("Hesap oluşturulurken girilen bakiye");
+        // transfer.setType("incoming");
+        // transfer.setDate(LocalDate.now());
+        // transfer.setCreateDate(LocalDateTime.now());
+        // transfer.setUser(user);
+        // transfer.setMoneyAccount(savedMoneyAccount);
+        // transfer.setInputPreviousBalance(BigDecimal.ZERO);
+        // transfer.setInputNextBalance(savedMoneyAccount.getBalance());
+
+        // transferRepository.save(transfer);
+
         return this.moneyAccountMapper.toMoneyAccountResponseDTO(savedMoneyAccount);
     }
 
@@ -130,12 +148,32 @@ public class AccountService {
 
     @Transactional
     public MoneyAccountResponseDTO updateMoneyAccount(MoneyAccountResponseDTO moneyAccountResponseDTO){
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication()
+                .getPrincipal();
+        User user = userRepository.findById(userDetails.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         System.out.println("MoneyAccount Burda");
         System.out.println(moneyAccountResponseDTO);
         MoneyAccount moneyAccount = moneyAccountRepository.findById(moneyAccountResponseDTO.getId()).orElseThrow(() -> new RuntimeException("Hesap bulunamadı"));
         moneyAccount.setBalance(moneyAccountResponseDTO.getBalance());
-        MoneyAccount savedMoneyAccount = moneyAccountRepository.save(moneyAccount);       
-        return moneyAccountMapper.toMoneyAccountResponseDTO(savedMoneyAccount);        
+        MoneyAccount savedMoneyAccount = moneyAccountRepository.save(moneyAccount);
+
+        // Transfer transfer = new Transfer();
+        // transfer.setAmount(moneyAccount.getBalance());
+        // transfer.setType(moneyAccount.getBalance().compareTo(savedMoneyAccount.getBalance()) <= 0 ? "incoming" : "outgoing");
+        // transfer.setCategory("Bakiye Güncellemesi");
+        // transfer.setDetails("Hesap güncellemesi sonucu bakiye farkı");
+        // transfer.setDate(LocalDate.now());
+        // transfer.setCreateDate(LocalDateTime.now());
+        // transfer.setUser(user);
+        // transfer.setMoneyAccount(savedMoneyAccount);
+        // transfer.setInputPreviousBalance(moneyAccount.getBalance());
+        // transfer.setInputNextBalance(savedMoneyAccount.getBalance());
+
+        // transferRepository.save(transfer);
+
+        return this.moneyAccountMapper.toMoneyAccountResponseDTO(savedMoneyAccount);
     }
 
     @Transactional
@@ -406,63 +444,63 @@ public class AccountService {
                 .orElseThrow(() -> new GeneralException("Account not found: " + id)));
     }
 
-    @Transactional
-    public AccountDTO updateAccount(Long id, AccountDTO updatedAccount) {
-        Account existingAccount = accountRepository.findById(id)
-                .orElseThrow(() -> new GeneralException("Account to be updated not found: " + id));
+    // @Transactional
+    // public AccountDTO updateAccount(Long id, AccountDTO updatedAccount) {
+    //     Account existingAccount = accountRepository.findById(id)
+    //             .orElseThrow(() -> new GeneralException("Account to be updated not found: " + id));
 
-        BigDecimal oldBalance = existingAccount.getBalance();
-        BigDecimal newBalance = updatedAccount.getBalance();
-        BigDecimal difference = newBalance.subtract(oldBalance);
+    //     BigDecimal oldBalance = existingAccount.getBalance();
+    //     BigDecimal newBalance = updatedAccount.getBalance();
+    //     BigDecimal difference = newBalance.subtract(oldBalance);
 
-        existingAccount.setUpdateDate(updatedAccount.getUpdateDate());
-        existingAccount.setAccountName(updatedAccount.getAccountName());
-        existingAccount.setBalance(newBalance);
-        existingAccount.setCurrency(updatedAccount.getCurrency());
+    //     existingAccount.setUpdateDate(updatedAccount.getUpdateDate());
+    //     existingAccount.setAccountName(updatedAccount.getAccountName());
+    //     existingAccount.setBalance(newBalance);
+    //     existingAccount.setCurrency(updatedAccount.getCurrency());
 
-        // Update new fields
-        if (updatedAccount.getAccountType() != null) {
-            existingAccount.setAccountType(AccountType.valueOf(updatedAccount.getAccountType()));
-        }
-        if (updatedAccount.getHoldingType() != null) {
-            existingAccount.setHoldingType(
-                    com.crowallet.backend.entity.HoldingType.valueOf(updatedAccount.getHoldingType()));
-        }
-        if (updatedAccount.getAssetType() != null) {
-            existingAccount.setAssetType(
-                    com.crowallet.backend.entity.AssetType.valueOf(updatedAccount.getAssetType()));
-        }
-        existingAccount.setAssetSymbol(updatedAccount.getAssetSymbol());
-        existingAccount.setQuantity(updatedAccount.getQuantity());
-        existingAccount.setAverageCost(updatedAccount.getAverageCost());
-        existingAccount.setCurrentPrice(updatedAccount.getCurrentPrice());
+    //     // Update new fields
+    //     if (updatedAccount.getAccountType() != null) {
+    //         existingAccount.setAccountType(AccountType.valueOf(updatedAccount.getAccountType()));
+    //     }
+    //     if (updatedAccount.getHoldingType() != null) {
+    //         existingAccount.setHoldingType(
+    //                 com.crowallet.backend.entity.HoldingType.valueOf(updatedAccount.getHoldingType()));
+    //     }
+    //     if (updatedAccount.getAssetType() != null) {
+    //         existingAccount.setAssetType(
+    //                 com.crowallet.backend.entity.AssetType.valueOf(updatedAccount.getAssetType()));
+    //     }
+    //     existingAccount.setAssetSymbol(updatedAccount.getAssetSymbol());
+    //     existingAccount.setQuantity(updatedAccount.getQuantity());
+    //     existingAccount.setAverageCost(updatedAccount.getAverageCost());
+    //     existingAccount.setCurrentPrice(updatedAccount.getCurrentPrice());
 
-        if (updatedAccount.getUserId() != null) {
-            User user = userRepository.findById(updatedAccount.getUserId())
-                    .orElseThrow(() -> new GeneralException("User not found: " + updatedAccount.getUserId()));
-            existingAccount.setUser(user);
-        }
+    //     if (updatedAccount.getUserId() != null) {
+    //         User user = userRepository.findById(updatedAccount.getUserId())
+    //                 .orElseThrow(() -> new GeneralException("User not found: " + updatedAccount.getUserId()));
+    //         existingAccount.setUser(user);
+    //     }
 
-        Account savedAccount = accountRepository.save(existingAccount);
+    //     Account savedAccount = accountRepository.save(existingAccount);
 
-        if (difference.compareTo(BigDecimal.ZERO) != 0) {
-            Transfer transfer = new Transfer();
-            transfer.setAmount(difference.abs());
-            transfer.setType(difference.compareTo(BigDecimal.ZERO) > 0 ? "incoming" : "outgoing");
-            transfer.setCategory("Bakiye Güncellemesi");
-            transfer.setDetails("Hesap güncellemesi sonucu bakiye farkı");
-            transfer.setDate(LocalDate.now());
-            transfer.setCreateDate(LocalDateTime.now());
-            transfer.setUser(savedAccount.getUser());
-            transfer.setAccount(savedAccount);
-            transfer.setInputPreviousBalance(oldBalance);
-            transfer.setInputNextBalance(newBalance);
+    //     if (difference.compareTo(BigDecimal.ZERO) != 0) {
+    //         Transfer transfer = new Transfer();
+    //         transfer.setAmount(difference.abs());
+    //         transfer.setType(difference.compareTo(BigDecimal.ZERO) > 0 ? "incoming" : "outgoing");
+    //         transfer.setCategory("Bakiye Güncellemesi");
+    //         transfer.setDetails("Hesap güncellemesi sonucu bakiye farkı");
+    //         transfer.setDate(LocalDate.now());
+    //         transfer.setCreateDate(LocalDateTime.now());
+    //         transfer.setUser(savedAccount.getUser());
+    //         transfer.setAccount(savedAccount);
+    //         transfer.setInputPreviousBalance(oldBalance);
+    //         transfer.setInputNextBalance(newBalance);
 
-            transferRepository.save(transfer);
-        }
+    //         transferRepository.save(transfer);
+    //     }
 
-        return AccountMapper.INSTANCE.toAccountDTO(savedAccount);
-    }
+    //     return AccountMapper.INSTANCE.toAccountDTO(savedAccount);
+    // }
 
     @Transactional
     public void deleteAccount(Long id) {

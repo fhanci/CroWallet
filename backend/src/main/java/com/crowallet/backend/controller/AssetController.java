@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.crowallet.backend.dto.AccountSummaryResponseDTO;
 import com.crowallet.backend.dto.AssetDTO;
 import com.crowallet.backend.dto.AssetResponse;
+import com.crowallet.backend.dto.MoneyAccountResponseDTO;
 import com.crowallet.backend.dto.PositionDTO;
 import com.crowallet.backend.dto.TransactionDTO;
 import com.crowallet.backend.requests.SellInvestmentRequest;
@@ -141,6 +142,23 @@ public class AssetController {
     @GetMapping("/accountSummary")
     public AccountSummaryResponseDTO getAccountSummary() {
         return assetService.getAccountSummary();
+    }
+
+    @DeleteMapping("/delete-money-account/{accountId}")
+    public ResponseEntity<Void> deleteMoneyAccount(@PathVariable Long accountId) {
+        boolean deleted = assetService.deleteMoneyAccount(accountId);
+        if (deleted) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+
+    @PutMapping("/update-money-account")
+    public ResponseEntity<MoneyAccountResponseDTO> updateMoneyAccount(@RequestBody MoneyAccountResponseDTO moneyAccountResponseDTO) {
+        System.out.println(moneyAccountResponseDTO);
+        MoneyAccountResponseDTO updatedMoneyAccount = assetService.updateMoneyAccount(moneyAccountResponseDTO);
+        return ResponseEntity.ok(updatedMoneyAccount);
     }
     
     

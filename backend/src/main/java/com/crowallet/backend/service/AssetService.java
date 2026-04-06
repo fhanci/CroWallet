@@ -632,9 +632,9 @@ public class AssetService {
         UserBalanceDTO userBalance = moneyAccountRepository.findTotalBalancesByUser(user);
         accountSummary.setTotalBalanceTRY(userBalance.getTotalUSD().add(userBalance.getTotalEUR()).add(userBalance.getTotalTRY()));
         Map<String,BigDecimal> currencyTotals = new HashMap<>();
-        currencyTotals.put("EUR", userBalance.getTotalEUR());
-        currencyTotals.put("USD", userBalance.getTotalUSD());
-        currencyTotals.put("TRY", userBalance.getTotalTRY());
+        currencyTotals.put("EUR", userBalance.getTotalEUR() != null ? userBalance.getTotalEUR() : BigDecimal.ZERO);
+        currencyTotals.put("USD", userBalance.getTotalUSD() != null ? userBalance.getTotalUSD() : BigDecimal.ZERO);
+        currencyTotals.put("TRY", userBalance.getTotalTRY() != null ? userBalance.getTotalTRY() : BigDecimal.ZERO);
         accountSummary.setCurrencyTotals(currencyTotals);
 
 
@@ -648,6 +648,13 @@ public class AssetService {
         Map<Long,BigDecimal> assetInvestmentValues = new HashMap<>();
 
         for (Asset asset : userAssets) {
+
+            System.out.println(asset.isActive());
+            if (asset.isActive() == false){
+                System.out.println("Inactive asset found: " + asset.getId());
+                continue;
+            }
+
             List<Transactions> transactionsListByAsset = transactionRepository.findByAsset(asset);
             List<Positions> positionsListByAsset = positionRepository.findAllByAsset(asset);
             Positions position = positionsListByAsset.get(positionsListByAsset.size() - 1);
@@ -676,6 +683,12 @@ public class AssetService {
         ////////////////////////////////////INVESTMENT ACCOUNT////////////////////////////////////
         List<UserAccountSummaryInvestmentDTO> investmentAccountResponseDTO = new ArrayList<>();
         for (Asset asset : userAssets) {
+
+            if (asset.isActive() == false){
+                System.out.println("Inactive asset found2: " + asset.getId());
+                continue;
+            }
+
             UserAccountSummaryInvestmentDTO investmentDTO = new UserAccountSummaryInvestmentDTO();
             investmentDTO.setId(asset.getId());
             investmentDTO.setAccountName(asset.getAssetName());
@@ -693,14 +706,20 @@ public class AssetService {
             List<Transactions> transactionListByAsset = transactionRepository.findByAsset(asset);
             for (Transactions transaction : transactionListByAsset) {
 
+                System.out.println(transaction.getAssetName());
+
                 if (transaction.getTransactionType() == TransactionType.SELL) {
                     continue;
                 }
 
+                System.out.println("Transaction found: " + transaction.getId());
+
                 Long sellingCount = this.getSellingCount(transaction.getId());
-                if (sellingCount.compareTo(BigDecimal.ZERO.longValue()) > 0) {
+                System.out.println("Transaction Quantity: " + transaction.getQuantity() + " Transaction Selling Count: " + sellingCount);
+                if (sellingCount.compareTo(transaction.getQuantity().longValue()) >= 0) {
                     continue;
                 }
+                System.out.println("-".repeat(100));
                 AssetResponse assetResponse = new AssetResponse();
                 assetResponse.setId(transaction.getId());
                 assetResponse.setAccountId(asset.getId());
@@ -726,4 +745,32 @@ public class AssetService {
         return accountSummary;
     }
 
+
+
+    public Boolean deleteMoneyAccount(Long accountId) {
+        try {
+            moneyAccountRepository.deleteById(accountId);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+
+    public MoneyAccountResponseDTO updateMoneyAccount(MoneyAccountResponseDTO moneyAccountResponseDTO) {
+        try {
+            Optional<MoneyAccount> optionalMoneyAccount = moneyAccountRepository.findById(moneyAccountResponseDTO.getId());
+            if (!optionalMoneyAccount.isPresent()){
+                return null;
+            }
+            MoneyAccount moneyAccount = optionalMoneyAccount.get();
+            moneyAccount.setAccountName(moneyAccountResponseDTO.getAccountName());
+            moneyAccount.setBalance(moneyAccountResponseDTO.getBalance());
+            moneyAccount.setCurrency(moneyAccountResponseDTO.getCurrency());            
+            MoneyAccount savedMoneyAccount = moneyAccountRepository.save(moneyAccount);
+            return moneyAccountMapper.toMoneyAccountResponseDTO(savedMoneyAccount);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

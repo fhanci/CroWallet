@@ -170,15 +170,31 @@ const MyAccountsPage = () => {
     }
 
     try {
-      const updateDate = new Date().toISOString();
+      // const updateDate = new Date().toISOString();
+      // await axios.put(
+      //   `${backendUrl}/api/accounts/update/${editingAccount.id}`,
+      //   {
+      //     ...editingAccount,
+      //     accountName: editAccountName,
+      //     balance: parseFloat(editBalance),
+      //     currency: editCurrency,
+      //     updateDate,
+      //   },
+      //   {
+      //     headers: {
+      //       Authorization: token ? `Bearer ${token}` : undefined,
+      //       "Content-Type": "application/json",
+      //     },
+      //   }
+      // );
+
       await axios.put(
-        `${backendUrl}/api/accounts/update/${editingAccount.id}`,
+        `${backendUrl}/api/asset/update-money-account`,
         {
           ...editingAccount,
           accountName: editAccountName,
           balance: parseFloat(editBalance),
           currency: editCurrency,
-          updateDate,
         },
         {
           headers: {
@@ -220,15 +236,25 @@ const MyAccountsPage = () => {
       );
 
       if (verifyRes.status === 200) {
-        // Delete the account
+
         await axios.delete(
-          `${backendUrl}/api/accounts/delete/${deletingAccount.id}`,
+          `${backendUrl}/api/asset/delete-money-account/${deletingAccount.id}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
             },
           }
         );
+
+        // // Delete the account
+        // await axios.delete(
+        //   `${backendUrl}/api/accounts/delete/${deletingAccount.id}`,
+        //   {
+        //     headers: {
+        //       Authorization: token ? `Bearer ${token}` : undefined,
+        //     },
+        //   }
+        // );
 
         setDeleteDialogOpen(false);
         setSnackbar({ open: true, message: "Hesap başarıyla silindi!", severity: "success" });

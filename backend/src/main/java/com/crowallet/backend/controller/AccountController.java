@@ -96,10 +96,10 @@ public class AccountController {
     //     return accountService.findByAccountInvesment(id);
     // }
 
-    @PostMapping("/create-account")
-    public AccountDTO createAccount(@RequestBody AccountDTO account) {
-        return accountService.createAccount(account);
-    }
+    // @PostMapping("/create-account")
+    // public AccountDTO createAccount(@RequestBody AccountDTO account) {
+    //     return accountService.createAccount(account);
+    // }
 
     @PostMapping("/create-money-account")
     public ResponseEntity<MoneyAccountResponseDTO> createMoneyAccount(@RequestBody MoneyAccountRequestDTO moneyAccountRequestDTO) {        
@@ -108,7 +108,7 @@ public class AccountController {
     }
 
     @GetMapping("/get-money-accounts")
-    public ResponseEntity<List<MoneyAccountResponseDTO>> getMethodName(@RequestParam(required = true) Long userId) {
+    public ResponseEntity<List<MoneyAccountResponseDTO>> getMoneyAccounts(@RequestParam(required = true) Long userId) {
         List<MoneyAccountResponseDTO> moneyAccounts = accountService.getMoneyAccount(userId);
         return ResponseEntity.ok(moneyAccounts);
     }
@@ -157,10 +157,10 @@ public class AccountController {
         accountService.removeHoldingFromAccount(holdingId);
     }
 
-    @PutMapping("/update/{id}")
-    public AccountDTO updateAccount(@PathVariable Long id, @RequestBody AccountDTO account) {
-        return accountService.updateAccount(id, account);
-    }
+    // @PutMapping("/update/{id}")
+    // public AccountDTO updateAccount(@PathVariable Long id, @RequestBody AccountDTO account) {
+    //     return accountService.updateAccount(id, account);
+    // }
 
     @PostMapping("/withdraw-money")
     public TransferDTO withdrawMoney(@RequestBody TransferDTO transferDTO) {

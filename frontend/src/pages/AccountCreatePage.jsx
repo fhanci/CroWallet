@@ -450,30 +450,24 @@ const AccountCreatePage = () => {
           now.getTime() + 3 * 60 * 60 * 1000
         ).toISOString();
 
-
-
-
-
-
-
-        await axios.post(
-          `${backendUrl}/api/accounts/create-account`,
-          {
-            userId: user.id,
-            updateDate,
-            accountType,
-            accountName: finalAccountName,
-            balance: parseFloat(balance),
-            currency,
-            holdingType,
-          },
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        // await axios.post(
+        //   `${backendUrl}/api/accounts/create-account`,
+        //   {
+        //     userId: user.id,
+        //     updateDate,
+        //     accountType,
+        //     accountName: finalAccountName,
+        //     balance: parseFloat(balance),
+        //     currency,
+        //     holdingType,
+        //   },
+        //   {
+        //     headers: {
+        //       Authorization: token ? `Bearer ${token}` : undefined,
+        //       "Content-Type": "application/json",
+        //     },
+        //   }
+        // );
 
 
         await axios.post(
