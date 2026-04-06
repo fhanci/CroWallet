@@ -1,5 +1,6 @@
 package com.crowallet.backend.service;
 
+import com.crowallet.backend.repository.MoneyAccountRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -10,17 +11,23 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.crowallet.backend.dto.AccountSummaryResponseDTO;
 import com.crowallet.backend.dto.AssetDTO;
 import com.crowallet.backend.dto.AssetResponse;
+import com.crowallet.backend.dto.MoneyAccountResponseDTO;
 import com.crowallet.backend.dto.PositionDTO;
 import com.crowallet.backend.dto.TransactionDTO;
+import com.crowallet.backend.dto.UserAccountSummaryInvestmentDTO;
+import com.crowallet.backend.dto.UserBalanceDTO;
 import com.crowallet.backend.entity.Asset;
+import com.crowallet.backend.entity.MoneyAccount;
 import com.crowallet.backend.entity.Positions;
 import com.crowallet.backend.entity.RelatedTransactions;
 import com.crowallet.backend.entity.TransactionType;
 import com.crowallet.backend.entity.Transactions;
 import com.crowallet.backend.entity.User;
 import com.crowallet.backend.mapper.AssetMapper;
+import com.crowallet.backend.mapper.MoneyAccountMapper;
 import com.crowallet.backend.mapper.PositionsMapper;
 import com.crowallet.backend.mapper.TransactionMapper;
 import com.crowallet.backend.repository.AssetRepository;
@@ -39,22 +46,27 @@ import org.springframework.stereotype.Service;
 @Service
 public class AssetService {
 
+    private final MoneyAccountRepository moneyAccountRepository;
     private AssetRepository assetRepository;
     private TransactionRepository transactionRepository;
     private PositionRepository positionRepository;
     private UserRepository userRepository;
     private TransactionMapper transactionMapper;
     private RelatedTransactionsRepository relatedTransactionsRepository;
+    private MoneyAccountMapper moneyAccountMapper;
 
     public AssetService(AssetRepository assetRepository, TransactionRepository transactionRepository,
             PositionRepository positionRepository, UserRepository userRepository, TransactionMapper transactionMapper,
-            RelatedTransactionsRepository relatedTransactionsRepository) {
+            RelatedTransactionsRepository relatedTransactionsRepository, MoneyAccountRepository moneyAccountRepository,
+            MoneyAccountMapper moneyAccountMapper) {
         this.assetRepository = assetRepository;
         this.transactionRepository = transactionRepository;
         this.positionRepository = positionRepository;
         this.userRepository = userRepository;
         this.transactionMapper = transactionMapper;
         this.relatedTransactionsRepository = relatedTransactionsRepository;
+        this.moneyAccountRepository = moneyAccountRepository;
+        this.moneyAccountMapper = moneyAccountMapper;
     }
 
     @Transactional
@@ -562,6 +574,8 @@ public class AssetService {
 
     @Transactional
     public List<SellInvestmentRequest> sellInvestments(List<SellInvestmentRequest> sellInvestmentRequestsList) {
+
+
         for (SellInvestmentRequest sellInvestmentRequest : sellInvestmentRequestsList) {
             Optional<Transactions> optionalTransaction = transactionRepository
                     .findById(sellInvestmentRequest.getTransactionId());
@@ -602,6 +616,114 @@ public class AssetService {
         if (newPositions == null)
             throw new Error("Yeni bir position kaydı açılamadı");
         return sellInvestmentRequestsList;
+    }
+
+    @Transactional
+    public AccountSummaryResponseDTO getAccountSummary() {
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication()
+                .getPrincipal();
+        User user = userRepository.findById(userDetails.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+
+        AccountSummaryResponseDTO accountSummary = new AccountSummaryResponseDTO();
+
+        ////////////////////////////////////MONEY////////////////////////////////////
+        UserBalanceDTO userBalance = moneyAccountRepository.findTotalBalancesByUser(user);
+        accountSummary.setTotalBalanceTRY(userBalance.getTotalUSD().add(userBalance.getTotalEUR()).add(userBalance.getTotalTRY()));
+        Map<String,BigDecimal> currencyTotals = new HashMap<>();
+        currencyTotals.put("EUR", userBalance.getTotalEUR());
+        currencyTotals.put("USD", userBalance.getTotalUSD());
+        currencyTotals.put("TRY", userBalance.getTotalTRY());
+        accountSummary.setCurrencyTotals(currencyTotals);
+
+
+
+        ////////////////////////////////////INVESTMENT////////////////////////////////////
+        List<Asset> userAssets = assetRepository.findByUser(user);
+        Map<String, BigDecimal> lastPrices = this.getLastPrices(transactionRepository.findAll());
+
+        BigDecimal totalInvestmentValue = BigDecimal.ZERO;
+        BigDecimal totalProfitLoss = BigDecimal.ZERO;
+        Map<Long,BigDecimal> assetInvestmentValues = new HashMap<>();
+
+        for (Asset asset : userAssets) {
+            List<Transactions> transactionsListByAsset = transactionRepository.findByAsset(asset);
+            List<Positions> positionsListByAsset = positionRepository.findAllByAsset(asset);
+            Positions position = positionsListByAsset.get(positionsListByAsset.size() - 1);
+            totalProfitLoss = totalProfitLoss.add(position.getProfitLoss());
+            assetInvestmentValues.put(asset.getId(), BigDecimal.ZERO);
+            for (Transactions transaction : transactionsListByAsset) {
+                if (transaction.getTransactionType() == TransactionType.CREATE || transaction.getTransactionType() == TransactionType.BUY || transaction.getTransactionType() == TransactionType.UPDATE) {
+                    totalInvestmentValue = totalInvestmentValue.add(transaction.getQuantity().multiply(lastPrices.get(transaction.getAssetSymbol())));
+                    assetInvestmentValues.put(asset.getId(), assetInvestmentValues.get(asset.getId()).add(transaction.getQuantity().multiply(lastPrices.get(transaction.getAssetSymbol()))));
+                }
+                else if (transaction.getTransactionType() == TransactionType.SELL) {
+                    totalInvestmentValue = totalInvestmentValue.subtract(transaction.getQuantity().multiply(lastPrices.get(transaction.getAssetSymbol())));
+                    assetInvestmentValues.put(asset.getId(), assetInvestmentValues.get(asset.getId()).subtract(transaction.getQuantity().multiply(lastPrices.get(transaction.getAssetSymbol()))));
+                }
+            };
+        };
+
+        accountSummary.setTotalInvestmentValue(totalInvestmentValue);
+        accountSummary.setTotalInvestmentProfitLoss(totalProfitLoss);
+
+        ////////////////////////////////////MONEY ACCOUNT////////////////////////////////////
+        List<MoneyAccount> userMoneyAccounts = moneyAccountRepository.findByUser(user);
+        List<MoneyAccountResponseDTO> moneyAccountResponseDTO = this.moneyAccountMapper.toMoneyAccountResponseDTO(userMoneyAccounts);
+        accountSummary.setCurrencyAccounts(moneyAccountResponseDTO);
+
+        ////////////////////////////////////INVESTMENT ACCOUNT////////////////////////////////////
+        List<UserAccountSummaryInvestmentDTO> investmentAccountResponseDTO = new ArrayList<>();
+        for (Asset asset : userAssets) {
+            UserAccountSummaryInvestmentDTO investmentDTO = new UserAccountSummaryInvestmentDTO();
+            investmentDTO.setId(asset.getId());
+            investmentDTO.setAccountName(asset.getAssetName());
+            investmentDTO.setBalance(assetInvestmentValues.get(asset.getId()));
+            investmentDTO.setTotalValue(investmentDTO.getBalance());
+            investmentDTO.setUserId(user.getId());
+            investmentDTO.setAssetType(asset.getAssetType().name());
+            List<Positions> positionsListByAsset = positionRepository.findAllByAsset(asset);
+            Positions position = positionsListByAsset.get(positionsListByAsset.size() - 1);            
+            investmentDTO.setProfitLoss(position.getProfitLoss());
+            investmentDTO.setAccountType("INVESTMENT");
+
+            
+            List<AssetResponse> listInvestment = new ArrayList<>();
+            List<Transactions> transactionListByAsset = transactionRepository.findByAsset(asset);
+            for (Transactions transaction : transactionListByAsset) {
+
+                if (transaction.getTransactionType() == TransactionType.SELL) {
+                    continue;
+                }
+
+                Long sellingCount = this.getSellingCount(transaction.getId());
+                if (sellingCount.compareTo(BigDecimal.ZERO.longValue()) > 0) {
+                    continue;
+                }
+                AssetResponse assetResponse = new AssetResponse();
+                assetResponse.setId(transaction.getId());
+                assetResponse.setAccountId(asset.getId());
+                assetResponse.setUserId(user.getId());
+                assetResponse.setAssetType(asset.getAssetType());
+                assetResponse.setAssetSymbol(transaction.getAssetSymbol());
+                assetResponse.setAssetName(transaction.getAssetName());
+                assetResponse.setQuantity(transaction.getQuantity().subtract(BigDecimal.valueOf(sellingCount)));
+                assetResponse.setPurchasePrice(transaction.getUnitPrice());
+                assetResponse.setCurrentPrice(lastPrices.get(transaction.getAssetSymbol()));
+                assetResponse.setTotalValue(transaction.getQuantity().multiply(lastPrices.get(transaction.getAssetSymbol())));
+                assetResponse.setProfitLoss((transaction.getQuantity().subtract(BigDecimal.valueOf(sellingCount))).multiply(lastPrices.get(transaction.getAssetSymbol())).subtract(assetResponse.getTotalValue()));
+                assetResponse.setAccountName(asset.getAssetName());
+                listInvestment.add(assetResponse);                
+            }
+            investmentDTO.setHoldings(listInvestment);
+            investmentDTO.setHoldingCount(listInvestment.size());
+            investmentAccountResponseDTO.add(investmentDTO);
+        }
+        accountSummary.setInvestmentAccounts(investmentAccountResponseDTO);
+        accountSummary.setCurrencyAccountCount(accountSummary.getCurrencyAccounts().size());
+        accountSummary.setInvestmentAccountCount(investmentAccountResponseDTO.size());
+        return accountSummary;
     }
 
 }

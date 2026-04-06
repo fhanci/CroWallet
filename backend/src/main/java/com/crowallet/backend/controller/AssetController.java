@@ -3,6 +3,7 @@ package com.crowallet.backend.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.crowallet.backend.dto.AccountSummaryResponseDTO;
 import com.crowallet.backend.dto.AssetDTO;
 import com.crowallet.backend.dto.AssetResponse;
 import com.crowallet.backend.dto.PositionDTO;
@@ -137,6 +138,10 @@ public class AssetController {
     }
     
     
+    @GetMapping("/accountSummary")
+    public AccountSummaryResponseDTO getAccountSummary() {
+        return assetService.getAccountSummary();
+    }
     
     
 

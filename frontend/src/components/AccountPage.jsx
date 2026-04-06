@@ -22,11 +22,12 @@ import { useTheme } from "../config/ThemeContext";
 import useCurrencyRates from "../config/useCurrencyRates";
 import axios from "axios";
 import { backendUrl } from "../utils/envVariables";
+import { CURRENCIES, exchangeRates } from "../data/currencies";
 
 // Currency Rates Display Component - Shows EUR/TRY, EUR/USD rates
 const CurrencyRatesDisplay = ({ isDarkMode }) => {
   const { rates, loading, refresh } = useCurrencyRates(60000);
-  
+
   const formatRate = (rate) => {
     if (!rate) return '-';
     return rate.toFixed(4);
@@ -38,12 +39,12 @@ const CurrencyRatesDisplay = ({ isDarkMode }) => {
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
       {/* EUR/TRY Rate */}
-      <Box sx={{ 
-        display: "flex", 
-        alignItems: "center", 
-        gap: 0.5, 
-        px: 1.5, 
-        py: 0.5, 
+      <Box sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 0.5,
+        px: 1.5,
+        py: 0.5,
         borderRadius: 2,
         bgcolor: bgColor,
         border: "1px solid",
@@ -58,12 +59,12 @@ const CurrencyRatesDisplay = ({ isDarkMode }) => {
       </Box>
 
       {/* USD/TRY Rate */}
-      <Box sx={{ 
-        display: "flex", 
-        alignItems: "center", 
-        gap: 0.5, 
-        px: 1.5, 
-        py: 0.5, 
+      <Box sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 0.5,
+        px: 1.5,
+        py: 0.5,
         borderRadius: 2,
         bgcolor: bgColor,
         border: "1px solid",
@@ -79,11 +80,11 @@ const CurrencyRatesDisplay = ({ isDarkMode }) => {
 
       {/* Refresh Button */}
       <MuiTooltip title="Kurları Güncelle">
-        <IconButton 
-          onClick={refresh} 
-          size="small" 
+        <IconButton
+          onClick={refresh}
+          size="small"
           disabled={loading}
-          sx={{ 
+          sx={{
             color: isDarkMode ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.5)",
             "&:hover": { color: "#2196F3" }
           }}
@@ -136,14 +137,41 @@ const AccountPage = () => {
             },
           }
         );
-        setAccountSummary(res.data);
-        console.log("AccountSummarData: " + JSON.stringify(res.data,4,4));
+        //setAccountSummary(res.data);
+        console.log("AccountSummarData: " + JSON.stringify(res.data, 4, 4));
+
+        await exchangeRates();
+
+
+        const resTest = await axios.get(
+          `${backendUrl}/api/asset/accountSummary`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
+
+
+        console.log("İşlem Sonuçları: ")
+        console.log(resTest.data);
+        console.log("İşlem Update Sonucu:");
+        console.log("Kurlar: ")
+        console.log(CURRENCIES);
+        resTest.data.totalBalanceTRY =
+          resTest.data.currencyTotals.EUR * CURRENCIES[2].exchangeRates + resTest.data.currencyTotals.USD * CURRENCIES[1].exchangeRates + resTest.data.currencyTotals.TRY + resTest.data.totalInvestmentValue;
+        console.log(resTest.data.totalBalanceTRY);
+
+        setAccountSummary(resTest.data);
+
+
       } catch (error) {
         console.error("Error fetching account summary:", error);
       }
     };
     fetchAccountSummary();
   }, [user.id, token]);
+
 
   // Fetch debt summary
   useEffect(() => {
@@ -265,8 +293,8 @@ const AccountPage = () => {
     border: `1px solid ${borderColor}`,
     boxShadow: isDarkMode ? "0 4px 24px rgba(0, 0, 0, 0.3)" : "0 4px 24px rgba(0, 0, 0, 0.12)",
     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-    "&:hover": { 
-      transform: "translateY(-2px)", 
+    "&:hover": {
+      transform: "translateY(-2px)",
       boxShadow: isDarkMode ? "0 8px 32px rgba(0, 0, 0, 0.4)" : "0 8px 32px rgba(0, 0, 0, 0.18)",
     },
   };
@@ -278,7 +306,7 @@ const AccountPage = () => {
         width: { xs: "90%", sm: 260, md: 300 },
         height: 130,
         p: 2,
-        bgcolor: isDarkMode 
+        bgcolor: isDarkMode
           ? (item.holdingType === "CASH" ? "rgba(76, 175, 80, 0.15)" : "rgba(33, 150, 243, 0.15)")
           : (item.holdingType === "CASH" ? "rgba(76, 175, 80, 0.12)" : "rgba(33, 150, 243, 0.12)"),
         borderRadius: 0,
@@ -301,11 +329,11 @@ const AccountPage = () => {
         <Typography variant="h6" sx={{ fontWeight: 700, fontSize: "1.25rem", letterSpacing: "-0.5px", color: textPrimary }}>
           {formatCurrency(item.balance, item.currency)}
         </Typography>
-        <Typography 
-          variant="caption" 
-          sx={{ 
-            mt: 1, 
-            px: 1.5, 
+        <Typography
+          variant="caption"
+          sx={{
+            mt: 1,
+            px: 1.5,
             py: 0.25,
             bgcolor: item.holdingType === "CASH" ? "rgba(76, 175, 80, 0.2)" : "rgba(33, 150, 243, 0.2)",
             color: item.holdingType === "CASH" ? "#4CAF50" : "#2196F3",
@@ -354,9 +382,9 @@ const AccountPage = () => {
         <Typography variant="h6" sx={{ fontWeight: 700, fontSize: "1.25rem", letterSpacing: "-0.5px", color: textPrimary }}>
           {formatCurrency(item.totalValue, "TRY")}
         </Typography>
-        <Typography 
-          variant="body2" 
-          sx={{ 
+        <Typography
+          variant="body2"
+          sx={{
             color: item.profitLoss >= 0 ? "#4CAF50" : "#f44336",
             fontWeight: 600,
             fontSize: "0.85rem",
@@ -364,11 +392,11 @@ const AccountPage = () => {
         >
           {item.profitLoss >= 0 ? "+" : ""}{formatCurrency(item.profitLoss, "TRY")}
         </Typography>
-        <Typography 
-          variant="caption" 
-          sx={{ 
-            mt: 1, 
-            px: 1.5, 
+        <Typography
+          variant="caption"
+          sx={{
+            mt: 1,
+            px: 1.5,
             py: 0.25,
             bgcolor: item.assetType === "GOLD" ? "rgba(212, 175, 55, 0.25)" : "rgba(156, 39, 176, 0.20)",
             color: item.assetType === "GOLD" ? "#FFD700" : "#BA68C8",
@@ -422,7 +450,7 @@ const AccountPage = () => {
             </Typography>
           </Box>
         </Box>
-        
+
         <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 700, color: "#f44336", fontSize: "1.25rem", letterSpacing: "-0.5px" }}>
@@ -432,7 +460,7 @@ const AccountPage = () => {
               Toplam: {formatCurrency(debt.debtAmount, debt.debtCurrency)}
             </Typography>
           </Box>
-          
+
           {debt.paymentType === "PERIODIC" && (
             <Box sx={{ mt: 1.5 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
@@ -458,12 +486,12 @@ const AccountPage = () => {
               />
             </Box>
           )}
-          
+
           <Box sx={{ display: "flex", gap: 1, mt: 1.5 }}>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                px: 1.5, 
+            <Typography
+              variant="caption"
+              sx={{
+                px: 1.5,
                 py: 0.25,
                 bgcolor: isCredit ? "rgba(244, 67, 54, 0.2)" : "rgba(255, 152, 0, 0.2)",
                 color: isCredit ? "#f44336" : "#ff9800",
@@ -475,10 +503,10 @@ const AccountPage = () => {
             >
               {isCredit ? "Kredi" : "Nakit Borç"}
             </Typography>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                px: 1.5, 
+            <Typography
+              variant="caption"
+              sx={{
+                px: 1.5,
                 py: 0.25,
                 bgcolor: "rgba(0, 0, 0, 0.05)",
                 color: "text.secondary",
@@ -507,16 +535,30 @@ const AccountPage = () => {
   const incomeData = getChartData(incomeSources, "incoming", transfers);
   const expenseData = getChartData(expenseSources, "outgoing", transfers);
 
-  // Helper to convert any currency to TRY using real-time rates
-  const convertToTRY = (amount, currency) => {
+
+  const convertToTRY2 = (amount, currency) => {
+    console.log(`Para Hesapları - ${currency}: ${amount}`);
     if (!amount || !currency || currency === "TRY") return amount || 0;
-    if (!rates || Object.keys(rates).length === 0 || !rates[currency] || !rates["TRY"]) {
-      return 0;
-    }
+    // if (!rates || Object.keys(rates).length === 0 || !rates[currency] || !rates["TRY"]) {
+    //   return 0;
+    // }
+    console.log("Bura")
     // rates[currency] = EUR rate, rates["TRY"] = EUR to TRY rate
     // X [currency] = X * (TRY_rate / currency_rate) TRY
-    return amount * (rates["TRY"] / rates[currency]);
-  };
+
+    return amount * CURRENCIES.find(c => c.value === currency)?.exchangeRates
+  }
+
+  // Helper to convert any currency to TRY using real-time rates
+  // const convertToTRY = (amount, currency) => {
+  //   if (!amount || !currency || currency === "TRY") return amount || 0;
+  //   if (!rates || Object.keys(rates).length === 0 || !rates[currency] || !rates["TRY"]) {
+  //     return 0;
+  //   }
+  //   // rates[currency] = EUR rate, rates["TRY"] = EUR to TRY rate
+  //   // X [currency] = X * (TRY_rate / currency_rate) TRY
+  //   return amount * (rates["TRY"] / rates[currency]);
+  // };
 
   // Calculate total assets in TRY using real-time rates
   const calculateTotalAssetsTRY = () => {
@@ -526,7 +568,7 @@ const AccountPage = () => {
     let total = 0;
     if (accountSummary?.currencyTotals) {
       Object.entries(accountSummary.currencyTotals).forEach(([currency, amount]) => {
-        total += convertToTRY(amount, currency);
+        total += convertToTRY2(amount, currency);
       });
     }
     total += accountSummary?.totalInvestmentValue || 0;
@@ -540,7 +582,7 @@ const AccountPage = () => {
     }
     let total = 0;
     debtSummary.debts.forEach((debt) => {
-      total += convertToTRY(debt.remainingAmount, debt.debtCurrency);
+      total += convertToTRY2(debt.remainingAmount, debt.debtCurrency);
     });
     return total;
   };
@@ -556,19 +598,21 @@ const AccountPage = () => {
   // Calculate pie chart data by account type
   const calculatePieData = () => {
     if (!accountSummary) return [];
-    
+
+
     // Calculate currency accounts total in TRY using real-time rates
     let currencyTotal = 0;
     if (accountSummary.currencyTotals) {
       Object.entries(accountSummary.currencyTotals).forEach(([currency, amount]) => {
-        currencyTotal += convertToTRY(amount, currency);
+        //console.log(`Para Hesapları - ${currency}: ${amount}`);   
+        currencyTotal += convertToTRY2(amount, currency);
       });
     }
-    
+
     // Calculate gold and stock totals from investment accounts
     let goldTotal = 0;
     let stockTotal = 0;
-    
+
     if (accountSummary.investmentAccounts) {
       accountSummary.investmentAccounts.forEach((acc) => {
         if (acc.holdings) {
@@ -583,16 +627,19 @@ const AccountPage = () => {
         }
       });
     }
-    
+
+    console.log(goldTotal);
+    console.log(stockTotal);
+
     // Get debt total in TRY
     const debtTotal = totalDebts;
-    
+
     const data = [];
     if (stockTotal > 0) data.push({ name: "Hisse Yatırımları", value: stockTotal, color: "#9C27B0" });
     if (goldTotal > 0) data.push({ name: "Altın Yatırımları", value: goldTotal, color: "#FFD700" });
     if (currencyTotal > 0) data.push({ name: "Para Hesapları", value: currencyTotal, color: "#4CAF50" });
     if (debtTotal > 0) data.push({ name: "Borçlar", value: debtTotal, color: "#f44336" });
-    
+
     return data;
   };
 
@@ -601,7 +648,7 @@ const AccountPage = () => {
   // Custom active shape for pie chart with external label
   const renderActiveShape = (props) => {
     const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value } = props;
-    
+
     return (
       <g>
         <Sector
@@ -859,19 +906,19 @@ const AccountPage = () => {
 
       {/* Currency Accounts Section */}
       <Divider sx={{ width: "100%", my: 4, borderColor: borderColor }} />
-      
+
       <Box sx={{ width: "100%", mt: 2 }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2, mb: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <AccountBalanceIcon sx={{ fontSize: 30, color: "#2196F3" }} />
             <Typography variant="h5" sx={{ color: textPrimary, fontWeight: 600 }}>Para Hesapları</Typography>
-            <Chip 
-              label={accountSummary?.currencyAccountCount || 0} 
-              size="small" 
-              color="primary" 
+            <Chip
+              label={accountSummary?.currencyAccountCount || 0}
+              size="small"
+              color="primary"
             />
           </Box>
-          
+
           {/* Real-time Currency Rates */}
           <CurrencyRatesDisplay isDarkMode={isDarkMode} />
         </Box>
@@ -901,10 +948,10 @@ const AccountPage = () => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
           <TrendingUpIcon sx={{ fontSize: 30, color: "#9C27B0" }} />
           <Typography variant="h5" sx={{ color: textPrimary, fontWeight: 600 }}>Yatırım Hesapları</Typography>
-          <Chip 
-            label={accountSummary?.investmentAccountCount || 0} 
-            size="small" 
-            color="secondary" 
+          <Chip
+            label={accountSummary?.investmentAccountCount || 0}
+            size="small"
+            color="secondary"
           />
         </Box>
 
@@ -928,13 +975,13 @@ const AccountPage = () => {
 
       {/* Debts Section (same format as accounts) */}
       <Divider sx={{ width: "100%", my: 4, borderColor: borderColor }} />
-      
+
       <Box sx={{ width: "100%", mt: 2 }}>
-        <Box 
-          sx={{ 
-            display: "flex", 
-            alignItems: "center", 
-            gap: 2, 
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
             mb: 2,
             cursor: "pointer",
             "&:hover": { opacity: 0.8 },
@@ -943,10 +990,10 @@ const AccountPage = () => {
         >
           <CreditCardIcon sx={{ fontSize: 30, color: "#f44336" }} />
           <Typography variant="h5" sx={{ color: textPrimary, fontWeight: 600 }}>Borçlar</Typography>
-          <Chip 
-            label={debtSummary?.activeDebts || 0} 
-            size="small" 
-            color="error" 
+          <Chip
+            label={debtSummary?.activeDebts || 0}
+            size="small"
+            color="error"
           />
           <ArrowForwardIosIcon sx={{ fontSize: 18, color: textSecondary, ml: "auto" }} />
         </Box>
@@ -970,14 +1017,14 @@ const AccountPage = () => {
 
         {activeDebts.length > 6 && (
           <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               color="error"
               onClick={() => navigate("/debt")}
               startIcon={<ArrowForwardIosIcon />}
-              sx={{ 
-                borderRadius: 0, 
-                textTransform: "none", 
+              sx={{
+                borderRadius: 0,
+                textTransform: "none",
                 fontWeight: 600,
                 px: 3,
               }}
@@ -990,13 +1037,13 @@ const AccountPage = () => {
 
       {/* Recent Transactions Section */}
       <Divider sx={{ width: "100%", my: 4, borderColor: borderColor }} />
-      
+
       <Box sx={{ width: "100%", mt: 2 }}>
-        <Box 
-          sx={{ 
-            display: "flex", 
-            alignItems: "center", 
-            gap: 2, 
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
             mb: 2,
             cursor: "pointer",
             "&:hover": { opacity: 0.8 },
@@ -1018,15 +1065,15 @@ const AccountPage = () => {
               .sort((a, b) => new Date(b.createDate) - new Date(a.createDate))
               .slice(0, 4)
               .map((transaction) => {
-                const isIncome = transaction.type === "incoming" || 
+                const isIncome = transaction.type === "incoming" ||
                   (transaction.type === "inter-account" && transaction.inputPreviousBalance !== null);
-                
+
                 return (
                   <Card
                     key={transaction.id}
                     sx={{
                       p: 2,
-                      bgcolor: isDarkMode 
+                      bgcolor: isDarkMode
                         ? (isIncome ? "rgba(76, 175, 80, 0.12)" : "rgba(244, 67, 54, 0.12)")
                         : (isIncome ? "rgba(76, 175, 80, 0.06)" : "rgba(244, 67, 54, 0.06)"),
                       borderRadius: 0,
@@ -1038,8 +1085,8 @@ const AccountPage = () => {
                       borderLeftStyle: "solid",
                       borderLeftColor: isIncome ? "#4CAF50" : "#f44336",
                       transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                      "&:hover": { 
-                        transform: "translateX(4px)", 
+                      "&:hover": {
+                        transform: "translateX(4px)",
                         bgcolor: isDarkMode
                           ? (isIncome ? "rgba(76, 175, 80, 0.18)" : "rgba(244, 67, 54, 0.18)")
                           : (isIncome ? "rgba(76, 175, 80, 0.10)" : "rgba(244, 67, 54, 0.10)"),
@@ -1056,10 +1103,10 @@ const AccountPage = () => {
                           {transaction.account?.accountName} • {transaction.date}
                         </Typography>
                       </Box>
-                      <Typography 
-                        variant="h6" 
-                        sx={{ 
-                          fontWeight: 700, 
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontWeight: 700,
                           color: isIncome ? "#4CAF50" : "#f44336",
                           fontSize: "1.1rem",
                           letterSpacing: "-0.5px",
@@ -1075,17 +1122,17 @@ const AccountPage = () => {
         )}
 
         {transfers.length > 4 && (
-          <Box 
-            sx={{ 
-              display: "flex", 
-              justifyContent: "center", 
-              mt: 2 
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mt: 2
             }}
           >
-            <Button 
+            <Button
               variant="text"
               onClick={() => navigate("/all-transactions")}
-              sx={{ 
+              sx={{
                 textTransform: "none",
                 fontWeight: 600,
                 color: "#FF9800",
@@ -1103,13 +1150,13 @@ const AccountPage = () => {
       {upcomingPayments.length > 0 && (
         <>
           <Divider sx={{ width: "100%", my: 4 }} />
-          
+
           <Box sx={{ width: "100%", mt: 2 }}>
-            <Box 
-              sx={{ 
-                display: "flex", 
-                alignItems: "center", 
-                gap: 2, 
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
                 mb: 2,
                 cursor: "pointer",
                 "&:hover": { opacity: 0.8 },
@@ -1133,10 +1180,10 @@ const AccountPage = () => {
                     key={payment.id}
                     sx={{
                       p: 2,
-                      bgcolor: isOverdue 
-                        ? "rgba(244, 67, 54, 0.08)" 
-                        : isUrgent 
-                          ? "rgba(255, 152, 0, 0.08)" 
+                      bgcolor: isOverdue
+                        ? "rgba(244, 67, 54, 0.08)"
+                        : isUrgent
+                          ? "rgba(255, 152, 0, 0.08)"
                           : "rgba(244, 67, 54, 0.04)",
                       borderRadius: 0,
                       borderLeft: `3px solid ${isOverdue ? "#d32f2f" : isUrgent ? "#ff9800" : "#f44336"}`,
@@ -1148,12 +1195,12 @@ const AccountPage = () => {
                       borderLeftStyle: "solid",
                       borderLeftColor: isOverdue ? "#d32f2f" : isUrgent ? "#ff9800" : "#f44336",
                       transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                      "&:hover": { 
-                        transform: "translateX(4px)", 
-                        bgcolor: isOverdue 
-                          ? "rgba(244, 67, 54, 0.12)" 
-                          : isUrgent 
-                            ? "rgba(255, 152, 0, 0.12)" 
+                      "&:hover": {
+                        transform: "translateX(4px)",
+                        bgcolor: isOverdue
+                          ? "rgba(244, 67, 54, 0.12)"
+                          : isUrgent
+                            ? "rgba(255, 152, 0, 0.12)"
                             : "rgba(244, 67, 54, 0.08)",
                       },
                     }}
@@ -1186,8 +1233,8 @@ const AccountPage = () => {
                         </Box>
                       </Box>
                       <Box sx={{ textAlign: "right" }}>
-                        <Typography 
-                          variant="h6" 
+                        <Typography
+                          variant="h6"
                           sx={{ fontWeight: 700, color: "#f44336", fontSize: "1.1rem", letterSpacing: "-0.5px" }}
                         >
                           {formatCurrency(payment.amount, payment.debtCurrency)}
@@ -1197,10 +1244,10 @@ const AccountPage = () => {
                           sx={{
                             px: 1.5,
                             py: 0.25,
-                            bgcolor: isOverdue 
-                              ? "rgba(211, 47, 47, 0.12)" 
-                              : isUrgent 
-                                ? "rgba(255, 152, 0, 0.12)" 
+                            bgcolor: isOverdue
+                              ? "rgba(211, 47, 47, 0.12)"
+                              : isUrgent
+                                ? "rgba(255, 152, 0, 0.12)"
                                 : "rgba(0, 0, 0, 0.05)",
                             color: isOverdue ? "#c62828" : isUrgent ? "#e65100" : "text.secondary",
                             fontWeight: 600,
@@ -1209,10 +1256,10 @@ const AccountPage = () => {
                             letterSpacing: "0.3px",
                           }}
                         >
-                          {isOverdue 
-                            ? `${Math.abs(daysUntil)} gün geçti` 
-                            : daysUntil === 0 
-                              ? "Bugün" 
+                          {isOverdue
+                            ? `${Math.abs(daysUntil)} gün geçti`
+                            : daysUntil === 0
+                              ? "Bugün"
                               : `${daysUntil} gün kaldı`
                           }
                         </Typography>
@@ -1224,14 +1271,14 @@ const AccountPage = () => {
             </Box>
 
             <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-              <Button 
-                variant="outlined" 
+              <Button
+                variant="outlined"
                 color="error"
                 onClick={() => navigate("/debt")}
                 startIcon={<ArrowForwardIosIcon />}
-                sx={{ 
-                  borderRadius: 0, 
-                  textTransform: "none", 
+                sx={{
+                  borderRadius: 0,
+                  textTransform: "none",
                   fontWeight: 600,
                   px: 3,
                 }}

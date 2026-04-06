@@ -383,9 +383,10 @@ public class AccountService {
         summary.setInvestmentAccounts(AccountMapper.INSTANCE.toAccountDTOList(investmentAccounts));
         summary.setCurrencyAccountCount(currencyAccounts.size());
         summary.setInvestmentAccountCount(investmentAccounts.size());
-
         return summary;
     }
+
+    
 
     private BigDecimal convertToTRY(BigDecimal amount, String currency) {
         // Simplified conversion rates - in production, use real-time rates
