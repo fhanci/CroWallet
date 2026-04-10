@@ -44,4 +44,7 @@ public class MoneyAccount extends BaseEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @Column(name = "is_active")
+    private Boolean isActive;
+
 }

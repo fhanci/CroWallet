@@ -155,9 +155,9 @@ public class AssetController {
 
 
     @PutMapping("/update-money-account")
-    public ResponseEntity<MoneyAccountResponseDTO> updateMoneyAccount(@RequestBody MoneyAccountResponseDTO moneyAccountResponseDTO) {
+    public ResponseEntity<MoneyAccountResponseDTO> updateMoneyAccount(@RequestParam(required = true) Boolean updatedAccount,@RequestParam(required = true) BigDecimal exchangeRate, @RequestBody MoneyAccountResponseDTO moneyAccountResponseDTO) {
         System.out.println(moneyAccountResponseDTO);
-        MoneyAccountResponseDTO updatedMoneyAccount = assetService.updateMoneyAccount(moneyAccountResponseDTO);
+        MoneyAccountResponseDTO updatedMoneyAccount = assetService.updateMoneyAccount(updatedAccount,exchangeRate,moneyAccountResponseDTO);
         return ResponseEntity.ok(updatedMoneyAccount);
     }
     

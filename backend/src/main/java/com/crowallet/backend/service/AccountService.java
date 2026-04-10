@@ -112,6 +112,7 @@ public class AccountService {
                 .orElseThrow(() -> new RuntimeException("Kullanıcı Bulunamadı"));
         MoneyAccount moneyAccount = this.moneyAccountMapper.toMoneyAccount(moneyAccountRequestDTO);
         moneyAccount.setUser(user);
+        moneyAccount.setIsActive(true);
         MoneyAccount savedMoneyAccount = moneyAccountRepository.save(moneyAccount);
 
 
@@ -135,7 +136,7 @@ public class AccountService {
     @Transactional
     public List<MoneyAccountResponseDTO> getMoneyAccount(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User Bulunamadı"));
-        List<MoneyAccount> allMoneyAccounts = moneyAccountRepository.findByUser(user);
+        List<MoneyAccount> allMoneyAccounts = moneyAccountRepository.findByUserAndIsActive(user, true);
         return this.moneyAccountMapper.toMoneyAccountResponseDTO(allMoneyAccounts);
     }
 
@@ -144,36 +145,6 @@ public class AccountService {
         MoneyAccount account = moneyAccountRepository.findById(moneyAccountId).orElseThrow(() -> new RuntimeException("Girilen Hesap Bulunamadı"));
         MoneyAccountResponseDTO moneyAccountResponseDTO = moneyAccountMapper.toMoneyAccountResponseDTO(account);
         return moneyAccountResponseDTO;
-    }
-
-    @Transactional
-    public MoneyAccountResponseDTO updateMoneyAccount(MoneyAccountResponseDTO moneyAccountResponseDTO){
-        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication()
-                .getPrincipal();
-        User user = userRepository.findById(userDetails.getId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        System.out.println("MoneyAccount Burda");
-        System.out.println(moneyAccountResponseDTO);
-        MoneyAccount moneyAccount = moneyAccountRepository.findById(moneyAccountResponseDTO.getId()).orElseThrow(() -> new RuntimeException("Hesap bulunamadı"));
-        moneyAccount.setBalance(moneyAccountResponseDTO.getBalance());
-        MoneyAccount savedMoneyAccount = moneyAccountRepository.save(moneyAccount);
-
-        // Transfer transfer = new Transfer();
-        // transfer.setAmount(moneyAccount.getBalance());
-        // transfer.setType(moneyAccount.getBalance().compareTo(savedMoneyAccount.getBalance()) <= 0 ? "incoming" : "outgoing");
-        // transfer.setCategory("Bakiye Güncellemesi");
-        // transfer.setDetails("Hesap güncellemesi sonucu bakiye farkı");
-        // transfer.setDate(LocalDate.now());
-        // transfer.setCreateDate(LocalDateTime.now());
-        // transfer.setUser(user);
-        // transfer.setMoneyAccount(savedMoneyAccount);
-        // transfer.setInputPreviousBalance(moneyAccount.getBalance());
-        // transfer.setInputNextBalance(savedMoneyAccount.getBalance());
-
-        // transferRepository.save(transfer);
-
-        return this.moneyAccountMapper.toMoneyAccountResponseDTO(savedMoneyAccount);
     }
 
     @Transactional

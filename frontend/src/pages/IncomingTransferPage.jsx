@@ -24,11 +24,12 @@ import { useNavigate } from "react-router-dom";
 import { t } from "i18next";
 import { useUser } from "../config/UserStore";
 import { backendUrl } from "../utils/envVariables";
+import { CURRENCIES } from "../data/currencies";
+import {toLocalISOTime} from "../utils/localIsoTime.js"
 
 const IncomingTransferPage = () => {
   const navigate = useNavigate();
   const { user } = useUser();
-  const now = new Date();
   const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
   const [selectedTransferAccount, setSelectedTransferAccount] = useState(null);
@@ -48,22 +49,10 @@ const IncomingTransferPage = () => {
     }
   };
 
+
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        // const res = await axios.get(
-        //   `${backendUrl}/api/accounts/get/${user.id}`,
-        //   {
-        //     headers: {
-        //       Authorization: token ? `Bearer ${token}` : undefined,
-        //     },
-        //   }
-        // );
-        // // Only show CURRENCY type accounts
-        // const currencyAccounts = res.data.filter(
-        //   acc => !acc.accountType || acc.accountType === "CURRENCY"
-        // );
-
         const currencyAccounts = await axios.get(
           `${backendUrl}/api/accounts/get-money-accounts?userId=${user.id}`,
           {
@@ -89,6 +78,7 @@ const IncomingTransferPage = () => {
     if (!merged.includes("Diğer")) {
       merged.push("Diğer");
     }
+
     setIncomeSources(merged);
   }, [user.id]);
 
@@ -110,10 +100,15 @@ const IncomingTransferPage = () => {
       ? customCategory
       : selectedTransfer.category;
 
+      console.log("Final Category: ", finalCategory);
+      console.log("Selected Transfer: ", selectedTransfer);
+      console.log("Custom Category: ", customCategory);
+      console.log("selectedTransferAccount: ", selectedTransferAccount);
+
+
     if (
       !selectedTransferAccount ||
       !selectedTransfer.amount ||
-      !finalCategory ||
       !selectedTransfer.date
     ) {
       setError(t("requiredFieldsError"));
@@ -121,6 +116,7 @@ const IncomingTransferPage = () => {
     }
 
     if (selectedTransfer.category === "Diğer" && !customCategory.trim()) {
+      console.log("Özel kategori adı girilmedi.");
       setError("Lütfen özel kategori adı girin.");
       return;
     }
@@ -131,35 +127,27 @@ const IncomingTransferPage = () => {
       return;
     }
 
-    const createDate = new Date(
-      now.getTime() + 3 * 60 * 60 * 1000
-    ).toISOString();
+
 
     const currentBalance = parseFloat(selectedTransferAccount.balance);
 
     const transferPayload = {
-      ...selectedTransfer,
       category: finalCategory,
-      exchangeRate: 1,
+      exchangeRate: CURRENCIES.find(c => c.value === selectedTransferAccount.currency)?.exchangeRates || 1,
+      currency: selectedTransferAccount.currency,
       type: "incoming",
-      createDate,
-      user: { id: user.id },
-      account: { id: parseInt(selectedTransferAccount.id) },
-      amount,
-      date: selectedTransfer.date,
-      inputPreviousBalance: currentBalance,
-      inputNextBalance: currentBalance + amount,
-    };
-
-    const updatedAccount = {
-      ...selectedTransferAccount,
-      balance: currentBalance + amount,
-      updateDate: createDate,
+      moneyAccountId:parseInt(selectedTransferAccount.id),
+      description: selectedTransfer.description,
+      amount: parseFloat(selectedTransfer.amount),
+      details: selectedTransfer.details,
+      transactionDateTime: toLocalISOTime(selectedTransfer.date),
+      inputPreviousBalance: currentBalance,      
+      inputNextBalance: currentBalance + parseFloat(selectedTransfer.amount),
     };
 
     const updatedAccount2 = {
       ...selectedTransferAccount,
-      balance: currentBalance + amount,
+      balance: currentBalance + parseFloat(selectedTransfer.amount),
     };
 
 
@@ -176,19 +164,8 @@ const IncomingTransferPage = () => {
       );
 
       await axios.put(
-        `${backendUrl}/api/accounts/update-money-account`,
+        `${backendUrl}/api/asset/update-money-account?updatedAccount=false&exchangeRate=${transferPayload.exchangeRate}`,
         updatedAccount2,
-        {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      await axios.put(
-        `${backendUrl}/api/accounts/update/${selectedTransferAccount.id}`,
-        updatedAccount,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
@@ -224,6 +201,12 @@ const IncomingTransferPage = () => {
     ? selectedTransferAccount.balance + parseFloat(selectedTransfer.amount || 0)
     : null;
 
+
+    useEffect(() => {
+      console.log(selectedTransfer.date);
+      
+    }, [selectedTransfer.date]);
+
   return (
     <Container maxWidth="sm" sx={{ mt: 2 }}>
       <Card sx={{ borderRadius: 3, boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}>
@@ -254,7 +237,7 @@ const IncomingTransferPage = () => {
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
                     <span>{account.accountName}</span>
                     <Chip
-                      label={`${account.balance} ${account.currency}`}
+                      label={`${account.balance.toLocaleString("tr-TR")} ${account.currency}`}
                       size="small"
                       sx={{ ml: "auto" }}
                     />
@@ -301,17 +284,18 @@ const IncomingTransferPage = () => {
               opacity: 0.9
             }}>
               <Typography variant="body2" color="success.dark">
-                İşlem sonrası bakiye: <strong>{newBalance.toFixed(2)} {selectedTransferAccount.currency}</strong>
+                İşlem sonrası bakiye: <strong>{newBalance.toLocaleString("tr-TR")} {selectedTransferAccount.currency}</strong>
               </Typography>
             </Box>
           )}
 
           <TextField
             label={t("date")}
-            type="date"
+            type="datetime-local"
+            format="yyyy-MM-ddTHH:mm:SSS"
             value={selectedTransfer.date || ""}
             onChange={(e) =>
-              setSelectedTransfer({ ...selectedTransfer, date: e.target.value })
+              setSelectedTransfer({ ...selectedTransfer, date: e.target.value})
             }
             fullWidth
             margin="normal"
@@ -355,9 +339,10 @@ const IncomingTransferPage = () => {
             freeSolo
             options={selectedDetailsOptions}
             value={selectedTransfer.details || ""}
-            onChange={(e, newValue) =>
-              setSelectedTransfer({ ...selectedTransfer, details: newValue })
-            }
+            onChange={(event, newValue) => {
+              setSelectedTransfer({ ...selectedTransfer, details: newValue });
+              console.log("Updated Details:", newValue);
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}

@@ -46,8 +46,8 @@ public class DebtPayment {
     private String note;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id")
-    private Account account;
+    @JoinColumn(name = "money_account_id")
+    private MoneyAccount moneyAccount;
 
     @Column(name = "paid_currency")
     private String paidCurrency;

@@ -13,6 +13,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
+import { formatDateTime, toLocalISOTime } from '../utils/localIsoTime';
 
 
 
@@ -66,7 +67,7 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
         const newId = Math.max(...goldItems.map((item) => item.id)) + 1;
         setGoldItems([
             ...goldItems,
-            { id: newId, goldType: "", quantity: "", price: "", buyingDateTime: dayjs() },
+            { id: newId, goldType: "", quantity: "", price: "", buyingDateTime: toLocalISOTime(dayjs()) },
         ]);
     };
 
@@ -82,17 +83,25 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
         if (field === "price" || field === "quantity")
             value = value < 0 ? value * -1 : value;
 
-        if (field !== "price") {
+
+        //Tarih
+        if (field === "buyingDateTime" || field === "quantity") {
+            value = field === "buyingDateTime" ? dayjs(value) : value;
+            setGoldItems(
+                goldItems.map((item) =>
+                    item.id === id ? { ...item, [field]: value } : item
+                )
+            );
+        }
+
+       else if (field === "goldType") {
             setGoldItems(
                 goldItems.map((item) =>
                     item.id === id ? { ...item, [field]: value, price: ["GRAM", "CEYREK", "YARIM", "TAM", "CUMHURIYET"].includes(value) ? goldPrice.find((data) => data.Name.split("ALTIN")[0] === value).Selling : item.price } : item
                 )
             );
         }
-        else {
-            if (field === "buyingDateTime") {
-                value = dayjs(value).format("YYYY-MM-DD");
-            }
+        else if (field === "price") {
             setGoldItems(
                 goldItems.map((item) =>
                     item.id === id ? { ...item, [field]: value } : item)
@@ -185,6 +194,8 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
 
 
 
+
+
     return (
         <Box sx={{ padding: "15px" }}>
             {/* INVESTMENT ACCOUNT FORM */}
@@ -213,7 +224,7 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
                 <Box>
                     {/* Gold Items */}
                     {goldItems.map((item, index) => (
-                        
+
                         <Paper
                             key={item.id}
                             elevation={1}
@@ -332,7 +343,18 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
                             </Box>
 
                             <Box sx={{ my: 3 }}>
-                                <LocalizationProvider dateAdapter={AdapterDayjs}>
+
+
+                                <TextField
+                                    label={"Tarih Seç"}
+                                    type="datetime-local"
+                                    fullWidth
+                                    value={formatDateTime(item.buyingDateTime)}
+                                    onChange={(e) => updateGoldItem(item.id, "buyingDateTime", e.target.value)}
+                                    margin="normal"
+                                    InputLabelProps={{ shrink: true }}
+                                />
+                                {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
                                     <DatePicker
                                         label="Tarih Seç"
                                         value={item.buyingDateTime}
@@ -345,7 +367,7 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
                                         }}
 
                                     />
-                                </LocalizationProvider>
+                                </LocalizationProvider> */}
 
                             </Box>
 

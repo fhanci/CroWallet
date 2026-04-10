@@ -85,8 +85,8 @@ public class Debt {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "account_id", referencedColumnName = "id")
-    private Account account;
+    @JoinColumn(name = "money_account_id", referencedColumnName = "id")
+    private MoneyAccount moneyAccount;
 
     @OneToMany(mappedBy = "debt", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<DebtPayment> payments = new ArrayList<>();

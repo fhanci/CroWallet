@@ -19,12 +19,6 @@ import java.util.Map;
 
 import com.crowallet.backend.service.AccountService;
 import com.crowallet.backend.repository.UserRepository;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 
 
 ;
@@ -113,11 +107,11 @@ public class AccountController {
         return ResponseEntity.ok(moneyAccounts);
     }
 
-    @PutMapping("/update-money-account")
-    public ResponseEntity<MoneyAccountResponseDTO> updateMoneyAccount(@RequestBody MoneyAccountResponseDTO moneyAccountResponseDTO) {
-        MoneyAccountResponseDTO updateMoneyAccount = accountService.updateMoneyAccount(moneyAccountResponseDTO);
-        return ResponseEntity.ok(updateMoneyAccount);
-    }
+    // @PutMapping("/update-money-account")
+    // public ResponseEntity<MoneyAccountResponseDTO> updateMoneyAccount(@RequestParam(required = true) Long exchangeRate,@RequestBody MoneyAccountResponseDTO moneyAccountResponseDTO) {
+    //     MoneyAccountResponseDTO updateMoneyAccount = accountService.updateMoneyAccount(exchangeRate,moneyAccountResponseDTO);
+    //     return ResponseEntity.ok(updateMoneyAccount);
+    // }
     
     @GetMapping("/get-money-account")
     public ResponseEntity<MoneyAccountResponseDTO> getMoneyAccountById(@RequestParam Long moneyAccountId) {

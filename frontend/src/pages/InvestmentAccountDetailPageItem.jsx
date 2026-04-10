@@ -53,6 +53,7 @@ import dayjs from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { toLocalISOTime } from "../utils/localIsoTime";
 
 
 
@@ -204,21 +205,37 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
         const selectedAccount = await getAccountDetailInfo();
 
-        const nowTime = new Date().toISOString()
-        //TRANSFER APILACAK 
-        const transferPayload = {
-            type: "incoming",
-            account: { id: parseInt(selectedAccount.id) },
-            user: { id: user.id },
-            inputPreviousBalance: selectedAccount.balance,
-            inputNextBalance: selectedAccount.balance + await getTotalPriceBySellingItems(selectedAccount),
-            exchangeRate: selectedAccount.currency === "TRY" ? 1 : selectedAccount.currency === "USD" ? (await exchangeRates()).USD.Selling : (await exchangeRates()).EUR.Selling,
-            date: nowTime,
-            description: "Altın/Hisse satım işlemi sırasında bu hesaba para girişi sağlanmıştır",
-            createDate: nowTime,
-            category: "Satım İşlemi",
-            amount: await getTotalPriceBySellingItems(selectedAccount),
-        };
+        const rates = await exchangeRates();
+        const rate = selectedAccount.currency === "TRY" ? 1 :
+            selectedAccount.currency === "USD" ? rates.USD.Selling : rates.EUR.Selling;
+
+        const transferPayloads = [];
+
+        let currentBalance = selectedAccount.balance;
+
+        console.log("Satılacaklar Bunlar: " + JSON.stringify(sellInvestmentList, 4, 4));
+
+        for (const item of sellInvestmentList) {
+            const itemTotal = parseFloat(item.sellCount) * parseFloat(item.salesPrice);
+            const itemValueInAccountCurrency = itemTotal / rate;
+
+            const previousBalance = currentBalance;
+            currentBalance += itemValueInAccountCurrency;
+
+            transferPayloads.push({
+                type: "incoming",
+                moneyAccountId: selectedAccount.id,
+                inputPreviousBalance: previousBalance,
+                inputNextBalance: currentBalance,
+                exchangeRate: rate,
+                description: "Altın/Hisse satım işlemi sırasında bu hesaba para girişi sağlanmıştır",
+                transactionDateTime: toLocalISOTime(item.buyingDateTime),
+                category: "Satım İşlemi",
+                amount: itemValueInAccountCurrency,
+                currency: selectedAccount.currency
+            })
+        }
+
 
         const updatedAccount = {
             ...selectedAccount,
@@ -227,19 +244,21 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
 
         try {
-            await axios.post(
-                `${backendUrl}/api/transfers/create`,
-                transferPayload,
-                {
-                    headers: {
-                        Authorization: token ? `Bearer ${token}` : undefined,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
 
+            for (const transferPayload of transferPayloads) {
+                await axios.post(
+                    `${backendUrl}/api/transfers/create`,
+                    transferPayload,
+                    {
+                        headers: {
+                            Authorization: token ? `Bearer ${token}` : undefined,
+                            "Content-Type": "application/json",
+                        },
+                    }
+                );
+            }
             await axios.put(
-                `${backendUrl}/api/accounts/update-money-account`,
+                `${backendUrl}/api/asset/update-money-account?updatedAccount=false&exchangeRate=${CURRENCIES.find(c => c.value === selectedAccount.currency)?.exchangeRates}`,
                 updatedAccount,
                 {
                     headers: {
@@ -426,21 +445,78 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
         const selectedAccount = await getAccountDetailInfo();
 
-        const nowTime = new Date().toISOString()
-        //TRANSFER APILACAK 
-        const transferPayload = {
-            type: "outgoing",
-            account: { id: parseInt(selectedAccount.id) },
-            user: { id: user.id },
-            outputPreviousBalance: selectedAccount.balance,
-            outputNextBalance: selectedAccount.balance - await getTotalPrice(selectedAccount),
-            exchangeRate: selectedAccount.currency === "TRY" ? 1 : selectedAccount.currency === "USD" ? (await exchangeRates()).USD.Selling : (await exchangeRates()).EUR.Selling,
-            date: nowTime, //Değişebilir çünkü transfer işlemi yapıldıktan sonra tarih atanacak, şu anlık işlem tarihi atıldı
-            description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
-            createDate: nowTime,
-            category: "Satın Alım",
-            amount: await getTotalPrice(selectedAccount),
+        const rates = await exchangeRates(); // Kuru dışarıda bir kez çekelim
+        const rate = selectedAccount.currency === "TRY" ? 1 :
+            selectedAccount.currency === "USD" ? rates.USD.Selling : rates.EUR.Selling;
+
+        const transferPayloads = [];
+
+        let currentBalance = selectedAccount.balance;
+
+        if (item[0].assetType === "GOLD") {
+            for (const item of goldItems) {
+                const itemTotal = parseFloat(item.quantity) * parseFloat(item.price);
+                const itemValueInAccountCurrency = itemTotal / rate;
+
+                const previousBalance = currentBalance;
+                currentBalance -= itemValueInAccountCurrency;
+
+                transferPayloads.push({
+                    type: "outgoing",
+                    moneyAccountId: selectedAccount.id,
+                    outputPreviousBalance: previousBalance,
+                    outputNextBalance: currentBalance,
+                    exchangeRate: rate,
+                    description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
+                    transactionDateTime: toLocalISOTime(item.buyingDateTime),
+                    category: "Satın Alım",
+                    amount: itemValueInAccountCurrency,
+                    currency: selectedAccount.currency
+                })
+            }
+        }
+        else {
+            for (const item of stockItems) {
+                const itemTotal = parseFloat(item.quantity) * parseFloat(item.price);
+                const itemValueInAccountCurrency = itemTotal / rate;
+                const previousBalance = currentBalance;
+                currentBalance -= itemValueInAccountCurrency;
+                transferPayloads.push({
+                    type: "outgoing",
+                    moneyAccountId: selectedAccount.id,
+                    outputPreviousBalance: previousBalance,
+                    outputNextBalance: currentBalance,
+                    exchangeRate: rate,
+                    description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
+                    transactionDateTime: toLocalISOTime(item.buyingDateTime),
+                    category: "Satın Alım",
+                    amount: itemValueInAccountCurrency,
+                    currency: selectedAccount.currency,
+                    buyingDateTime: item.buyingDateTime.toISOString()
+                })
+
+
+            }
+
         };
+
+        console.log("Transfer payloadları:", transferPayloads);
+
+
+
+
+        // const transferPayload = {
+        //     type: "outgoing",
+        //     moneyAccountId: selectedAccount.id,
+        //     outputPreviousBalance: selectedAccount.balance,
+        //     outputNextBalance: selectedAccount.balance - await getTotalPrice(selectedAccount),
+        //     exchangeRate: selectedAccount.currency === "TRY" ? 1 : selectedAccount.currency === "USD" ? (await exchangeRates()).USD.Selling : (await exchangeRates()).EUR.Selling,
+        //     description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
+        //     category: "Satın Alım",
+        //     amount: await getTotalPrice(selectedAccount),
+        //     transactionDateTime: new Date(selectedTransfer.date).toISOString().slice(0, 19),
+        //     currency: selectedAccount.currency
+        // };
 
         const updatedAccount = {
             ...selectedAccount,
@@ -448,19 +524,33 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
         };
 
         try {
-            await axios.post(
-                `${backendUrl}/api/transfers/create`,
-                transferPayload,
-                {
-                    headers: {
-                        Authorization: token ? `Bearer ${token}` : undefined,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
+
+            for (const transferPayload of transferPayloads) {
+                await axios.post(
+                    `${backendUrl}/api/transfers/create`,
+                    transferPayload,
+                    {
+                        headers: {
+                            Authorization: token ? `Bearer ${token}` : undefined,
+                            "Content-Type": "application/json",
+                        },
+                    }
+                );
+            }
+
+            // await axios.post(
+            //     `${backendUrl}/api/transfers/create`,
+            //     transferPayload,
+            //     {
+            //         headers: {
+            //             Authorization: token ? `Bearer ${token}` : undefined,
+            //             "Content-Type": "application/json",
+            //         },
+            //     }
+            // );
 
             await axios.put(
-                `${backendUrl}/api/accounts/update-money-account`,
+                `${backendUrl}/api/asset/update-money-account?updatedAccount=false&exchangeRate=${CURRENCIES.find(c => c.value === selectedAccount.currency)?.exchangeRates}`,
                 updatedAccount,
                 {
                     headers: {
@@ -505,7 +595,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                 currentValue: parseFloat(stockItem.stock.price),
                 buyingDateTime: stockItem.buyingDateTime.toISOString()
             }));
-        
+
         await addHolding(holdings).unwrap();
         setUpdateMoneyAccount(true);
         closeShowAddDialog();
@@ -670,7 +760,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                 updatedId: editingHolding.id,
                 updatedQuantity: parseFloat(editQuantity),
                 updatedPurchasePrice: parseFloat(editPrice),
-            }).unwrap();        
+            }).unwrap();
 
             setEditDialogOpen(false);
         } catch (err) {

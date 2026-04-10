@@ -217,8 +217,11 @@ const AccountPage = () => {
   useEffect(() => {
     const fetchTransfers = async () => {
       try {
+
+        //Burda Tüm Para Hesaplarının Transferleri Alınacak.
+
         const res = await axios.get(
-          `${backendUrl}/api/transfers/get/${user.id}`,
+          `${backendUrl}/api/transfers/getUserAllTransfers?userId=${user.id}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
@@ -226,6 +229,7 @@ const AccountPage = () => {
           }
         );
         setTransfers(res.data);
+        console.log("User Transfers:", res.data);
       } catch (error) {
         console.error("Transfer fetch error:", error);
       }
@@ -1062,15 +1066,15 @@ const AccountPage = () => {
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             {transfers
-              .sort((a, b) => new Date(b.createDate) - new Date(a.createDate))
+              .sort((b,a) => new Date(a.transactionDateTime) - new Date(b.transactionDateTime))
               .slice(0, 4)
-              .map((transaction) => {
+              .map((transaction, idx) => {
                 const isIncome = transaction.type === "incoming" ||
                   (transaction.type === "inter-account" && transaction.inputPreviousBalance !== null);
 
                 return (
                   <Card
-                    key={transaction.id}
+                    key={idx}
                     sx={{
                       p: 2,
                       bgcolor: isDarkMode
@@ -1092,7 +1096,7 @@ const AccountPage = () => {
                           : (isIncome ? "rgba(76, 175, 80, 0.10)" : "rgba(244, 67, 54, 0.10)"),
                       },
                     }}
-                    onClick={() => navigate(`/transactions/${transaction.account?.id}`)}
+                    onClick={() => navigate(`/transactions/${transaction.moneyAccountId}`)}
                   >
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <Box>
@@ -1100,7 +1104,7 @@ const AccountPage = () => {
                           {transaction.category || "Hesaplar Arası Transfer"}
                         </Typography>
                         <Typography variant="caption" sx={{ color: textSecondary }}>
-                          {transaction.account?.accountName} • {transaction.date}
+                          {transaction.accountName} • {new Date(transaction.transactionDateTime).toLocaleString ("tr-TR")}
                         </Typography>
                       </Box>
                       <Typography
@@ -1112,7 +1116,7 @@ const AccountPage = () => {
                           letterSpacing: "-0.5px",
                         }}
                       >
-                        {isIncome ? "+" : "-"}{Math.abs(transaction.amount)} {transaction.account?.currency}
+                        {isIncome ? "+" : "-"}{Math.abs(transaction.amount).toLocaleString("tr-TR")} {transaction.currency}
                       </Typography>
                     </Box>
                   </Card>
@@ -1131,7 +1135,7 @@ const AccountPage = () => {
           >
             <Button
               variant="text"
-              onClick={() => navigate("/all-transactions")}
+              onClick={() => navigate("/all-transactions")} ///////////////////////////////////////////////////////////////////////////////////////////
               sx={{
                 textTransform: "none",
                 fontWeight: 600,

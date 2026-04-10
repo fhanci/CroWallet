@@ -14,6 +14,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
+import { formatDateTime, toLocalISOTime } from '../utils/localIsoTime';
 
 
 export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoneyAccount, selectedMoneyAccount }) => {
@@ -74,22 +75,35 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
     const updateStockItem = (id, field, value) => {
         console.log(`Updating stock item ${id}: setting ${field} to`, value);
 
+        //Ne
         if (field === "price" || field === "quantity")
             value = value < 0 ? value * -1 : value;
 
-        if (field === "price") {
+
+        //Tarih
+        if (field === "buyingDateTime" || field === "quantity") {
+            value = field === "buyingDateTime" ? dayjs(value) : value;
             setStockItems(
                 stockItems.map((item) =>
                     item.id === id ? { ...item, [field]: value } : item
                 )
             );
         }
-        else {
 
-            if (field === "buyingDateTime") {
-                value = dayjs(value).format("YYYY-MM-DD");
-            }
 
+        //Manuel Fiyat Değiştirme
+        else if (field === "price") {
+            console.log(`IF Updating stock item ${id}: setting ${field} to`, value);
+            setStockItems(
+                stockItems.map((item) =>
+                    item.id === id ? { ...item, [field]: value } : item
+                )
+            );
+        }
+
+        //Otomatik Fiyat Değiştirme
+        else if(field === "stock") {
+            console.log(`ELSE Updating stock item ${id}: setting ${field} to`, value);
             setStockItems(
                 stockItems.map((item) =>
                     item.id === id ? { ...item, [field]: value, price: typeof value === "object" ? stockPrice.find((s) => s.symbol === value.symbol).value : item.price } : item
@@ -363,7 +377,19 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
                                     />
                                 </Box>
                                 <Box sx={{ my: 3 }}>
-                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+
+
+                                    <TextField
+                                        label={"Tarih Seç"}
+                                        type="datetime-local"
+                                        fullWidth
+                                        value={formatDateTime(item.buyingDateTime)}
+                                        onChange={(e) => updateStockItem(item.id, "buyingDateTime", e.target.value)}
+                                        margin="normal"
+                                        InputLabelProps={{ shrink: true }}
+                                    />
+
+                                    {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
                                         <DatePicker
                                             label="Tarih Seç"
                                             value={item.buyingDateTime}
@@ -376,7 +402,7 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
                                             }}
 
                                         />
-                                    </LocalizationProvider>
+                                    </LocalizationProvider> */}
 
                                 </Box>
 

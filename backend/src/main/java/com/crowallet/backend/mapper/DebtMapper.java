@@ -23,7 +23,7 @@ public interface DebtMapper {
     @Mapping(source = "paymentType", target = "paymentType", qualifiedByName = "stringToPaymentType")
     @Mapping(source = "paymentFrequency", target = "paymentFrequency", qualifiedByName = "stringToPaymentFrequency")
     @Mapping(target = "user", ignore = true)
-    @Mapping(target = "account", ignore = true)
+    @Mapping(target = "moneyAccount", ignore = true)
     Debt toDebt(DebtDTO debtDTO);
 
     @Mapping(source = "debtType", target = "debtType", qualifiedByName = "debtTypeToString")
@@ -53,8 +53,8 @@ public interface DebtMapper {
     // Get account name safely (handles null account)
     @Named("getAccountName")
     default String getAccountName(DebtPayment payment) {
-        if (payment != null && payment.getDebt() != null && payment.getDebt().getAccount() != null) {
-            return payment.getDebt().getAccount().getAccountName();
+        if (payment != null && payment.getDebt() != null && payment.getDebt().getMoneyAccount() != null) {
+            return payment.getDebt().getMoneyAccount().getAccountName();
         }
         return null;
     }

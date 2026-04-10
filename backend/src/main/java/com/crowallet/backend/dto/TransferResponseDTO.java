@@ -1,15 +1,19 @@
 package com.crowallet.backend.dto;
 
-import lombok.Data;
-
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Data
-public class TransferDTO {
+import lombok.Getter;
+import lombok.Setter;
+
+
+@Getter
+@Setter
+public class TransferResponseDTO {
     private String category;
     private BigDecimal amount;
+    private LocalDateTime createdDate;
+    private LocalDateTime lastModifiedDate;
     private String description;
     private String type;
     private String details;
@@ -23,5 +27,5 @@ public class TransferDTO {
     private LocalDateTime transactionDateTime;
     private Boolean isAccountToAccountTransfer;
     private Long transferId;
+    
 }
-

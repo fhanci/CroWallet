@@ -53,18 +53,29 @@ const AllTransactionsPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(`${backendUrl}/api/transfers/get/${user.id}`, {
+        const response = await axios.get(`${backendUrl}/api/transfers/getUserAllTransfers?userId=${user.id}`, {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
           },
         });
 
+
         const sortedData = response.data.sort(
-          (a, b) => new Date(b.createDate) - new Date(a.createDate)
+          (b,a) => new Date(b.transactionDateTime) - new Date(a.transactionDateTime)
         );
 
-        setTransactions(sortedData);
-        setFilteredTransactions(sortedData);
+        const transactionsWithAccountInfo = await Promise.all(
+          sortedData.map(async (transaction,idx) => {
+            const accountInfo = await getMoneyAccountInfo(transaction.moneyAccountId);
+            return { ...transaction, accountName: accountInfo?.accountName || "-", id: idx};
+          })
+        );
+
+        console.log(transactionsWithAccountInfo)
+
+
+        setTransactions(transactionsWithAccountInfo);
+        setFilteredTransactions(transactionsWithAccountInfo);
       } catch (error) {
         console.error("Hata:", error);
         setError("Bir hata oluştu, lütfen tekrar deneyin.");
@@ -82,7 +93,7 @@ const AllTransactionsPage = () => {
     }
     if (startDate && endDate) {
       filtered = filtered.filter((t) => {
-        const date = new Date(t.createDate);
+        const date = new Date(t.transactionDateTime);
         return date >= new Date(startDate) && date <= new Date(endDate);
       });
     }
@@ -92,12 +103,12 @@ const AllTransactionsPage = () => {
         (t) =>
           (t.details ? t.details.toLowerCase() : "").includes(sq) ||
           (t.category ? t.category.toLowerCase() : "").includes(sq) ||
-          (t.person ? t.person.toLowerCase() : "").includes(sq) ||
+          (t.person ? t.person.toLowerCase() : "").includes(sq) || ///////////////////////////////////////////////////////////////////////////////
           (t.account?.accountName ? t.account.accountName.toLowerCase() : "").includes(sq)
       );
     }
 
-    filtered.sort((a, b) => new Date(b.createDate) - new Date(a.createDate));
+    filtered.sort((a, b) => new Date(b.transactionDateTime) - new Date(a.transactionDateTime));
     setFilteredTransactions(filtered);
   };
 
@@ -147,6 +158,19 @@ const AllTransactionsPage = () => {
       return "-";
     }
     return transaction.type === "incoming" ? t("income") : transaction.type === "debt_payment" ? t("debtPayment") : t("expense");
+  };
+
+  const getMoneyAccountInfo = async (moneyAccountId) => {
+     const response = await axios.get(
+      `${backendUrl}/api/accounts/get-money-account?moneyAccountId=${moneyAccountId}`,
+      {
+        headers:
+        {
+          Authorization: token ? `Bearer ${token}` : undefined,
+        },
+      }
+    );
+    return response.data;
   };
 
   const getTransactionTypeLabel = (transaction) => {
@@ -275,7 +299,7 @@ const AllTransactionsPage = () => {
                   : (isDarkMode ? "#f44336" : "#842029");
 
                 return (
-                  <React.Fragment key={transaction.id}>
+                  <React.Fragment key={idx}>
                     <TableRow
                       onClick={() => handleExpandTransaction(transaction.id)}
                       sx={{
@@ -295,12 +319,12 @@ const AllTransactionsPage = () => {
                       </TableCell>
                       <TableCell>
                         <Chip 
-                          label={transaction.account?.accountName || "-"} 
+                          label={transaction.accountName || "-"} 
                           size="small" 
                           variant="outlined"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/transactions/${transaction.account?.id}`);
+                            navigate(`/transactions/${transaction.moneyAccountId}`);
                           }}
                           sx={{ cursor: "pointer" }}
                         />
@@ -310,12 +334,12 @@ const AllTransactionsPage = () => {
                       </TableCell>
                       <TableCell align="right" sx={{ color: textColor }}>
                         {(isIncome ? "+ " : "- ") +
-                          Math.abs(transaction.amount) +
+                          Math.abs(transaction.amount).toLocaleString("tr-TR") +
                           " " +
-                          (transaction.account?.currency || "")}
+                          (transaction.currency || "")}
                       </TableCell>
                       <TableCell align="center" sx={{ color: textColor }}>
-                        {transaction.date}
+                        {new Date(transaction.transactionDateTime).toLocaleString("tr-TR")}
                       </TableCell>
                     </TableRow>
                     <TableRow>
@@ -327,7 +351,7 @@ const AllTransactionsPage = () => {
                         >
                           <Box sx={{ py: 2, px: 4, bgcolor: isDarkMode ? "rgba(255, 255, 255, 0.03)" : "grey.50" }}>
                             <Typography variant="body2">
-                              <strong>Hesap:</strong> {transaction.account?.accountName}
+                              <strong>Hesap:</strong> {transaction.accountName}
                             </Typography>
                             <Typography variant="body2">
                               <strong>{t("category")}:</strong> {transaction.category}
@@ -337,26 +361,26 @@ const AllTransactionsPage = () => {
                             </Typography>
                             <Typography variant="body2">
                               <strong>{t("transactionDate")}:</strong>{" "}
-                              {new Date(transaction.createDate).toLocaleString("tr-TR")}
+                              {new Date(transaction.transactionDateTime).toLocaleString("tr-TR")}
                             </Typography>
                             {transaction.inputPreviousBalance !== null && (
                               <Typography variant="body2">
-                                <strong>{t("previousBalance")}:</strong> {transaction.inputPreviousBalance}
+                                <strong>{t("previousBalance")}:</strong> {transaction.inputPreviousBalance.toLocaleString("tr-TR")}
                               </Typography>
                             )}
                             {transaction.inputNextBalance !== null && (
                               <Typography variant="body2">
-                                <strong>{t("nextBalance")}:</strong> {transaction.inputNextBalance}
+                                <strong>{t("nextBalance")}:</strong> {transaction.inputNextBalance.toLocaleString("tr-TR")}
                               </Typography>
                             )}
                             {transaction.outputPreviousBalance !== null && (
                               <Typography variant="body2">
-                                <strong>{t("previousBalance")}:</strong> {transaction.outputPreviousBalance}
+                                <strong>{t("previousBalance")}:</strong> {transaction.outputPreviousBalance.toLocaleString("tr-TR")}
                               </Typography>
                             )}
                             {transaction.outputNextBalance !== null && (
                               <Typography variant="body2">
-                                <strong>{t("nextBalance")}:</strong> {transaction.outputNextBalance}
+                                <strong>{t("nextBalance")}:</strong> {transaction.outputNextBalance.toLocaleString("tr-TR")}
                               </Typography>
                             )}
                           </Box>

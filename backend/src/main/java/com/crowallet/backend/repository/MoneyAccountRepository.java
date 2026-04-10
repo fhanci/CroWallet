@@ -9,25 +9,30 @@ import com.crowallet.backend.entity.User;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 public interface MoneyAccountRepository extends JpaRepository<MoneyAccount, Long> {
 
     List<MoneyAccount> findByUser(User user);
 
     @Query("SELECT new com.crowallet.backend.dto.UserBalanceDTO(" +
-            "COALESCE(SUM(CASE WHEN m.currency = 'USD' THEN m.balance ELSE 0 END), 0), " +
-            "COALESCE(SUM(CASE WHEN m.currency = 'EUR' THEN m.balance ELSE 0 END), 0), " +
-            "COALESCE(SUM(CASE WHEN m.currency = 'TRY' THEN m.balance ELSE 0 END), 0)) " +
+            "COALESCE(SUM(CASE WHEN m.currency = 'USD' AND m.isActive = true THEN m.balance ELSE 0 END), 0), " +
+            "COALESCE(SUM(CASE WHEN m.currency = 'EUR' AND m.isActive = true THEN m.balance ELSE 0 END), 0), " +
+            "COALESCE(SUM(CASE WHEN m.currency = 'TRY' AND m.isActive = true THEN m.balance ELSE 0 END), 0)) " +
             "FROM MoneyAccount m WHERE m.user = :user")
     UserBalanceDTO findTotalBalancesByUser(User user);
 
-    @Query("SELECT CASE m.currency WHEN 'USD' THEN SUM(m.balance) ELSE 0 END FROM MoneyAccount m WHERE m.user = :user")
+    @Query("SELECT CASE m.currency WHEN 'USD' THEN SUM(m.balance) ELSE 0 END FROM MoneyAccount m WHERE m.user = :user AND m.isActive = true")
     BigDecimal findTotalBalanceByUserAndCurrencyUSD(User user);
 
-    @Query("SELECT CASE m.currency WHEN 'EUR' THEN SUM(m.balance) ELSE 0 END FROM MoneyAccount m WHERE m.user = :user")
+    @Query("SELECT CASE m.currency WHEN 'EUR' THEN SUM(m.balance) ELSE 0 END FROM MoneyAccount m WHERE m.user = :user AND m.isActive = true")
     BigDecimal findTotalBalanceByUserAndCurrencyEUR(User user);
 
-    @Query("SELECT CASE m.currency WHEN 'TRY' THEN SUM(m.balance) ELSE 0 END FROM MoneyAccount m WHERE m.user = :user")
+    @Query("SELECT CASE m.currency WHEN 'TRY' THEN SUM(m.balance) ELSE 0 END FROM MoneyAccount m WHERE m.user = :user AND m.isActive = true")
     BigDecimal findTotalBalanceByUserAndCurrencyTRY(User user);
+
+    MoneyAccount findByAccountName(String accountName);
+
+    List<MoneyAccount> findByUserAndIsActive(User user, Boolean isActive);
 
 }

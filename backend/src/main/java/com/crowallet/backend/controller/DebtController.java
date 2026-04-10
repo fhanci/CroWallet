@@ -79,10 +79,10 @@ public class DebtController {
         return debtService.markPaymentAsPaid(paymentId, payDebt);
     }
 
-    @PutMapping("/update/{id}")
-    public DebtDTO updateDebt(@PathVariable Long id, @RequestBody DebtDTO debt) {
-        return debtService.updateDebt(id, debt);
-    }
+    // @PutMapping("/update/{id}")
+    // public DebtDTO updateDebt(@PathVariable Long id, @RequestBody DebtDTO debt) {
+    //     return debtService.updateDebt(id, debt);
+    // }
 
     @DeleteMapping("/delete/{id}")
     public void deleteDebt(@PathVariable Long id) {

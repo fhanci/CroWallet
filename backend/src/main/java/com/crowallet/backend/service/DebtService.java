@@ -95,7 +95,7 @@ public class DebtService {
         if (debtType == DebtType.ACCOUNT_DEBT && debtDTO.getAccount() != null && debtDTO.getAccount().getId() != null) {
             Account account = accountRepository.findById(debtDTO.getAccount().getId())
                     .orElseThrow(() -> new GeneralException("Account not found"));
-            debt.setAccount(account);
+            //debt.setAccount(account);
         }
 
         // Handle periodic payments
@@ -231,7 +231,7 @@ public class DebtService {
         // Update payment record
         payment.setStatus("PAID");
         payment.setPaidDate(LocalDate.now());
-        payment.setAccount(account);
+        //payment.setAccount(account);
         payment.setPaidCurrency(accountCurrency);
         payment.setUsedExchangeRate(exchangeRate);
         payment.setPaidAmount(amountToDeduct);
@@ -252,23 +252,23 @@ public class DebtService {
         debtRepository.save(debt);
         payment = paymentRepository.save(payment);
 
-        // Create transfer record for transaction history
-        Transfer transfer = new Transfer();
-        transfer.setAmount(amountToDeduct);
-        transfer.setCategory("Borç Ödemesi");
-        transfer.setDetails("Taksit #" + payment.getPaymentNumber() + " - " + debt.getToWhom());
-        transfer.setDescription("Borç ödemesi: " + debt.getToWhom() + " (" + installmentAmount + " " + debtCurrency + ")");
-        transfer.setDate(LocalDate.now());
-        transfer.setCreateDate(LocalDateTime.now());
-        transfer.setUser(debt.getUser());
-        transfer.setAccount(account);
-        transfer.setType("debt_payment");
-        transfer.setOutputPreviousBalance(previousBalance);
-        transfer.setOutputNextBalance(newBalance);
-        if (exchangeRate != null) {
-            transfer.setExchangeRate(exchangeRate);
-        }
-        transferRepository.save(transfer);
+        // // Create transfer record for transaction history
+        // Transfer transfer = new Transfer();
+        // transfer.setAmount(amountToDeduct);
+        // transfer.setCategory("Borç Ödemesi");
+        // transfer.setDetails("Taksit #" + payment.getPaymentNumber() + " - " + debt.getToWhom());
+        // transfer.setDescription("Borç ödemesi: " + debt.getToWhom() + " (" + installmentAmount + " " + debtCurrency + ")");
+        // transfer.setDate(LocalDate.now());
+        // transfer.setCreateDate(LocalDateTime.now());
+        // transfer.setUser(debt.getUser());
+        // transfer.setAccount(account);
+        // transfer.setType("debt_payment");
+        // transfer.setOutputPreviousBalance(previousBalance);
+        // transfer.setOutputNextBalance(newBalance);
+        // if (exchangeRate != null) {
+        //     transfer.setExchangeRate(exchangeRate);
+        // }
+        // transferRepository.save(transfer);
 
         DebtPaymentDTO dto = DebtMapper.INSTANCE.toPaymentDTO(payment);
         dto.setAccountId(account.getId());
@@ -291,38 +291,38 @@ public class DebtService {
         return enrichDebtDTO(DebtMapper.INSTANCE.toDebtDTO(debt));
     }
 
-    @Transactional
-    public DebtDTO updateDebt(Long id, DebtDTO updatedDebt) {
-        Debt existingDebt = debtRepository.findById(id)
-                .orElseThrow(() -> new GeneralException("Debt not found: " + id));
+    // @Transactional
+    // public DebtDTO updateDebt(Long id, DebtDTO updatedDebt) {
+    //     Debt existingDebt = debtRepository.findById(id)
+    //             .orElseThrow(() -> new GeneralException("Debt not found: " + id));
 
-        existingDebt.setDebtAmount(updatedDebt.getDebtAmount());
-        existingDebt.setRemainingAmount(updatedDebt.getDebtAmount());
-        existingDebt.setDebtCurrency(updatedDebt.getDebtCurrency());
-        existingDebt.setToWhom(updatedDebt.getToWhom());
-        existingDebt.setStatus(updatedDebt.getStatus());
-        existingDebt.setWarningPeriod(updatedDebt.getWarningPeriod());
-        existingDebt.setDueDate(updatedDebt.getDueDate());
-        existingDebt.setDescription(updatedDebt.getDescription());
+    //     existingDebt.setDebtAmount(updatedDebt.getDebtAmount());
+    //     existingDebt.setRemainingAmount(updatedDebt.getDebtAmount());
+    //     existingDebt.setDebtCurrency(updatedDebt.getDebtCurrency());
+    //     existingDebt.setToWhom(updatedDebt.getToWhom());
+    //     existingDebt.setStatus(updatedDebt.getStatus());
+    //     existingDebt.setWarningPeriod(updatedDebt.getWarningPeriod());
+    //     existingDebt.setDueDate(updatedDebt.getDueDate());
+    //     existingDebt.setDescription(updatedDebt.getDescription());
     
 
-        if (updatedDebt.getAccount() != null && updatedDebt.getAccount().getId() != null) {
-            Account account = accountRepository.findById(updatedDebt.getAccount().getId())
-                    .orElseThrow(() -> new GeneralException("Account not found"));
-            existingDebt.setAccount(account);
-        }
+    //     if (updatedDebt.getAccount() != null && updatedDebt.getAccount().getId() != null) {
+    //         Account account = accountRepository.findById(updatedDebt.getAccount().getId())
+    //                 .orElseThrow(() -> new GeneralException("Account not found"));
+    //         existingDebt.setAccount(account);
+    //     }
 
-        if (updatedDebt.getTotalInstallments() != null && updatedDebt.getTotalInstallments() > 0) {
-                existingDebt.setInstallmentAmount(updatedDebt.getDebtAmount().divide(
-                        BigDecimal.valueOf(updatedDebt.getTotalInstallments()), 2, RoundingMode.HALF_UP));
-        }
+    //     if (updatedDebt.getTotalInstallments() != null && updatedDebt.getTotalInstallments() > 0) {
+    //             existingDebt.setInstallmentAmount(updatedDebt.getDebtAmount().divide(
+    //                     BigDecimal.valueOf(updatedDebt.getTotalInstallments()), 2, RoundingMode.HALF_UP));
+    //     }
 
-        Debt saved = debtRepository.save(existingDebt);
+    //     Debt saved = debtRepository.save(existingDebt);
 
-        //updatePaymentSchedule(saved);
+    //     //updatePaymentSchedule(saved);
         
-        return enrichDebtDTO(DebtMapper.INSTANCE.toDebtDTO(saved));
-    }
+    //     return enrichDebtDTO(DebtMapper.INSTANCE.toDebtDTO(saved));
+    // }
 
 
    
@@ -459,10 +459,10 @@ public class DebtService {
         transfer.setAmount(payAmount);
         transfer.setCategory("Borç Ödeme");
         transfer.setDetails("Borç ödeme");
-        transfer.setDate(LocalDate.now());
-        transfer.setCreateDate(LocalDateTime.now());
+        // transfer.setDate(LocalDate.now());
+        // transfer.setCreateDate(LocalDateTime.now());
         transfer.setUser(userRepository.findById(debt.getUserId()).orElse(null));
-        transfer.setAccount(account);
+        //transfer.setAccount(account);
         transfer.setType("outgoing");
         transfer.setOutputPreviousBalance(account.getBalance().add(payAmount));
         transfer.setOutputNextBalance(updatedBalance);

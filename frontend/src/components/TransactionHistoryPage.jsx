@@ -65,23 +65,26 @@ const TransactionHistoryPage = () => {
           }
         );
 
-        // Filter transactions by accountId
-        const accountTransactions = response.data.filter(
-          (t) => t.account && t.account.id.toString() === accountId.toString()
+        const response2 = await axios.get(
+          `${backendUrl}/api/accounts/get-money-account?moneyAccountId=${accountId}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
+        setAccountName(response2.data.accountName + " - " + response2.data.currency);        
+
+        const sortedData = response.data.sort(
+          (a,b) => new Date(b.transactionDateTime) - new Date(a.transactionDateTime)
         );
 
-        if (accountTransactions.length > 0) {
-          setAccountName(
-            `${accountTransactions[0].account.accountName} - ${accountTransactions[0].account.currency}`
-          );
-        }
+        const transactionsList = sortedData.map((transaction, index) => ({ ...transaction, id: index }));
+        console.log("İşlem Listesi:", transactionsList);
 
-        const sortedData = accountTransactions.sort(
-          (a, b) => new Date(b.createDate) - new Date(a.createDate)
-        );
-        setTransactions(sortedData);
-        setFilteredTransactions(sortedData);
-        setGraphTransactions(sortedData);
+        setTransactions(transactionsList);
+        setFilteredTransactions(transactionsList);
+        setGraphTransactions(transactionsList);
       } catch (error) {
         console.error("Hata:", error);
         setError("Bir hata oluştu, lütfen tekrar deneyin.");
@@ -96,22 +99,27 @@ const TransactionHistoryPage = () => {
 
   // güncel bakiye için
   const fetchAccountBalance = async () => {
-    try {
-      const res = await axios.get(
-        `${backendUrl}/api/accounts/${accountId}`,
-        {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
-          },
-        }
-      );
+      // const res = await axios.get(
+      //   `${backendUrl}/api/accounts/${accountId}`,
+      //   {
+      //     headers: {
+      //       Authorization: token ? `Bearer ${token}` : undefined,
+      //     },
+      //   }
+      
+      // );
 
-      setAccountBalance(res.data.balance);
-      setAccountCurrency(res.data.currency);
-    } catch (e) {
-      console.error("Bakiye çekme hatası:", e);
+      const lastTransaction = transactions[transactions.length - 1];
+      setAccountBalance(lastTransaction?.outputNextBalance ?? lastTransaction?.inputNextBalance);
+      setAccountCurrency(lastTransaction?.currency);
+  }
+
+  useEffect(() => {
+    if (transactions.length > 0) {
+      fetchAccountBalance();
     }
-  };
+    
+  }, [transactions]);
 
   const applyFilters = () => {
     let filtered = [...transactions];
@@ -121,7 +129,7 @@ const TransactionHistoryPage = () => {
     }
     if (startDate && endDate) {
       filtered = filtered.filter((t) => {
-        const date = new Date(t.createDate);
+        const date = new Date(t.transactionDateTime);
         return date >= new Date(startDate) && date <= new Date(endDate);
       });
       setGraphTransactions(filtered);
@@ -132,11 +140,11 @@ const TransactionHistoryPage = () => {
         (t) =>
           (t.details ? t.details.toLowerCase() : "").includes(sq) ||
           (t.category ? t.category.toLowerCase() : "").includes(sq) ||
-          (t.person ? t.person.toLowerCase() : "").includes(sq)
+          (t.person ? t.person.toLowerCase() : "").includes(sq)////////////////////////////////////////////////////////////////////
       );
     }
 
-    filtered.sort((a, b) => new Date(b.createDate) - new Date(a.createDate));
+    filtered.sort((b,a) => new Date(b.createDate) - new Date(a.createDate));
     setFilteredTransactions(filtered);
   };
 
@@ -151,6 +159,7 @@ const TransactionHistoryPage = () => {
   };
 
   const handleOpenMenu = (event) => setAnchorEl(event.currentTarget);
+  
   const handleCloseMenu = () => setAnchorEl(null);
 
   const applyFilter = (type) => {
@@ -206,7 +215,7 @@ const TransactionHistoryPage = () => {
 
     const kategori = transaction.category || "";
     const detay = transaction.details || "";
-    return `${kategori} - ${incomeOrExpense}${detay ? " - " + detay : ""}`;
+    return `${kategori} - ${incomeOrExpense} ${detay ? "/ Detay: " + detay : ""}`;
   };
 
   return (
@@ -245,7 +254,7 @@ const TransactionHistoryPage = () => {
               justifyContent: "center",
             }}
           >
-            {t("currentBalance")}: {accountBalance} {accountCurrency}
+            {t("currentBalance")}: {accountBalance != null ? accountBalance.toLocaleString("tr-TR") : 0} {accountCurrency}
           </Typography>
         </Box>
       )}
@@ -291,6 +300,8 @@ const TransactionHistoryPage = () => {
           />
         </Box>
       </Box>
+
+
       {filteredTransactions.length > 0 && (
         <Box
           sx={{
@@ -311,6 +322,7 @@ const TransactionHistoryPage = () => {
           <Graph transactions={graphTransactions} accountId={accountId} />
         </Box>
       )}
+
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -330,6 +342,9 @@ const TransactionHistoryPage = () => {
         </MenuItem>
         <MenuItem onClick={handleOpenDateFilter}>{t("filterByDate")}</MenuItem>
       </Menu>
+
+
+
 
       <TableContainer
         component={Paper}
@@ -360,7 +375,7 @@ const TransactionHistoryPage = () => {
                   : (isDarkMode ? "#f44336" : "#842029");
 
                 return (
-                  <React.Fragment key={transaction.id}>
+                  <React.Fragment key={idx}>
                     <TableRow
                       onClick={() => handleExpandTransaction(transaction.id)}
                       sx={{
@@ -383,12 +398,12 @@ const TransactionHistoryPage = () => {
                       </TableCell>
                       <TableCell align="right" sx={{ color: textColor }}>
                         {(isIncome ? "+ " : "- ") +
-                          Math.abs(transaction.amount) +
+                          Math.abs(transaction.amount).toLocaleString("tr-TR") +
                           " " +
-                          transaction.account.currency}
+                          transaction.currency}
                       </TableCell>
                       <TableCell align="center" sx={{ color: textColor }}>
-                        {transaction.date}
+                        {new Date(transaction.transactionDateTime).toLocaleString("tr-TR")}
                       </TableCell>
                     </TableRow>
                     <TableRow>
@@ -407,35 +422,37 @@ const TransactionHistoryPage = () => {
                             </Typography>
                             <Typography variant="body2">
                               {t("transactionDate")}:{" "}
-                              {new Date(transaction.createDate).toLocaleString(
+                              {new Date(transaction.transactionDateTime).toLocaleString(
                                 "tr-TR"
                               )}
                             </Typography>
                             <Typography variant="body2">
-                              {t("enteredDate")}: {transaction.date}
+                              {t("enteredDate")}: {new Date(transaction.createdDate).toLocaleString(
+                                "tr-TR"
+                              )}
                             </Typography>
                             {transaction.inputPreviousBalance !== null && (
                               <Typography variant="body2">
                                 {t("previousBalance")}:{" "}
-                                {transaction.inputPreviousBalance}
+                                {transaction.inputPreviousBalance.toLocaleString("tr-TR")}
                               </Typography>
                             )}
                             {transaction.inputNextBalance !== null && (
                               <Typography variant="body2">
                                 {t("nextBalance")}:{" "}
-                                {transaction.inputNextBalance}
+                                {transaction.inputNextBalance.toLocaleString("tr-TR")}
                               </Typography>
                             )}
                             {transaction.outputPreviousBalance !== null && (
                               <Typography variant="body2">
                                 {t("previousBalance")}:{" "}
-                                {transaction.outputPreviousBalance}
+                                {transaction.outputPreviousBalance.toLocaleString("tr-TR")}
                               </Typography>
                             )}
                             {transaction.outputNextBalance !== null && (
                               <Typography variant="body2">
                                 {t("nextBalance")}:{" "}
-                                {transaction.outputNextBalance}
+                                {transaction.outputNextBalance.toLocaleString("tr-TR")}
                               </Typography>
                             )}
                           </Box>
@@ -445,7 +462,9 @@ const TransactionHistoryPage = () => {
                   </React.Fragment>
                 );
               })
-            ) : (
+            ) : 
+            
+            (
               <TableRow>
                 <TableCell colSpan={4}>
                   <Typography variant="body2" color="textSecondary">

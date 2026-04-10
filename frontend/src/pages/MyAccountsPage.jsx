@@ -36,6 +36,7 @@ import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { backendUrl } from "../utils/envVariables";
+import { CURRENCIES } from "../data/currencies";
 
 
 const MyAccountsPage = () => {
@@ -170,26 +171,8 @@ const MyAccountsPage = () => {
     }
 
     try {
-      // const updateDate = new Date().toISOString();
-      // await axios.put(
-      //   `${backendUrl}/api/accounts/update/${editingAccount.id}`,
-      //   {
-      //     ...editingAccount,
-      //     accountName: editAccountName,
-      //     balance: parseFloat(editBalance),
-      //     currency: editCurrency,
-      //     updateDate,
-      //   },
-      //   {
-      //     headers: {
-      //       Authorization: token ? `Bearer ${token}` : undefined,
-      //       "Content-Type": "application/json",
-      //     },
-      //   }
-      // );
-
       await axios.put(
-        `${backendUrl}/api/asset/update-money-account`,
+        `${backendUrl}/api/asset/update-money-account?updatedAccount=true&exchangeRate=${CURRENCIES.find(c => c.value === editCurrency)?.exchangeRates}`,
         {
           ...editingAccount,
           accountName: editAccountName,
@@ -246,16 +229,6 @@ const MyAccountsPage = () => {
           }
         );
 
-        // // Delete the account
-        // await axios.delete(
-        //   `${backendUrl}/api/accounts/delete/${deletingAccount.id}`,
-        //   {
-        //     headers: {
-        //       Authorization: token ? `Bearer ${token}` : undefined,
-        //     },
-        //   }
-        // );
-
         setDeleteDialogOpen(false);
         setSnackbar({ open: true, message: "Hesap başarıyla silindi!", severity: "success" });
         fetchAccounts();
@@ -271,18 +244,20 @@ const MyAccountsPage = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 3, mb: 4}}>
-      <Box sx={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap"}}>
+    <Container maxWidth="lg" sx={{ mt: 3, mb: 4 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
         <Typography variant="h4" sx={{ fontWeight: 600, mb: 3 }}>
           Hesaplarım
-      </Typography>
+        </Typography>
 
-      <Button component={Link} to="/account/create" 
-      sx={{borderRadius: "30px",border: "none",background: "darkblue",color: "white",
-        textTransform:"none",padding:"10px",mb:3 }}>
-        Hesap Ekle
-      </Button>
-      
+        <Button component={Link} to="/account/create"
+          sx={{
+            borderRadius: "30px", border: "none", background: "darkblue", color: "white",
+            textTransform: "none", padding: "10px", mb: 3
+          }}>
+          Hesap Ekle
+        </Button>
+
       </Box>
 
       {/* Summary Cards */}
@@ -464,9 +439,8 @@ const MyAccountsPage = () => {
                   transform: "translateX(8px)",
                   boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
                 },
-                borderLeft: `4px solid ${
-                  account.holdingType === "BANK" ? "#2196F3" : "#4CAF50"
-                }`,
+                borderLeft: `4px solid ${account.holdingType === "BANK" ? "#2196F3" : "#4CAF50"
+                  }`,
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
