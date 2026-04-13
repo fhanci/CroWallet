@@ -3,13 +3,18 @@ import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, L
 
 const getIncomeOrExpense = (transaction, accountId) => {
   if (transaction.type === "inter-account") {
-    if (transaction.account.id.toString() === accountId.toString()) {
+    
+    if (transaction.moneyAccountId.toString() !== accountId.toString()) {
       return "expense";
     }
     if (transaction.receiverId.toString() === accountId.toString()) {
       return "income";
     }
     return "problem var";
+  }
+
+  if (transaction.type === "equal"){
+    return "equal";
   }
 
   return transaction.type === "incoming" ? "income" : "expense";
@@ -30,6 +35,9 @@ const Graph = ({ transactions, accountId }) => {
           cumulativeTotal += amount;
         } else if (type === "expense") {
           cumulativeTotal -= amount;
+        }
+        else if (type === "equal") {
+          cumulativeTotal += 0;
         }
 
         return {

@@ -348,6 +348,7 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
                                 <TextField
                                     label={"Tarih Seç"}
                                     type="datetime-local"
+                                    inputProps={{step: 1}}
                                     fullWidth
                                     value={formatDateTime(item.buyingDateTime)}
                                     onChange={(e) => updateGoldItem(item.id, "buyingDateTime", e.target.value)}

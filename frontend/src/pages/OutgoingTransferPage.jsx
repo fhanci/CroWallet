@@ -347,6 +347,7 @@ const OutgoingTransferPage = () => {
             label={t("date")}
             type="datetime-local"
             value={selectedTransfer.date || ""}
+            inputProps={{step: 1}}
             onChange={(e) =>
               setSelectedTransfer({ ...selectedTransfer, date: e.target.value })
             }

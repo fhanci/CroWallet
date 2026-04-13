@@ -4,14 +4,17 @@ import com.crowallet.backend.dto.AccounttoAccountTransferRequestDTO;
 import com.crowallet.backend.dto.AccounttoAccountTransferResponseDTO;
 import com.crowallet.backend.dto.TransferDTO;
 import com.crowallet.backend.dto.TransferResponseDTO;
+import com.crowallet.backend.entity.AccounttoAccountTransfer;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 import com.crowallet.backend.service.TransferService;
+
 
 
 
@@ -68,5 +71,11 @@ public class TransferController {
     public ResponseEntity<AccounttoAccountTransferResponseDTO> createAccountToAccountTransfer(@RequestBody AccounttoAccountTransferRequestDTO transferDTO) {
         return ResponseEntity.ok(transferService.createAccountToAccountTransfer(transferDTO));
     }
+
+    @GetMapping("/getAccountToAccountTransfer")
+    public ResponseEntity<Map<String, Long>> getAccountToAccountTransfer(@RequestParam Long transferId) {
+        return ResponseEntity.ok(transferService.getAccountToAccountTransfer(transferId));
+    }
+    
     
 }

@@ -593,6 +593,7 @@ const AccountToAccountTransferPage = () => {
           <TextField
             label={t("date")}
             type="datetime-local"
+            inputProps={{step: 1}}
             value={transferData.date || ""}
             onChange={(e) =>
               setTransferData({ ...transferData, date: e.target.value })

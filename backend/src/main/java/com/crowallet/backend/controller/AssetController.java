@@ -16,6 +16,7 @@ import com.crowallet.backend.service.StockService;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -63,15 +64,27 @@ public class AssetController {
     }
 
     @GetMapping({"/my-assets"})
-    public ResponseEntity<List<AssetResponse>> getMethodName() {
+    public ResponseEntity<List<AssetResponse>> myAssets() {
         List<AssetResponse> assetsByUserId = assetService.getAssetsByUserId();
         return ResponseEntity.status(200).body(assetsByUserId);
+    }
+
+    @GetMapping("/isFirstAsset")
+    public Boolean isFirstAsset(){
+        return assetService.isFirstAsset();
     }
 
     @GetMapping("/get-asset-size-by-user-id")
     public ResponseEntity<Long> getAssetSizeByUserId() {
         Long assetExistsSize = assetService.findAssetByUserId();
         return ResponseEntity.ok(assetExistsSize);
+    }
+    
+
+    @PutMapping("/after-deleting-add-money")
+    public String afterDeletingAddMoney(@RequestParam Long transactionId, @RequestParam Long selectedMoneyAccountId,  @RequestBody List<Map<String, BigDecimal>> exchangeRate) {
+        System.out.println("Test Deneme");
+        return assetService.afterDeletingAddMoney(transactionId, selectedMoneyAccountId, exchangeRate);
     }
     
 
@@ -160,6 +173,12 @@ public class AssetController {
         MoneyAccountResponseDTO updatedMoneyAccount = assetService.updateMoneyAccount(updatedAccount,exchangeRate,moneyAccountResponseDTO);
         return ResponseEntity.ok(updatedMoneyAccount);
     }
+
+    @GetMapping("/isDeleteTransactionBefore")
+    public Boolean isDeleteTransactionBefore(@RequestParam Long transactionId) {
+        return assetService.isDeleteTransactionBefore(transactionId);
+    }
+    
     
     
 

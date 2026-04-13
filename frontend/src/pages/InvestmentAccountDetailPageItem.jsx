@@ -53,7 +53,7 @@ import dayjs from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { toLocalISOTime } from "../utils/localIsoTime";
+import { formatDateTime, toLocalISOTime } from "../utils/localIsoTime";
 
 
 
@@ -178,8 +178,32 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
             }
         )
 
+        console.log("Money accounts fetched:", responseMoneyAccount.data);
         setMoneyAccountPersons(responseMoneyAccount.data);
     }
+
+
+    const [allMoneyAccounts, setAllMoneyAccounts] = useState([]);
+
+    useEffect(() => {
+
+        const getAllMoneyAccounts = async () => {
+            const response = await axios.get(
+                `${backendUrl}/api/accounts/get-money-accounts?userId=${user.id}`,
+                {
+                    headers: {
+                        Authorization: token ? `Bearer ${token}` : undefined,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            console.log("Money accounts fetched:", response.data);
+            setAllMoneyAccounts(response.data);
+        };
+
+        getAllMoneyAccounts();
+    }, []);
 
 
 
@@ -325,6 +349,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     }
 
     const updateSoldData = (id, field, newValue) => {
+        console.log("Updating sold data:", { id, field, newValue });
         const updatedData = sellInvestmentList.map((item) => {
             if (item.id === id) {
                 return { ...item, [field]: dayjs(newValue) };
@@ -778,16 +803,26 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     const handleDeleteConfirm = async () => {
         try {
             const [assetResponse] = item.filter((data) => data.id === deletingHoldingId)
+            const exchangeRates = CURRENCIES.map(currency => { return { [currency.value]: currency.exchangeRates } });
+            console.log("exchangeRates: ", exchangeRates);
+            console.log("transactionId: ", assetResponse.transactionId);
+            console.log("selectedMoneyAccountId: ", selectedMoneyAccount);
+
+            await axios.put(`${backendUrl}/api/asset/after-deleting-add-money?transactionId=${assetResponse.transactionId}&selectedMoneyAccountId=${selectedMoneyAccount}`,
+                exchangeRates,
+                { headers: { Authorization: token ? `Bearer ${token}` : undefined } }
+            );
+
             await deleteTransaction({ ...assetResponse }).unwrap();
-            if (item.length === 1) {
+            // if (item.length === 1) {
 
-                await axios.delete(backendUrl + `/api/accounts/delete/${item[0].accountId}`, {
-                    headers: {
-                        Authorization: token ? `Bearer ${token}` : undefined,
-                    },
-                });
+            //     await axios.delete(backendUrl + `/api/accounts/delete/${item[0].accountId}`, {
+            //         headers: {
+            //             Authorization: token ? `Bearer ${token}` : undefined,
+            //         },
+            //     });
 
-            }
+            // }
 
             setDeleteDialogOpen(false);
         } catch (err) {
@@ -850,9 +885,32 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
 
 
+    const [isSellingBefore, setIsSellingBefore] = useState([]);
+
+    useEffect(() => {
+
+        setIsSellingBefore([]);
+
+        const checkDeleteDisable = async () => {
+            for (const holding of item) {
+                const response = await axios.get(`${backendUrl}/api/asset/isDeleteTransactionBefore?transactionId=${holding.transactionId}`, {
+                    headers: {
+                        Authorization: token ? `Bearer ${token}` : undefined,
+                    },
+                });
+
+                setIsSellingBefore((prev) => [...prev, response.data]);
+            }
+        }
+
+        checkDeleteDisable();
+
+    }, [item])
 
 
-
+    useEffect(() => {
+        console.log("Selected Money Account:", selectedMoneyAccount);
+    }, [selectedMoneyAccount]);
 
     return (
 
@@ -1095,6 +1153,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                                                 <IconButton
                                                     size="small"
                                                     color="warning"
+                                                    disabled={isSellingBefore[index]}
                                                     onClick={() => handleDeleteClick(holding.id)}
                                                 >
                                                     <DeleteIcon fontSize="small" />
@@ -1294,12 +1353,128 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                         Bu yatırımı silmek istediğinizden emin misiniz? Bu işlem geri
                         alınamaz.
                     </Typography>
+                    <Box>
+                        {(allMoneyAccounts.length === 0) ?
+                            <Typography
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 1.5,
+                                    p: 2,
+                                    my: 2,
+                                    border: "1px solid",
+                                    borderColor: 'error.light',
+                                    borderRadius: "12px",
+                                    textAlign: "center",
+                                    color: "error.main",
+                                    bgcolor: "#fff5f5",
+                                    fontWeight: '500',
+                                    fontSize: '0.95rem',
+                                    boxShadow: '0 2px 8px rgba(211, 47, 47, 0.1)',
+                                    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                                }}
+                            >
+
+                                <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                                Lütfen öncelikle bir banka/para hesabı ekleyiniz. Aksi halde işleme devam edilemeyecektir.
+                            </Typography>
+                            : allMoneyAccounts.length > 0 && (
+                                <FormControl component="fieldset" sx={{ width: '100%' }}>
+                                    <FormLabel id="selectMoneyAccount" sx={{ fontWeight: 'bold', mb: 2, color: 'text.primary' }}>
+                                        Banka Hesap Seçimi
+                                    </FormLabel>
+                                    <RadioGroup
+                                        aria-labelledby="selectMoneyAccount"
+                                        name="radio-buttons-group"
+                                        value={selectedMoneyAccount || ""}
+                                        onChange={(e) => setSelectedMoneyAccount(e.target.value)}
+                                    >
+                                        {allMoneyAccounts.map((data) => {
+
+                                            const isSelected = selectedMoneyAccount === String(data.id);
+
+                                            return (
+                                                <FormControlLabel
+                                                    key={data.id}
+                                                    value={data.id}
+                                                    control={<Radio sx={{ display: 'none' }} />}
+                                                    sx={{
+                                                        margin: '0.5rem 0',
+                                                        width: '100%',
+                                                        border: '2px solid',
+                                                        borderColor: isSelected ? 'primary.main' : 'divider',
+                                                        borderRadius: '12px',
+                                                        padding: '12px 16px',
+                                                        transition: 'all 0.2s ease',
+                                                        backgroundColor: isSelected ? 'action.selected' : 'background.paper',
+                                                        '&:hover': {
+                                                            borderColor: 'primary.light',
+                                                            transform: 'translateY(-2px)',
+                                                            boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                                                        },
+
+                                                        '& .MuiFormControlLabel-label': {
+                                                            width: '100%',
+                                                            fontFamily: 'monospace',
+                                                            whiteSpace: 'pre-wrap',
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            gap: '4px'
+                                                        }
+                                                    }}
+                                                    label={
+                                                        <>
+                                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                <Typography sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
+                                                                    {data.accountName.toUpperCase()}
+                                                                </Typography>
+                                                                <Typography sx={{
+                                                                    color: 'success.main',
+                                                                    fontWeight: 'bold',
+                                                                    fontSize: '0.9rem',
+                                                                    bgcolor: '#e8f5e9',
+                                                                    px: 1, borderRadius: 1
+                                                                }}>
+                                                                    {/* {isInsufficient ? "Yetersiz Bakiye" : "Bakiye Uygun"} */}
+                                                                </Typography>
+                                                            </Box>
+
+                                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, opacity: 0.8 }}>
+                                                                <span>Tür: {data.currency}</span>
+                                                                <span>Bakiye: {showMoneytoLocalString(data.balance)} {data.currency === "TRY" ? "₺" : data.currency === "EUR" ? "€" : "$"}</span>
+                                                            </Box>
+
+                                                            {/* {data.currency !== "TRY" && (
+                                                            <Box>
+                                                                <Box sx={{ textAlign: 'right', mt: 0.5, fontStyle: 'italic', fontSize: '0.8rem' }}>
+                                                                    TL Karşılığı: {showMoneytoLocalString(data.balance * (exchangeRate[data.currency]?.Buying || 0))} ₺
+                                                                </Box>
+                                                                <Box sx={{ textAlign: 'right', mt: 0.5, fontStyle: 'italic', fontSize: '0.8rem' }}>
+                                                                    Kur: {data.currency === "TRY" ? CURRENCIES[0].exchangeRates : data.currency === "USD" ? CURRENCIES[1].exchangeRates : CURRENCIES[2].exchangeRates} ₺
+                                                                </Box>
+
+
+                                                            </Box>
+                                                        )}
+                                                        {<Box sx={{ textAlign: 'right', mt: 0.5, fontStyle: 'italic', fontSize: '0.8rem' }}>
+                                                            İşlem Sonu Bakiye: {showMoneytoLocalString((totalInvestmentValue) / (data.currency === "TRY" ? CURRENCIES[0].exchangeRates : data.currency === "USD" ? CURRENCIES[1].exchangeRates : CURRENCIES[2].exchangeRates) + data.balance)} {CURRENCIES.find((d) => d.value === data.currency)?.label.split(" ")[0]}
+                                                        </Box>} */}
+                                                        </>
+                                                    }
+                                                />
+                                            );
+                                        })}
+                                    </RadioGroup>
+                                </FormControl>)}
+                    </Box>
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 2 }}>
                     <Button onClick={() => setDeleteDialogOpen(false)}>İptal</Button>
                     <Button
                         variant="contained"
                         color="error"
+                        disabled={selectedMoneyAccount === 0}
                         onClick={handleDeleteConfirm}
                     >
                         Sil
@@ -1489,7 +1664,22 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                                     sx={{ my: 2, "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                                 />
                                 <Box>
-                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+
+                                    <TextField
+                                        label={"Tarih Seçiniz"}
+                                        type="datetime-local"
+                                        inputProps={{ step: 1 }}
+                                        value={formatDateTime(sellData.buyingDateTime) || null}
+                                        onChange={(e) =>
+                                            updateSoldData(sellData.id, "buyingDateTime", e.target.value)
+                                        }
+                                        fullWidth
+                                        margin="normal"
+                                        InputLabelProps={{ shrink: true }}
+                                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+                                    />
+
+                                    {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
                                         <DatePicker
                                             label="Tarih Seç"
                                             value={sellData.buyingDateTime || null}
@@ -1500,7 +1690,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
                                             }}
                                         />
-                                    </LocalizationProvider>
+                                    </LocalizationProvider> */}
 
                                 </Box>
 

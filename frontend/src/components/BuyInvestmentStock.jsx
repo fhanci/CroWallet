@@ -382,6 +382,7 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
                                     <TextField
                                         label={"Tarih Seç"}
                                         type="datetime-local"
+                                        inputProps={{step: 1}}
                                         fullWidth
                                         value={formatDateTime(item.buyingDateTime)}
                                         onChange={(e) => updateStockItem(item.id, "buyingDateTime", e.target.value)}

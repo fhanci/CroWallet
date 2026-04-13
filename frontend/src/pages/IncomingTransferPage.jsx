@@ -145,6 +145,8 @@ const IncomingTransferPage = () => {
       inputNextBalance: currentBalance + parseFloat(selectedTransfer.amount),
     };
 
+    console.log("tra")
+
     const updatedAccount2 = {
       ...selectedTransferAccount,
       balance: currentBalance + parseFloat(selectedTransfer.amount),
@@ -292,7 +294,7 @@ const IncomingTransferPage = () => {
           <TextField
             label={t("date")}
             type="datetime-local"
-            format="yyyy-MM-ddTHH:mm:SSS"
+            inputProps={{step: 1}}
             value={selectedTransfer.date || ""}
             onChange={(e) =>
               setSelectedTransfer({ ...selectedTransfer, date: e.target.value})

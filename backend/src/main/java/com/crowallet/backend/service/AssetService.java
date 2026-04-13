@@ -3,6 +3,7 @@ package com.crowallet.backend.service;
 import com.crowallet.backend.repository.MoneyAccountRepository;
 import com.crowallet.backend.repository.TransferRepository;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,6 +25,7 @@ import com.crowallet.backend.entity.Asset;
 import com.crowallet.backend.entity.MoneyAccount;
 import com.crowallet.backend.entity.Positions;
 import com.crowallet.backend.entity.RelatedTransactions;
+import com.crowallet.backend.entity.TransactionDeleteControl;
 import com.crowallet.backend.entity.TransactionType;
 import com.crowallet.backend.entity.Transactions;
 import com.crowallet.backend.entity.Transfer;
@@ -35,6 +37,7 @@ import com.crowallet.backend.mapper.TransactionMapper;
 import com.crowallet.backend.repository.AssetRepository;
 import com.crowallet.backend.repository.PositionRepository;
 import com.crowallet.backend.repository.RelatedTransactionsRepository;
+import com.crowallet.backend.repository.TransactionDeleteControlRepository;
 import com.crowallet.backend.repository.TransactionRepository;
 import com.crowallet.backend.repository.UserRepository;
 import com.crowallet.backend.requests.SellInvestmentRequest;
@@ -57,13 +60,16 @@ public class AssetService {
     private final TransactionMapper transactionMapper;
     private final RelatedTransactionsRepository relatedTransactionsRepository;
     private final MoneyAccountMapper moneyAccountMapper;
+    private final TransactionDeleteControlRepository transactionDeleteControlRepository;
 
     public AssetService(AssetRepository assetRepository, TransactionRepository transactionRepository,
+            TransactionDeleteControlRepository transactionDeleteControlRepository,
             PositionRepository positionRepository, UserRepository userRepository, TransactionMapper transactionMapper,
             RelatedTransactionsRepository relatedTransactionsRepository, MoneyAccountRepository moneyAccountRepository,
             MoneyAccountMapper moneyAccountMapper, TransferRepository transferRepository) {
         this.assetRepository = assetRepository;
         this.transactionRepository = transactionRepository;
+        this.transactionDeleteControlRepository = transactionDeleteControlRepository;
         this.positionRepository = positionRepository;
         this.userRepository = userRepository;
         this.transactionMapper = transactionMapper;
@@ -86,6 +92,12 @@ public class AssetService {
         Asset assetEntity = AssetMapper.INSTANCE.toAsset(asset);
         assetEntity.setUser(user);
         Asset savedAsset = assetRepository.save(assetEntity);
+
+        TransactionDeleteControl deleteControl = new TransactionDeleteControl();
+        deleteControl.setAsset(savedAsset);
+        deleteControl.setIsDeleteBefore(false);
+        transactionDeleteControlRepository.save(deleteControl);
+
         return savedAsset.getId();
     }
 
@@ -132,11 +144,11 @@ public class AssetService {
             throw new RuntimeException("İlgili Hesap ID Bulunamadı. Position");
         }
         Asset asset = assetRepository.findById(assetId).orElseThrow(() -> new RuntimeException("Asset not found"));
-        
+
         // Pozisyon'ın maliyetini hesapla
         BigDecimal calculatedCostBasisBigDecimal = this.calculateCostBasis(position);
         position.setCostBasis(calculatedCostBasisBigDecimal);
-        
+
         // PozisyonDTO'yu Positions entity'sine dönüştür ve Asset ile ilişkilendir
         Positions positionEntity = PositionsMapper.INSTANCE.toPosition(position);
         positionEntity.setAsset(asset);
@@ -152,7 +164,7 @@ public class AssetService {
             return null;
         }
 
-        // İlgili Asset'e ait tüm işlemleri bul        
+        // İlgili Asset'e ait tüm işlemleri bul
         List<Transactions> allByAsset = transactionRepository.findAllByAsset(asset.get());
 
         // İşlem toplamını hesapla
@@ -170,7 +182,8 @@ public class AssetService {
         Asset asset = assetRepository.findById(assetId)
                 .orElseThrow(() -> new RuntimeException("Asset not found"));
 
-        // İlgili Asset'e ait tüm işlemleri bul ve sadece SELL türündeki işlemleri filtrele
+        // İlgili Asset'e ait tüm işlemleri bul ve sadece SELL türündeki işlemleri
+        // filtrele
         List<Transactions> transactions = transactionRepository.findByAsset(asset);
         transactions = transactions.stream().filter(data -> data.getTransactionType() == TransactionType.SELL)
                 .collect(Collectors.toList());
@@ -210,7 +223,6 @@ public class AssetService {
         // Son yatırım fiyatlarını al
         Map<String, BigDecimal> investmentLastPrices = this.getInvestmentLastPrices();
 
-
         for (Asset asset : assets) {
 
             // Varlık aktif mi kontrol et
@@ -220,12 +232,13 @@ public class AssetService {
 
             // İlgili Varlığa ait tüm pozisyonları bul
             List<Positions> positions = positionRepository.findAllByAssetOrderByIdAsc(asset);
-            
+
             // İlgili Varlığa ait tüm işlemleri bul
             List<Transactions> transactions = transactionRepository.findByAsset(asset);
 
-            
-            // Hiç işlem bulunamadıysa ve pozisyon sayısı 1 veya daha az ise, varlıkla ilgili işlem yapılmamıştır. Bu durumda varlık bilgilerini sıfır değerlerle döndür.
+            // Hiç işlem bulunamadıysa ve pozisyon sayısı 1 veya daha az ise, varlıkla
+            // ilgili işlem yapılmamıştır. Bu durumda varlık bilgilerini sıfır değerlerle
+            // döndür.
             if (transactions.size() == 0 && (positions.size() <= 1)) {
                 AssetResponse rAssetResponse = new AssetResponse();
                 rAssetResponse.setAccountId(asset.getId());
@@ -246,7 +259,8 @@ public class AssetService {
                 continue;
             }
 
-            // İlgili Varlığa ait işlemler bulunmuşsa, her bir işlem için ilgili bilgileri hesapla ve döndür
+            // İlgili Varlığa ait işlemler bulunmuşsa, her bir işlem için ilgili bilgileri
+            // hesapla ve döndür
             for (Transactions transaction : transactions) {
                 AssetResponse rAssetResponse = new AssetResponse();
 
@@ -254,8 +268,11 @@ public class AssetService {
                 List<RelatedTransactions> bySourceTransactions = relatedTransactionsRepository
                         .findBySourceTransactions(transaction);
 
-
-                // Bu transaction ile ilgili işlem yapıldı mı? Evet yapıldıysa, yapılan işlemlerle birlikte bilgileri hesapla ve döndür. Hayır yapılmadıysa, bu transaction selling datası olabilir mı diye kontrol et. Selling datası ise listelemeye dahil etme. Hiçbir işlem yapılmamışsa, bilgileri sıfır değerlerle döndür.
+                // Bu transaction ile ilgili işlem yapıldı mı? Evet yapıldıysa, yapılan
+                // işlemlerle birlikte bilgileri hesapla ve döndür. Hayır yapılmadıysa, bu
+                // transaction selling datası olabilir mı diye kontrol et. Selling datası ise
+                // listelemeye dahil etme. Hiçbir işlem yapılmamışsa, bilgileri sıfır değerlerle
+                // döndür.
                 if (bySourceTransactions.size() > 0) {
 
                     BigDecimal quantity = BigDecimal.ZERO;
@@ -333,6 +350,22 @@ public class AssetService {
         return rListAssetResponse;
     }
 
+
+    @Transactional
+    public Boolean isFirstAsset() {
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication()
+                .getPrincipal();
+        User user = userRepository.findById(userDetails.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        List<Transactions> allTransactions = transactionRepository.findAll();
+        for(Transactions transaction : allTransactions) {
+            if (transaction.getAsset().getUser().equals(user)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public Map<String, BigDecimal> getInvestmentLastPrices() {
 
         // Tüm işlemlerdeki benzersiz varlık sembollerini al
@@ -349,14 +382,14 @@ public class AssetService {
         return lastPrices;
     }
 
-
     public Long getSellingCount(Long transactionId) {
 
         // İlgili Transaction'ı bul
         Transactions mainTransactions = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new RuntimeException("Transaction Bulunamadı"));
 
-        // Bu Transaction ile ilgili yapılan işlemleri bul ve toplam satılan adedi hesapla        
+        // Bu Transaction ile ilgili yapılan işlemleri bul ve toplam satılan adedi
+        // hesapla
         BigDecimal totalSold = relatedTransactionsRepository.findBySourceTransactions(mainTransactions)
                 .stream().map(rt -> rt.getTargetTransactions().getQuantity())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -365,12 +398,13 @@ public class AssetService {
 
     @Transactional
     public UpdateTransaction updateAssetResponse(UpdateTransaction updateTransaction) {
-        
+
         // Transaction'ı bul
         Transactions mainTransactions = transactionRepository.findById(updateTransaction.getTransactionId())
                 .orElseThrow(() -> new RuntimeException("Transaction Bulunamadı"));
 
-        // 1. YAPILAN İŞLEMLERİN SATILAN MİKTARLARI TOPLANIYOR VE YENİ MİKTARLA KARŞILAŞTIRILIYOR
+        // 1. YAPILAN İŞLEMLERİN SATILAN MİKTARLARI TOPLANIYOR VE YENİ MİKTARLA
+        // KARŞILAŞTIRILIYOR
         BigDecimal oldQuantity = mainTransactions.getQuantity();
         BigDecimal oldPrice = mainTransactions.getUnitPrice();
 
@@ -430,26 +464,34 @@ public class AssetService {
         transactionRepository.delete(transaction);
         transactionRepository.flush();
 
-        //Silinen transaction'ın bağlı olduğu asset'in positionları getiriliyor.
+        // İlgili Asset Daha Önceden Silindi Diye İşaretleniyor.
+        TransactionDeleteControl byAsset = transactionDeleteControlRepository.findByAsset(transaction.getAsset());
+        byAsset.setIsDeleteBefore(true);
+        transactionDeleteControlRepository.save(byAsset);
+
+        // Silinen transaction'ın bağlı olduğu asset'in positionları getiriliyor.
         List<Positions> allPositions = positionRepository.findAllByAssetOrderByCreatedDateAsc(transaction.getAsset());
         Map<String, BigDecimal> lastPrices = getLastPrices(
                 transactionRepository.findAllByAsset(transaction.getAsset()));
 
-        //İlgili transaction'ın bağlı olduğu asset'in positionları arasında transactionların tarihlerini kontrol etmek için başlangıç zamanı ve kontrol zamanı belirleniyor.
+        // İlgili transaction'ın bağlı olduğu asset'in positionları arasında
+        // transactionların tarihlerini kontrol etmek için başlangıç zamanı ve kontrol
+        // zamanı belirleniyor.
         LocalDateTime startOfTime = LocalDateTime.now().minusYears(60);
         LocalDateTime controlTime = LocalDateTime.now().minusYears(60);
 
-        //Tüm positionlar geziliyor
+        // Tüm positionlar geziliyor
         for (Positions positions : allPositions) {
             BigDecimal costBasis = BigDecimal.ZERO;
             BigDecimal currentValue = BigDecimal.ZERO;
 
-            //İlgili asset'in bağlı olduğu 2 pozisyon arası hangi transactionlar var kontrol ediliyor.
+            // İlgili asset'in bağlı olduğu 2 pozisyon arası hangi transactionlar var
+            // kontrol ediliyor.
             List<Transactions> historyCheck = transactionRepository
-                    .findAllByCreatedDateBetweenAndAsset(controlTime, positions.getCreatedDate(),positions.getAsset());
+                    .findAllByCreatedDateBetweenAndAsset(controlTime, positions.getCreatedDate(), positions.getAsset());
 
-
-            //2 pozisyon arasında transaction yoksa işlem yoktur. İşlem yoksa bu pozisyonu tutmaya gerek yok. 
+            // 2 pozisyon arasında transaction yoksa işlem yoktur. İşlem yoksa bu pozisyonu
+            // tutmaya gerek yok.
             // Demekki arada transaction yok. Haliyle işlem olmadığı için bu position'ın
             // tutulmasına gerek yok
             if (historyCheck.size() == 0) {
@@ -457,25 +499,26 @@ public class AssetService {
                 continue;
             }
 
-            //Eğer 2 position arasında işlem varsa geçmişten ilgili tarihe kadar olan tüm transactionlar getiriliyor
-            //Çünkü bu positiondaki kar zarar durumu geçmişteki tüm transactionlardan etkileniyor.
+            // Eğer 2 position arasında işlem varsa geçmişten ilgili tarihe kadar olan tüm
+            // transactionlar getiriliyor
+            // Çünkü bu positiondaki kar zarar durumu geçmişteki tüm transactionlardan
+            // etkileniyor.
             List<Transactions> history = transactionRepository
-                    .findAllByCreatedDateBetweenAndAsset(startOfTime, positions.getCreatedDate(),positions.getAsset());
+                    .findAllByCreatedDateBetweenAndAsset(startOfTime, positions.getCreatedDate(), positions.getAsset());
 
             for (Transactions t : history) {
                 if (t.getTransactionType() != TransactionType.SELL) {
 
-                    //Satış adedini buluyoruz
+                    // Satış adedini buluyoruz
                     BigDecimal soldQuantity = relatedTransactionsRepository.findBySourceTransactions(t)
                             .stream()
                             .map(rt -> rt.getTargetTransactions().getQuantity())
                             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                    //Kalan miktarı buluyoruz
+                    // Kalan miktarı buluyoruz
                     BigDecimal remaining = t.getQuantity().subtract(soldQuantity);
 
-
-                    //Toplam maliyeti ve toplam piyasa değerini buluyoruz
+                    // Toplam maliyeti ve toplam piyasa değerini buluyoruz
                     if (remaining.compareTo(BigDecimal.ZERO) > 0) {
                         costBasis = costBasis.add(remaining.multiply(t.getUnitPrice()));
                         BigDecimal lastPrice = lastPrices.get(t.getAssetSymbol());
@@ -486,12 +529,12 @@ public class AssetService {
                 }
             }
 
-            //Her pozisyon için güncellemeler yapılıyor
+            // Her pozisyon için güncellemeler yapılıyor
             positions.setCostBasis(costBasis);
             positions.setCurrentValue(currentValue);
             positions.setProfitLoss(currentValue.subtract(costBasis));
 
-            //Maliyet sıfır ise pozisyonu sil, değilse güncelle
+            // Maliyet sıfır ise pozisyonu sil, değilse güncelle
             if (costBasis.compareTo(BigDecimal.ZERO) == 0) {
                 positionRepository.delete(positions);
             } else {
@@ -504,13 +547,75 @@ public class AssetService {
         return true;
     }
 
+    public String afterDeletingAddMoney(Long transactionId, Long selectedMoneyAccountId,
+            List<Map<String, BigDecimal>> exchangeRate) {
+
+        // İlgili Banka Hesabına Para Geri İade Ediliyor.
+        Optional<MoneyAccount> optionalMoneyAccount = moneyAccountRepository.findById(selectedMoneyAccountId);
+        if (!optionalMoneyAccount.isPresent()) {
+            throw new IllegalArgumentException("Geçersiz banka hesabı");
+        }
+        MoneyAccount moneyAccount = optionalMoneyAccount.get();
+        System.out.println("Money Account: " + moneyAccount);
+
+        Transactions transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new IllegalArgumentException("Geçersiz işlem"));
+
+        System.out.println("Transactions: " + transaction);
+
+        // Toplam Değer Bulunuyor
+
+        System.out.println("Exchange Rate: " + exchangeRate);
+
+        BigDecimal exchangeRateValue = exchangeRate.stream()
+                .filter(m -> m.containsKey(moneyAccount.getCurrency()))
+                .findFirst()
+                .map(m -> m.get(moneyAccount.getCurrency()))
+                .orElse(BigDecimal.ONE);
+
+        System.out.println("exchangeRateValue: " + exchangeRateValue);
+        BigDecimal returnTotalValue = transaction.getUnitPrice().multiply(transaction.getQuantity());
+        System.out.println("returnTotalValue: " + returnTotalValue);
+
+        // Hesap cinsine göre para ekleniyor
+        System.out.println("Eklenmeden Önce Para: " + moneyAccount.getBalance());
+        BigDecimal afterExchangeDivide = returnTotalValue.divide(exchangeRateValue, 5, RoundingMode.HALF_UP);
+
+        moneyAccount.setBalance(moneyAccount.getBalance().add(afterExchangeDivide).setScale(5, RoundingMode.HALF_UP));
+        System.out.println("Eklendikten sonra Para: " + moneyAccount.getBalance());
+
+
+        // Para Hesaba Eklendi
+        moneyAccountRepository.save(moneyAccount);
+        System.out.println("Para Eklendi");
+
+        // Transfer Logu Düşüldü
+        Transfer transfer = new Transfer();
+        transfer.setAmount(afterExchangeDivide);
+        transfer.setCategory("İade");
+        transfer.setCurrency(moneyAccount.getCurrency());
+        transfer.setDescription("Yanlışlıkla satın alım sonucu hesaba geri iade");
+        transfer.setDetails(null);
+        transfer.setExchangeRate(exchangeRateValue);
+        transfer.setInputPreviousBalance(
+                moneyAccount.getBalance().subtract(afterExchangeDivide));
+        transfer.setInputNextBalance(moneyAccount.getBalance());
+        transfer.setIsAccountToAccountTransfer(false);
+        transfer.setMoneyAccount(moneyAccount);
+        transfer.setTransactionDateTime(LocalDateTime.now());
+        transfer.setType("incoming");
+        transfer.setUser(moneyAccount.getUser());
+        transferRepository.save(transfer);
+        return "Hesaba para eklendi";
+
+    }
+
     public Map<String, BigDecimal> getLastPrices(List<Transactions> allTransactionByAsset) {
 
         // Tüm işlemlerdeki benzersiz varlık sembollerini al
         Set<String> symbols = allTransactionByAsset.stream()
                 .map(Transactions::getAssetSymbol)
                 .collect(Collectors.toSet());
-
 
         // Her bir varlık sembolü için en son fiyatı bul ve bir haritaya ekle
         Map<String, BigDecimal> lastPrices = new HashMap<>();
@@ -533,8 +638,7 @@ public class AssetService {
                 .map(Transactions::getAssetSymbol)
                 .collect(Collectors.toSet());
 
-
-        // Her bir varlık sembolü için en son fiyatı bul ve bir haritaya ekle                
+        // Her bir varlık sembolü için en son fiyatı bul ve bir haritaya ekle
         Map<String, BigDecimal> lastPrices = new HashMap<>();
         for (String symbol : symbols) {
             BigDecimal price = transactionRepository.findByAssetSymbolOrderByIdDesc(symbol)
@@ -546,7 +650,8 @@ public class AssetService {
         for (Transactions transactions : allTransactionByAsset) {
             TransactionType type = transactions.getTransactionType();
 
-            // Eğer işlem satış değilse, bu işlem üzerinden bir satış olmuş mu kontrol ediliyor
+            // Eğer işlem satış değilse, bu işlem üzerinden bir satış olmuş mu kontrol
+            // ediliyor
             if (type != TransactionType.SELL) {
 
                 // ilgili transaction üzerinden bir satış olmuş mu
@@ -599,7 +704,8 @@ public class AssetService {
         if (!assetOptional.isPresent())
             return null;
 
-        // Her bir TransactionDTO'yu Transaction entity'sine dönüştür, varlıkla ilişkilendir ve kaydet
+        // Her bir TransactionDTO'yu Transaction entity'sine dönüştür, varlıkla
+        // ilişkilendir ve kaydet
         for (TransactionDTO transactionDTO : listTransactionDTOs) {
             Transactions transaction = TransactionMapper.INSTANCE.toTransaction(transactionDTO);
             transaction.setAsset(assetOptional.get());
@@ -619,7 +725,6 @@ public class AssetService {
     @Transactional
     public List<SellInvestmentRequest> sellInvestments(List<SellInvestmentRequest> sellInvestmentRequestsList) {
 
-
         for (SellInvestmentRequest sellInvestmentRequest : sellInvestmentRequestsList) {
 
             // İlgili işlemi bul
@@ -638,7 +743,7 @@ public class AssetService {
             transactions.setTransactionType(TransactionType.SELL);
             transactions.setUnitPrice(sellInvestmentRequest.getUnitPrice());
             transactions.setCurrentValue(sellInvestmentRequest.getCurrentPrice());
-            transactions.setBuyingDateTime(sellInvestmentRequest.getBuyingDateTime()); //Satış tarihi
+            transactions.setBuyingDateTime(sellInvestmentRequest.getBuyingDateTime()); // Satış tarihi
             transactions.setSellingPrice(sellInvestmentRequest.getSalesPrice());
             Transactions savedTransactions = transactionRepository.save(transactions);
 
@@ -670,82 +775,121 @@ public class AssetService {
     @Transactional
     public AccountSummaryResponseDTO getAccountSummary() {
 
+        System.out.println("Kullanıcı Özet Bilgisi");
+
         // Kullanıcı bilgilerini al
         CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication()
                 .getPrincipal();
         User user = userRepository.findById(userDetails.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-
         AccountSummaryResponseDTO accountSummary = new AccountSummaryResponseDTO();
 
-        ////////////////////////////////////MONEY////////////////////////////////////
-        /// 
-        /// Toplam Bakiyeyi Hesaplamak için Kullanıcıya Ait Tüm Para Hesaplarındaki Bakiyeler Toplanıyor
+        //////////////////////////////////// MONEY////////////////////////////////////
+        ///
+        /// Toplam Bakiyeyi Hesaplamak için Kullanıcıya Ait Tüm Para Hesaplarındaki
+        //////////////////////////////////// Bakiyeler Toplanıyor
         UserBalanceDTO userBalance = moneyAccountRepository.findTotalBalancesByUser(user);
-        accountSummary.setTotalBalanceTRY(userBalance.getTotalUSD().add(userBalance.getTotalEUR()).add(userBalance.getTotalTRY()));
-        Map<String,BigDecimal> currencyTotals = new HashMap<>();
+        accountSummary.setTotalBalanceTRY(
+                userBalance.getTotalUSD().add(userBalance.getTotalEUR()).add(userBalance.getTotalTRY()));
+        Map<String, BigDecimal> currencyTotals = new HashMap<>();
         currencyTotals.put("EUR", userBalance.getTotalEUR() != null ? userBalance.getTotalEUR() : BigDecimal.ZERO);
         currencyTotals.put("USD", userBalance.getTotalUSD() != null ? userBalance.getTotalUSD() : BigDecimal.ZERO);
         currencyTotals.put("TRY", userBalance.getTotalTRY() != null ? userBalance.getTotalTRY() : BigDecimal.ZERO);
         accountSummary.setCurrencyTotals(currencyTotals);
+        System.out.println("Account Summary Currency Totals: " + accountSummary.getCurrencyTotals());
 
-
-
-        ////////////////////////////////////INVESTMENT////////////////////////////////////
-        /// 
-        /// Toplam Yatırım Değerini ve Toplam Kar/Zarar Durumunu Hesaplamak için Kullanıcıya Ait Tüm Varlıklar ve Bu Varlıklara Ait İşlemler Getiriliyor. 
-        // Her Bir Varlık İçin Yatırım Değeri ve Kar/Zarar Durumu Hesaplanarak Toplam Yatırım Değeri ve Toplam Kar/Zarar Durumu Bulunuyor.
+        //////////////////////////////////// INVESTMENT////////////////////////////////////
+        ///
+        /// Toplam Yatırım Değerini ve Toplam Kar/Zarar Durumunu Hesaplamak için
+        //////////////////////////////////// Kullanıcıya Ait Tüm Varlıklar ve Bu
+        //////////////////////////////////// Varlıklara Ait İşlemler Getiriliyor.
+        // Her Bir Varlık İçin Yatırım Değeri ve Kar/Zarar Durumu Hesaplanarak Toplam
+        //////////////////////////////////// Yatırım Değeri ve Toplam Kar/Zarar Durumu
+        //////////////////////////////////// Bulunuyor.
         List<Asset> userAssets = assetRepository.findByUser(user);
         Map<String, BigDecimal> lastPrices = this.getLastPrices(transactionRepository.findAll());
+        System.out.println("User Assets: " + userAssets);
+        System.out.println("Last Prices: " + lastPrices);
 
         BigDecimal totalInvestmentValue = BigDecimal.ZERO;
         BigDecimal totalProfitLoss = BigDecimal.ZERO;
-        Map<Long,BigDecimal> assetInvestmentValues = new HashMap<>();
+        Map<Long, BigDecimal> assetInvestmentValues = new HashMap<>();
 
         for (Asset asset : userAssets) {
-
-            System.out.println(asset.isActive());
-            if (asset.isActive() == false){
+            System.out.println("-".repeat(50));
+            if (asset.isActive() == false) {
                 System.out.println("Inactive asset found: " + asset.getId());
                 continue;
             }
 
+            System.out.println("Processing asset: " + asset.getId());
             List<Transactions> transactionsListByAsset = transactionRepository.findByAsset(asset);
             List<Positions> positionsListByAsset = positionRepository.findAllByAsset(asset);
+            System.out.println("Transactions for asset " + asset.getId() + ": " + transactionsListByAsset);
+            System.out.println("Positions for asset " + asset.getId() + ": " + positionsListByAsset);
+
+            // Transaction Silme Hatası Sonucu Eklendi
+            if (positionsListByAsset.size() == 0) {
+                System.out.println("No position found for asset " + asset.getId());
+                continue;
+            }
             Positions position = positionsListByAsset.get(positionsListByAsset.size() - 1);
+            System.out.println("Last position for asset " + asset.getId() + ": " + position);
             totalProfitLoss = totalProfitLoss.add(position.getProfitLoss());
             assetInvestmentValues.put(asset.getId(), BigDecimal.ZERO);
             for (Transactions transaction : transactionsListByAsset) {
-                if (transaction.getTransactionType() == TransactionType.CREATE || transaction.getTransactionType() == TransactionType.BUY || transaction.getTransactionType() == TransactionType.UPDATE) {
-                    totalInvestmentValue = totalInvestmentValue.add(transaction.getQuantity().multiply(lastPrices.get(transaction.getAssetSymbol())));
-                    assetInvestmentValues.put(asset.getId(), assetInvestmentValues.get(asset.getId()).add(transaction.getQuantity().multiply(lastPrices.get(transaction.getAssetSymbol()))));
+                System.out.println("*".repeat(50));
+                if (transaction.getTransactionType() == TransactionType.CREATE
+                        || transaction.getTransactionType() == TransactionType.BUY
+                        || transaction.getTransactionType() == TransactionType.UPDATE) {
+                    System.out.println("Processing transaction for asset " + asset.getId() + ": " + transaction);
+                    totalInvestmentValue = totalInvestmentValue
+                            .add(transaction.getQuantity().multiply(lastPrices.get(transaction.getAssetSymbol())));
+                    assetInvestmentValues.put(asset.getId(), assetInvestmentValues.get(asset.getId())
+                            .add(transaction.getQuantity().multiply(lastPrices.get(transaction.getAssetSymbol()))));
+                    System.out.println("Updated investment values for asset " + asset.getId() + ": "
+                            + assetInvestmentValues.get(asset.getId()));
+                } else if (transaction.getTransactionType() == TransactionType.SELL) {
+                    System.out.println("Processing sell transaction for asset " + asset.getId() + ": " + transaction);
+                    totalInvestmentValue = totalInvestmentValue
+                            .subtract(transaction.getQuantity().multiply(lastPrices.get(transaction.getAssetSymbol())));
+                    assetInvestmentValues.put(asset.getId(), assetInvestmentValues.get(asset.getId()).subtract(
+                            transaction.getQuantity().multiply(lastPrices.get(transaction.getAssetSymbol()))));
+                    System.out.println("Updated investment values for asset " + asset.getId() + ": "
+                            + assetInvestmentValues.get(asset.getId()));
                 }
-                else if (transaction.getTransactionType() == TransactionType.SELL) {
-                    totalInvestmentValue = totalInvestmentValue.subtract(transaction.getQuantity().multiply(lastPrices.get(transaction.getAssetSymbol())));
-                    assetInvestmentValues.put(asset.getId(), assetInvestmentValues.get(asset.getId()).subtract(transaction.getQuantity().multiply(lastPrices.get(transaction.getAssetSymbol()))));
-                }
-            };
-        };
+            }
+            ;
+        }
+        ;
 
+        System.out.println("User Asset Investment Values: " + assetInvestmentValues);
+        System.out.println("Total Investment Value: " + totalInvestmentValue);
+        System.out.println("Total Profit/Loss: " + totalProfitLoss);
         accountSummary.setTotalInvestmentValue(totalInvestmentValue);
         accountSummary.setTotalInvestmentProfitLoss(totalProfitLoss);
 
-        ////////////////////////////////////MONEY ACCOUNT////////////////////////////////////
-        /// Kullanıcıya Ait Tüm Para Hesapları Getiriliyor. 
+        //////////////////////////////////// MONEY
+        //////////////////////////////////// ACCOUNT////////////////////////////////////
+        /// Kullanıcıya Ait Tüm Para Hesapları Getiriliyor.
         // Her Bir Para Hesabı İçin İlgili Bilgiler Hesaplanarak Döndürülüyor.
-        List<MoneyAccount> userMoneyAccounts = moneyAccountRepository.findByUserAndIsActive(user,true);
-        List<MoneyAccountResponseDTO> moneyAccountResponseDTO = this.moneyAccountMapper.toMoneyAccountResponseDTO(userMoneyAccounts);
+        List<MoneyAccount> userMoneyAccounts = moneyAccountRepository.findByUserAndIsActive(user, true);
+        List<MoneyAccountResponseDTO> moneyAccountResponseDTO = this.moneyAccountMapper
+                .toMoneyAccountResponseDTO(userMoneyAccounts);
         accountSummary.setCurrencyAccounts(moneyAccountResponseDTO);
+        System.out.println("User Money Account Values: " + moneyAccountResponseDTO);
 
-        ////////////////////////////////////INVESTMENT ACCOUNT////////////////////////////////////
-    
+        //////////////////////////////////// INVESTMENT
+        //////////////////////////////////// ACCOUNT////////////////////////////////////
+
         List<UserAccountSummaryInvestmentDTO> investmentAccountResponseDTO = new ArrayList<>();
 
         // Kullanıcıya Ait Tüm Varlıklar Getiriliyor.
         for (Asset asset : userAssets) {
-            // Varlık aktif mi kontrol ediliyor. Aktif olmayan varlıklar yatırım hesabı özetinde gösterilmeyecek.
-            if (asset.isActive() == false){
+            // Varlık aktif mi kontrol ediliyor. Aktif olmayan varlıklar yatırım hesabı
+            // özetinde gösterilmeyecek.
+            if (asset.isActive() == false) {
                 continue;
             }
 
@@ -757,11 +901,19 @@ public class AssetService {
             investmentDTO.setUserId(user.getId());
             investmentDTO.setAssetType(asset.getAssetType().name());
             List<Positions> positionsListByAsset = positionRepository.findAllByAsset(asset);
-            Positions position = positionsListByAsset.get(positionsListByAsset.size() - 1);            
-            investmentDTO.setProfitLoss(position.getProfitLoss());
+
+            // Transaction Silme Hatası Sonucu Eklendi
+            if (positionsListByAsset.size() == 0) {
+                System.out.println("No position found for asset " + asset.getId());
+                investmentDTO.setProfitLoss(BigDecimal.ZERO);
+            } else {
+                Positions position = positionsListByAsset.get(positionsListByAsset.size() - 1);
+                investmentDTO.setProfitLoss(position.getProfitLoss());
+            }
+            ///////////////////////////////////////////
+
             investmentDTO.setAccountType("INVESTMENT");
 
-            
             List<AssetResponse> listInvestment = new ArrayList<>();
             List<Transactions> transactionListByAsset = transactionRepository.findByAsset(asset);
             for (Transactions transaction : transactionListByAsset) {
@@ -775,7 +927,8 @@ public class AssetService {
                 System.out.println("Transaction found: " + transaction.getId());
 
                 Long sellingCount = this.getSellingCount(transaction.getId());
-                System.out.println("Transaction Quantity: " + transaction.getQuantity() + " Transaction Selling Count: " + sellingCount);
+                System.out.println("Transaction Quantity: " + transaction.getQuantity() + " Transaction Selling Count: "
+                        + sellingCount);
                 if (sellingCount.compareTo(transaction.getQuantity().longValue()) >= 0) {
                     continue;
                 }
@@ -790,22 +943,40 @@ public class AssetService {
                 assetResponse.setQuantity(transaction.getQuantity().subtract(BigDecimal.valueOf(sellingCount)));
                 assetResponse.setPurchasePrice(transaction.getUnitPrice());
                 assetResponse.setCurrentPrice(lastPrices.get(transaction.getAssetSymbol()));
-                assetResponse.setTotalValue(transaction.getQuantity().multiply(lastPrices.get(transaction.getAssetSymbol())));
-                assetResponse.setProfitLoss((transaction.getQuantity().subtract(BigDecimal.valueOf(sellingCount))).multiply(lastPrices.get(transaction.getAssetSymbol())).subtract(assetResponse.getTotalValue()));
+                assetResponse.setTotalValue(
+                        transaction.getQuantity().multiply(lastPrices.get(transaction.getAssetSymbol())));
+                assetResponse.setProfitLoss((transaction.getQuantity().subtract(BigDecimal.valueOf(sellingCount)))
+                        .multiply(lastPrices.get(transaction.getAssetSymbol()))
+                        .subtract(assetResponse.getTotalValue()));
                 assetResponse.setAccountName(asset.getAssetName());
-                listInvestment.add(assetResponse);                
+                listInvestment.add(assetResponse);
             }
             investmentDTO.setHoldings(listInvestment);
             investmentDTO.setHoldingCount(listInvestment.size());
             investmentAccountResponseDTO.add(investmentDTO);
+            System.out.println("Investment DTO: " + investmentDTO);
         }
         accountSummary.setInvestmentAccounts(investmentAccountResponseDTO);
         accountSummary.setCurrencyAccountCount(accountSummary.getCurrencyAccounts().size());
         accountSummary.setInvestmentAccountCount(investmentAccountResponseDTO.size());
+
+        System.out.println("Kullanıcı Özet Bilgisi: " + accountSummary);
         return accountSummary;
     }
 
+    @Transactional
+    public Boolean isDeleteTransactionBefore(Long transactionId) {
 
+        if (transactionId != 0) {
+            Transactions transaction = transactionRepository.findById(transactionId)
+                    .orElseThrow(() -> new RuntimeException("Transaction not found"));
+            TransactionDeleteControl byAsset = transactionDeleteControlRepository.findByAsset(transaction.getAsset());
+            System.out.println("Delete control for asset " + transaction.getAsset().getId() + ": " + byAsset);
+            return byAsset.getIsDeleteBefore();
+        }
+        return true;
+
+    }
 
     @Transactional
     public Boolean deleteMoneyAccount(Long accountId) {
@@ -823,39 +994,37 @@ public class AssetService {
         return true;
     }
 
-
     @Transactional
-    public MoneyAccountResponseDTO updateMoneyAccount(Boolean updatedAccount,BigDecimal exchangeRate, MoneyAccountResponseDTO moneyAccountResponseDTO) {
+    public MoneyAccountResponseDTO updateMoneyAccount(Boolean updatedAccount, BigDecimal exchangeRate,
+            MoneyAccountResponseDTO moneyAccountResponseDTO) {
 
-        //Aktif kullanıcıyı al
+        // Aktif kullanıcıyı al
         CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication()
                 .getPrincipal();
         User user = userRepository.findById(userDetails.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-
-        //Para Hesabını Güncelle
+        // Para Hesabını Güncelle
         Optional<MoneyAccount> optionalMoneyAccount = moneyAccountRepository.findById(moneyAccountResponseDTO.getId());
-        if (!optionalMoneyAccount.isPresent()){
+        if (!optionalMoneyAccount.isPresent()) {
             return null;
         }
         MoneyAccount moneyAccount = optionalMoneyAccount.get();
         BigDecimal previousBalance = moneyAccount.getBalance();
         moneyAccount.setAccountName(moneyAccountResponseDTO.getAccountName());
         moneyAccount.setBalance(moneyAccountResponseDTO.getBalance());
-        moneyAccount.setCurrency(moneyAccountResponseDTO.getCurrency());            
+        moneyAccount.setCurrency(moneyAccountResponseDTO.getCurrency());
         MoneyAccount savedMoneyAccount = moneyAccountRepository.save(moneyAccount);
 
-
-        //Transfer kaydı oluştur (Eğer hesap güncellemesiyse)
+        // Transfer kaydı oluştur (Eğer hesap güncellemesiyse)
         if (updatedAccount) {
             Transfer transfer = new Transfer();
-            transfer.setAmount(savedMoneyAccount.getBalance());
+            transfer.setAmount(BigDecimal.valueOf(Math.abs(savedMoneyAccount.getBalance().doubleValue() - previousBalance.doubleValue())));
             if (savedMoneyAccount.getBalance().compareTo(previousBalance) == 0) {
                 transfer.setType("equal");
-            }
-            else{
-                transfer.setType(savedMoneyAccount.getBalance().compareTo(previousBalance) > 0 ? "incoming" : "outgoing");
+            } else {
+                transfer.setType(
+                        savedMoneyAccount.getBalance().compareTo(previousBalance) > 0 ? "incoming" : "outgoing");
             }
             transfer.setCategory("Bakiye Güncellemesi");
             transfer.setDetails("Hesap güncellemesi sonucu bakiye farkı");
@@ -865,10 +1034,13 @@ public class AssetService {
             if (transfer.getType().equals("incoming")) {
                 transfer.setInputPreviousBalance(previousBalance);
                 transfer.setInputNextBalance(savedMoneyAccount.getBalance());
-            } else {
+            } else  {
                 transfer.setOutputNextBalance(savedMoneyAccount.getBalance());
                 transfer.setOutputPreviousBalance(previousBalance);
             }
+            transfer.setIsAccountToAccountTransfer(false);
+            transfer.setCurrency(moneyAccount.getCurrency());
+            transfer.setTransactionDateTime(LocalDateTime.now());
             System.out.println("Transferi Kaydettik");
             transferRepository.save(transfer);
         }

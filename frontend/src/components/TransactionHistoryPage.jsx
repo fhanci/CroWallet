@@ -82,6 +82,26 @@ const TransactionHistoryPage = () => {
         const transactionsList = sortedData.map((transaction, index) => ({ ...transaction, id: index }));
         console.log("İşlem Listesi:", transactionsList);
 
+        //Burdaki tüm transactionlar içindeki inner-account'ları bul ve değiştir
+        for(const transaction of transactionsList){
+          if(transaction.type === "inter-account"){
+            const response = await axios.get(`${backendUrl}/api/transfers/getAccountToAccountTransfer?transferId=${transaction.transferId}`, {
+              headers: {
+                Authorization: token ? `Bearer ${token}` : undefined,
+              },
+            });
+
+            console.log("İşlem Çıktısı:", response.data);
+
+            if (response.data.hasAccountToAccountTransfer){
+              transaction.type = response.data.senderAccount === transaction.moneyAccountId ? "outgoing" : response.data.receiverAccount === transaction.moneyAccountId ? "incoming" : "Have a problem";
+            }            
+          }
+        }
+
+        
+        console.log("İşlem Listesi Çıktı")
+        console.log(transactionsList)
         setTransactions(transactionsList);
         setFilteredTransactions(transactionsList);
         setGraphTransactions(transactionsList);
@@ -109,7 +129,9 @@ const TransactionHistoryPage = () => {
       
       // );
 
-      const lastTransaction = transactions[transactions.length - 1];
+      const lastTransaction = transactions[0];
+      console.log("Son İşlem:", lastTransaction);
+      console.log(transactions)
       setAccountBalance(lastTransaction?.outputNextBalance ?? lastTransaction?.inputNextBalance);
       setAccountCurrency(lastTransaction?.currency);
   }
@@ -186,9 +208,12 @@ const TransactionHistoryPage = () => {
 
   const getIncomeOrExpense = (transaction) => {
     if (transaction.type === "inter-account") {
-      if (transaction.account.id.toString() === accountId.toString()) {
+      console.log("accountId:", accountId);
+      console.log("transaction.account.id:", transaction);
+      if (transaction.moneyAccountId.toString() === accountId.toString()) {
         return t("expense");
       }
+      console.log("Eşit Çıkmadı");
       if (transaction.receiverId.toString() === accountId.toString()) {
         return t("income");
       }
@@ -483,6 +508,7 @@ const TransactionHistoryPage = () => {
           <TextField
             label={t("startDateLabel")}
             type="datetime-local"
+            inputProps={{step: 1}}
             fullWidth
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
@@ -492,6 +518,7 @@ const TransactionHistoryPage = () => {
           <TextField
             label={t("endDateLabel")}
             type="datetime-local"
+            inputProps={{step: 1}}
             fullWidth
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}

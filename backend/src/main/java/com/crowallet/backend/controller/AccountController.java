@@ -161,8 +161,8 @@ public class AccountController {
         return accountService.withdrawMoney(transferDTO);
     }
 
-    @DeleteMapping("/delete/{id}")
-    public void deleteAccount(@PathVariable Long id) {
-        accountService.deleteAccount(id);
-    }
+    // @DeleteMapping("/delete/{id}")
+    // public void deleteAccount(@PathVariable Long id) {
+    //     accountService.deleteAccount(id);
+    // }
 }

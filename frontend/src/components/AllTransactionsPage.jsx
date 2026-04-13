@@ -71,7 +71,7 @@ const AllTransactionsPage = () => {
           })
         );
 
-        console.log(transactionsWithAccountInfo)
+        //console.log(transactionsWithAccountInfo)
 
 
         setTransactions(transactionsWithAccountInfo);
@@ -409,6 +409,7 @@ const AllTransactionsPage = () => {
           <TextField
             label={t("startDateLabel")}
             type="datetime-local"
+            inputProps={{step: 1}}
             fullWidth
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
@@ -418,6 +419,7 @@ const AllTransactionsPage = () => {
           <TextField
             label={t("endDateLabel")}
             type="datetime-local"
+            inputProps={{step: 1}}
             fullWidth
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}

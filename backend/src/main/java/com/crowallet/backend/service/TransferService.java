@@ -25,7 +25,9 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -176,6 +178,7 @@ public class TransferService {
     //     return TransferMapper.INSTANCE.toTransferDTO(transfer);
     // }
 
+    @Transactional
     public List<TransferResponseDTO> getUserTransfersByMoneyAccount(Long id) {
         // İlgili para hesabını bul
         MoneyAccount moneyAccount = moneyAccountRepository.findById(id).orElseThrow(() -> new RuntimeException("Money account not found: " + id));
@@ -183,5 +186,19 @@ public class TransferService {
         // Transfer nesnelerini para hesabına göre bul
         List<Transfer> transfers = transferRepository.findByMoneyAccount(moneyAccount);
         return transferMapper.toTransferResponseDTOList(transfers);
+    }
+
+
+    @Transactional
+    public Map<String, Long> getAccountToAccountTransfer(Long transferId) {
+        Transfer transfer = transferRepository.findById(transferId).orElseThrow(() -> new RuntimeException("Transfer not found: " + transferId));
+        List<AccounttoAccountTransfer> accountToAccountTransfers = accountToAccountTransferRepository.findByTransfer(transfer);
+        Map<String, Long> result = new HashMap<>();
+        if (!accountToAccountTransfers.isEmpty()) {
+            result.put("senderAccount", accountToAccountTransfers.get(0).getSenderAccount().getId());
+            result.put("receiverAccount", accountToAccountTransfers.get(0).getReceiverAccount().getId());
+        }
+        result.put("hasAccountToAccountTransfer", accountToAccountTransfers.isEmpty() ? 0L : 1L);
+        return result;
     }
 }
