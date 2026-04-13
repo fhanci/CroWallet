@@ -29,7 +29,7 @@ import useCurrencyRates from "../config/useCurrencyRates";
 import axios from "axios";
 import { backendUrl } from "../utils/envVariables";
 import { toLocalISOTime } from "../utils/localIsoTime";
-import { CURRENCIES } from "../data/currencies";
+import { CURRENCIES, exchangeRates } from "../data/currencies";
 
 const AccountToAccountTransferPage = () => {
   const navigate = useNavigate();
@@ -45,7 +45,7 @@ const AccountToAccountTransferPage = () => {
   const [error, setError] = useState(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [useRealTimeRate, setUseRealTimeRate] = useState(true);
-  const [customExchangeRate, setCustomExchangeRate] = useState("");
+  const [customExchangeRate, setCustomExchangeRate] = useState(0);
 
   // Get currency symbol
   const getCurrencySymbol = (currency) => {
@@ -56,6 +56,11 @@ const AccountToAccountTransferPage = () => {
       default: return currency;
     }
   };
+
+  useEffect(() => {
+    exchangeRates();
+  }, []);
+
 
   // Calculate real-time exchange rate
   const calculateRealTimeRate = () => {
@@ -69,6 +74,64 @@ const AccountToAccountTransferPage = () => {
     if (!senderRate || !receiverRate) return null;
     return receiverRate / senderRate;
   };
+
+  const getCurrentExchangeRate = (currency) => {
+    return CURRENCIES.find((data) => data.value === currency)?.exchangeRates || null;
+  }
+
+  const calculateSenderNewBalance = () => {
+    if (!selectedSenderAccount) return 0;
+    const currentBalance = parseFloat(selectedSenderAccount.balance) || 0;
+    const transferAmount = parseFloat(transferData.amount) || 0;
+    return currentBalance - transferAmount;
+  };
+
+
+  const calculateReceiverNewBalance = () => {
+    if (!selectedReceiverAccount) return 0;
+    const currentBalance = parseFloat(selectedReceiverAccount.balance) || 0;
+    const transferAmount = parseFloat(transferData.amount) || 0;
+
+    if (isDifferentCurrency) {
+      let effectiveRate;
+      if (!useRealTimeRate) {
+        effectiveRate = customExchangeRate
+      }
+      else {
+        effectiveRate = getCurrentExchangeRate(selectedSenderAccount.currency) / getCurrentExchangeRate(selectedReceiverAccount.currency);
+      }
+      if (effectiveRate) {
+        return currentBalance + transferAmount * effectiveRate;
+      }
+    }
+    return currentBalance + transferAmount;
+  };
+
+  useEffect(() => {
+    console.log("useRealTimeRate changed:", useRealTimeRate);
+  },[useRealTimeRate])
+
+  const calculateReceiverAmount = () => {
+    if (!selectedReceiverAccount) return 0;
+    const transferAmount = parseFloat(transferData.amount) || 0;
+
+
+    if (isDifferentCurrency) {
+      let effectiveRate;
+
+      if (!useRealTimeRate) {
+        effectiveRate = customExchangeRate
+      }
+      else {
+        effectiveRate = getCurrentExchangeRate(selectedSenderAccount.currency) / getCurrentExchangeRate(selectedReceiverAccount.currency);
+      }
+      if (effectiveRate) {
+        return transferAmount * effectiveRate;
+      }
+    };
+
+    return transferAmount;
+  }
 
   // Rate display configuration (handle TRY involvement)
   const getRateDisplayConfig = () => {
@@ -91,12 +154,12 @@ const AccountToAccountTransferPage = () => {
   };
 
   // Convert effective rate (for backend) to displayed rate (for UI)
-  const getDisplayedRateFromEffective = (effectiveRate) => {
-    const cfg = getRateDisplayConfig();
-    if (!cfg || effectiveRate == null) return null;
-    if (cfg.invert) return effectiveRate > 0 ? 1 / effectiveRate : null;
-    return effectiveRate;
-  };
+  // const getDisplayedRateFromEffective = (effectiveRate) => {
+  //   const cfg = getRateDisplayConfig();
+  //   if (!cfg || effectiveRate == null) return null;
+  //   if (cfg.invert) return effectiveRate > 0 ? 1 / effectiveRate : null;
+  //   return effectiveRate;
+  // };
 
   // Convert displayed rate (from UI) to effective rate (for backend)
   const getEffectiveRateFromDisplayed = (displayedRate) => {
@@ -175,10 +238,10 @@ const AccountToAccountTransferPage = () => {
       return;
     }
 
-    if (isDifferentCurrency && !getEffectiveExchangeRate()) {
-      setError("Geçerli bir döviz kuru giriniz.");
-      return;
-    }
+    // if (isDifferentCurrency && !getEffectiveExchangeRate()) {
+    //   setError("Geçerli bir döviz kuru giriniz.");
+    //   return;
+    // }
 
     if (selectedSenderAccount.id === selectedReceiverAccount.id) {
       setError(t("sameAccountError"));
@@ -198,11 +261,16 @@ const AccountToAccountTransferPage = () => {
       return;
     }
 
-    const effectiveRate = isDifferentCurrency
-      ? getEffectiveExchangeRate()
+    const effectiveRate = isDifferentCurrency ? 
+      !useRealTimeRate  
+      ? customExchangeRate 
+      : getCurrentExchangeRate(selectedSenderAccount.currency) / getCurrentExchangeRate(selectedReceiverAccount.currency) 
       : 1;
 
     const receiverAmount = amount * effectiveRate;
+
+
+    console.log("Effective exchange rate:", effectiveRate);
 
 
 
@@ -235,6 +303,7 @@ const AccountToAccountTransferPage = () => {
       isAccountToAccountTransfer: true
     };
 
+
     const updatedSender = {
       ...selectedSenderAccount,
       balance: senderBalance - amount,
@@ -244,6 +313,9 @@ const AccountToAccountTransferPage = () => {
       ...selectedReceiverAccount,
       balance: selectedReceiverAccount.balance + receiverAmount,
     };
+
+    console.log("Updated sender:", updatedSender);
+    console.log("Updated receiver:", updatedReceiver);
 
 
 
@@ -449,7 +521,7 @@ const AccountToAccountTransferPage = () => {
               type="number"
               value={transferData.amount || ""}
               onChange={(e) =>
-                setTransferData({ ...transferData, amount: e.target.value })
+                setTransferData({ ...transferData, amount: Math.abs(e.target.value) })
               }
               fullWidth
               InputProps={{
@@ -501,7 +573,7 @@ const AccountToAccountTransferPage = () => {
                       Anlık Kur
                     </Typography>
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      1 {getRateDisplayConfig()?.baseCurrency || selectedSenderAccount?.currency} = {getDisplayedRateFromEffective(calculateRealTimeRate())?.toFixed(4) || "..."} {getRateDisplayConfig()?.quoteCurrency || selectedReceiverAccount?.currency}
+                      1 {selectedSenderAccount?.currency} = {(getCurrentExchangeRate(selectedSenderAccount?.currency) / getCurrentExchangeRate(selectedReceiverAccount?.currency)).toLocaleString("tr-TR")} {selectedReceiverAccount?.currency}
                     </Typography>
                   </Box>
                 ) : (
@@ -511,16 +583,16 @@ const AccountToAccountTransferPage = () => {
                     type="number"
                     value={customExchangeRate}
                     onChange={(e) => setCustomExchangeRate(e.target.value)}
-                    placeholder={`1 ${getRateDisplayConfig()?.baseCurrency || selectedSenderAccount?.currency} = ? ${getRateDisplayConfig()?.quoteCurrency || selectedReceiverAccount?.currency}`}
+                    placeholder={`1 ${selectedSenderAccount?.currency} = ? ${selectedReceiverAccount?.currency}`}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          1 {getRateDisplayConfig()?.baseCurrency || selectedSenderAccount?.currency} =
+                          1 {selectedSenderAccount?.currency} =
                         </InputAdornment>
                       ),
                       endAdornment: (
                         <InputAdornment position="end">
-                          {getRateDisplayConfig()?.quoteCurrency || selectedReceiverAccount?.currency}
+                          {selectedReceiverAccount?.currency}
                         </InputAdornment>
                       ),
                     }}
@@ -559,7 +631,7 @@ const AccountToAccountTransferPage = () => {
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                     <Typography variant="body2">Kur:</Typography>
                     <Typography variant="body2">
-                      1 {getRateDisplayConfig()?.baseCurrency} = {getDisplayedRateFromEffective(getEffectiveExchangeRate())?.toFixed(4)} {getRateDisplayConfig()?.quoteCurrency}
+                      1 {selectedSenderAccount?.currency} = {parseFloat(customExchangeRate)?.toLocaleString("tr-TR")} {selectedReceiverAccount?.currency}
                     </Typography>
                   </Box>
                 )}
@@ -567,7 +639,7 @@ const AccountToAccountTransferPage = () => {
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <Typography variant="body2">Alıcı:</Typography>
                   <Typography variant="body2" color="success.main" fontWeight={600}>
-                    +{calculateConvertedAmount().toLocaleString("tr-TR")} {selectedReceiverAccount.currency}
+                    +{calculateReceiverAmount().toLocaleString("tr-TR")} {selectedReceiverAccount.currency}
                   </Typography>
                 </Box>
 
@@ -576,14 +648,14 @@ const AccountToAccountTransferPage = () => {
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                   <Typography variant="body2">Gönderen Yeni Bakiye:</Typography>
                   <Typography variant="body2" color={senderNewBalance >= 0 ? "text.primary" : "error.main"} fontWeight={500}>
-                    {senderNewBalance?.toLocaleString("tr-TR")} {selectedSenderAccount.currency}
+                    {calculateSenderNewBalance().toLocaleString("tr-TR")} {selectedSenderAccount.currency}
                   </Typography>
                 </Box>
 
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <Typography variant="body2">Alıcı Yeni Bakiye:</Typography>
                   <Typography variant="body2" color="success.main" fontWeight={500}>
-                    {receiverNewBalance?.toLocaleString("tr-TR")} {selectedReceiverAccount.currency}
+                    {calculateReceiverNewBalance().toLocaleString("tr-TR")} {selectedReceiverAccount.currency}
                   </Typography>
                 </Box>
               </CardContent>
@@ -593,7 +665,7 @@ const AccountToAccountTransferPage = () => {
           <TextField
             label={t("date")}
             type="datetime-local"
-            inputProps={{step: 1}}
+            inputProps={{ step: 1 }}
             value={transferData.date || ""}
             onChange={(e) =>
               setTransferData({ ...transferData, date: e.target.value })
@@ -631,12 +703,13 @@ const AccountToAccountTransferPage = () => {
             >
               İptal
             </Button>
+            {console.log(customExchangeRate)}
             <Button
               variant="contained"
               color="primary"
               onClick={handleSubmit}
               disabled={!selectedSenderAccount || !selectedReceiverAccount || !transferData.amount ||
-                (isDifferentCurrency && !getEffectiveExchangeRate())}
+                (useRealTimeRate === false && customExchangeRate === "0")}
               sx={{
                 flex: 1,
                 borderRadius: 2,

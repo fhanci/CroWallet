@@ -67,8 +67,9 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
         const newId = Math.max(...goldItems.map((item) => item.id)) + 1;
         setGoldItems([
             ...goldItems,
-            { id: newId, goldType: "", quantity: "", price: "", buyingDateTime: toLocalISOTime(dayjs()) },
+            { id: newId, goldType: "", quantity: "", price: "", buyingDateTime: dayjs() },
         ]);
+        console.log("Added new gold item:", goldItems);
     };
 
     const removeGoldItem = (id) => {
@@ -94,7 +95,7 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
             );
         }
 
-       else if (field === "goldType") {
+        else if (field === "goldType") {
             setGoldItems(
                 goldItems.map((item) =>
                     item.id === id ? { ...item, [field]: value, price: ["GRAM", "CEYREK", "YARIM", "TAM", "CUMHURIYET"].includes(value) ? goldPrice.find((data) => data.Name.split("ALTIN")[0] === value).Selling : item.price } : item
@@ -344,11 +345,21 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
 
                             <Box sx={{ my: 3 }}>
 
+                                {/* <TextField
+                                    label={"Kur Bilgisi"}
+                                    type="number"
+                                    fullWidth
+                                    //value={formatDateTime(item.buyingDateTime)}
+                                    //onChange={(e) => updateGoldItem(item.id, "buyingDateTime", e.target.value)}
+                                    margin="normal"
+                                    InputLabelProps={{ shrink: true }}
+                                /> */}
+
 
                                 <TextField
                                     label={"Tarih Seç"}
                                     type="datetime-local"
-                                    inputProps={{step: 1}}
+                                    inputProps={{ step: 1 }}
                                     fullWidth
                                     value={formatDateTime(item.buyingDateTime)}
                                     onChange={(e) => updateGoldItem(item.id, "buyingDateTime", e.target.value)}
