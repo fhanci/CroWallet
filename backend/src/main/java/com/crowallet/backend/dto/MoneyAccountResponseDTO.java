@@ -13,4 +13,5 @@ public class MoneyAccountResponseDTO {
     private String currency;
     private HoldingType holdingType;
     private Long id;
+    private Boolean isActive;
 }

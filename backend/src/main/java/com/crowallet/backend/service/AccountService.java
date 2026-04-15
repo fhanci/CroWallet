@@ -134,6 +134,14 @@ public class AccountService {
     }
 
     @Transactional
+    public List<MoneyAccountResponseDTO> getMoneyAccountActiveAndPassive(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User Bulunamadı"));
+        List<MoneyAccount> allMoneyAccounts = moneyAccountRepository.findByUser(user);
+        return this.moneyAccountMapper.toMoneyAccountResponseDTO(allMoneyAccounts);
+    }
+
+
+    @Transactional
     public List<MoneyAccountResponseDTO> getMoneyAccount(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User Bulunamadı"));
         List<MoneyAccount> allMoneyAccounts = moneyAccountRepository.findByUserAndIsActive(user, true);

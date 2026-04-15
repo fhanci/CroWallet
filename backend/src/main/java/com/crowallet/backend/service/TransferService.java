@@ -86,6 +86,7 @@ public class TransferService {
 
         // Kullanıcının tüm transferlerini al
         List<Transfer> transfers = transferRepository.findByUser(user);
+        
         return transferMapper.toTransferResponseDTOList(transfers);
     }
 

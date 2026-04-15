@@ -108,6 +108,12 @@ public class AccountController {
         return ResponseEntity.ok(moneyAccounts);
     }
 
+    @GetMapping("/get-money-accounts-active-passive")
+    public ResponseEntity<List<MoneyAccountResponseDTO>> getMoneyAccountsActiveAndPassive(@RequestParam(required = true) Long userId) {
+        List<MoneyAccountResponseDTO> moneyAccounts = accountService.getMoneyAccountActiveAndPassive(userId);
+        return ResponseEntity.ok(moneyAccounts);
+    }
+
     // @PutMapping("/update-money-account")
     // public ResponseEntity<MoneyAccountResponseDTO> updateMoneyAccount(@RequestParam(required = true) Long exchangeRate,@RequestBody MoneyAccountResponseDTO moneyAccountResponseDTO) {
     //     MoneyAccountResponseDTO updateMoneyAccount = accountService.updateMoneyAccount(exchangeRate,moneyAccountResponseDTO);

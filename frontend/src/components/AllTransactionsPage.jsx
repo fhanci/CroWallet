@@ -49,6 +49,7 @@ const AllTransactionsPage = () => {
   const [endDate, setEndDate] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const token = localStorage.getItem("token");
+  const [allMoneyAccounts, setAllMoneyAccounts] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -59,6 +60,14 @@ const AllTransactionsPage = () => {
           },
         });
 
+        const allMoneyAccounts = await axios.get(`${backendUrl}/api/accounts/get-money-accounts-active-passive?userId=${user.id}`, {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        });
+
+        setAllMoneyAccounts(allMoneyAccounts.data);
+        console.log("Tüm para hesapları:", allMoneyAccounts.data);
 
         const sortedData = response.data.sort(
           (b,a) => new Date(b.transactionDateTime) - new Date(a.transactionDateTime)
@@ -292,6 +301,8 @@ const AllTransactionsPage = () => {
           <TableBody>
             {filteredTransactions.length > 0 ? (
               filteredTransactions.map((transaction, idx) => {
+                const isActive = allMoneyAccounts.find((acc) => acc.id === transaction.moneyAccountId)?.isActive;
+                const textColorisPassive = "rgba(69, 60, 60, 0.2)";
                 const incomeOrExpense = getIncomeOrExpense(transaction);
                 const isIncome = incomeOrExpense === t("income");
                 const textColor = isIncome 
@@ -319,9 +330,10 @@ const AllTransactionsPage = () => {
                       </TableCell>
                       <TableCell>
                         <Chip 
-                          label={transaction.accountName || "-"} 
+                          label={transaction.accountName + (isActive ? "" : " (Pasif Hesap)")} 
                           size="small" 
                           variant="outlined"
+                          color= {isActive ? textColor : textColorisPassive }
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/transactions/${transaction.moneyAccountId}`);
@@ -329,16 +341,17 @@ const AllTransactionsPage = () => {
                           sx={{ cursor: "pointer" }}
                         />
                       </TableCell>
-                      <TableCell sx={{ color: textColor }}>
+                      
+                      <TableCell sx={{ color: isActive ? textColor : textColorisPassive }}>
                         {getTransactionTypeLabel(transaction)}
                       </TableCell>
-                      <TableCell align="right" sx={{ color: textColor }}>
+                      <TableCell sx={{ color: isActive ? textColor : textColorisPassive }}>
                         {(isIncome ? "+ " : "- ") +
                           Math.abs(transaction.amount).toLocaleString("tr-TR") +
                           " " +
                           (transaction.currency || "")}
                       </TableCell>
-                      <TableCell align="center" sx={{ color: textColor }}>
+                      <TableCell sx={{ color: isActive ? textColor : textColorisPassive }}>
                         {new Date(transaction.transactionDateTime).toLocaleString("tr-TR")}
                       </TableCell>
                     </TableRow>
