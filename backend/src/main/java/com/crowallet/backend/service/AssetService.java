@@ -1048,4 +1048,9 @@ public class AssetService {
         return moneyAccountMapper.toMoneyAccountResponseDTO(savedMoneyAccount);
 
     }
+
+    public Boolean isThereThisAssetNameBefore(String assetName) {
+        List<Asset> allByAssetName = assetRepository.findAllByAssetName(assetName);
+        return allByAssetName.size() > 0;
+    }
 }

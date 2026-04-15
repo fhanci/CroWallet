@@ -136,113 +136,103 @@ const AccountCreatePage = () => {
 
 
   useEffect(() => {
+
+    const checkField = async () => {
+      let fieldsValid = false;
+      if (assetType === "GOLD") {
+        fieldsValid = goldItems.every((goldData) =>
+          (goldData.goldType !== "" && goldData.goldType !== 0 && goldData.goldType !== null) &&
+          (goldData.price !== "" && goldData.price !== 0 && goldData.price !== null) &&
+          (goldData.quantity !== "" && goldData.quantity !== 0 && goldData.quantity !== null)
+        );
+
+      }
+      else if (assetType === "STOCK") {
+        fieldsValid = stockItems.every((stockData) =>
+          (stockData.price !== 0 && stockData.price !== "" && stockData.price !== null) &&
+          (stockData.quantity !== 0 && stockData.quantity !== "" && stockData.quantity !== null) &&
+          (stockData.stock !== 0 && stockData.stock !== "" && stockData.stock !== null)
+        )
+
+      }
+      return fieldsValid && accountName !== "";
+    }
+
+    const checkAccountIsEmpty = async() => {
+      let fieldsValid = false;
+      if (assetType === "GOLD") {
+        fieldsValid = goldItems.every((goldData) =>
+          (goldData.goldType === "" || goldData.goldType === 0 || goldData.goldType === null) &&
+          (goldData.price === "" || goldData.price === 0 || goldData.price === null) &&
+          (goldData.quantity === "" || goldData.quantity === 0 || goldData.quantity === null)
+        );
+
+      }
+      else if (assetType === "STOCK") {
+        fieldsValid = stockItems.every((stockData) =>
+          (stockData.price === 0 || stockData.price === "" || stockData.price === null) &&
+          (stockData.quantity === 0 || stockData.quantity === "" || stockData.quantity === null) &&
+          (stockData.stock === 0 || stockData.stock === "" || stockData.stock === null)
+        )
+      }
+      return accountName !== "" && fieldsValid;
+    }
+
     const validate = async () => {
 
-      //Kullanıcının Daha Önceden Hesabı Olacak
-      //Asset adı girecek
-      //Gold ya da Stock Seçecek
-      //Eğer fieldarı hiç doldurmadıysa buton aktif olacak
-      if (!isFirstAsset && accountName !== "" && (assetType === "GOLD" || assetType === "STOCK")) {
-        let fieldsValid = true;
-        if (assetType === "GOLD") {
-          fieldsValid = goldItems.every((goldData) =>
-            (goldData.goldType === "" || goldData.goldType === 0) &&
-            (goldData.price === "" || goldData.price === 0) &&
-            (goldData.quantity === "" || goldData.quantity === 0)
-          );
+      console.log("İlk hesap mı? : ", isFirstAsset)
+      if (!isFirstAsset) {
 
-        }
-        else if (assetType === "STOCK") {
-          fieldsValid = stockItems.every((stockData) =>
-            (stockData.price === 0 || stockData.price === "" || stockData.price === null) &&
-            (stockData.quantity === 0 || stockData.quantity === "" || stockData.quantity === null) &&
-            (stockData.stock === 0 || stockData.stock === "" || stockData.stock === null)
-          )
-        }
-
-        if (fieldsValid) {
-          setIsButtonDisabled(!fieldsValid)
+        if (await checkAccountIsEmpty()){
+          console.log("Girdim")
+          setIsButtonDisabled(false);
           return;
         }
+        console.log("Giremedim")
+
+        let fieldsValid = false;
+        if (assetType === "GOLD" || assetType === "STOCK") {
+          fieldsValid = await checkField();
+          console.log(fieldsValid)
+        }
+
+        if (!fieldsValid) {
+          setIsButtonDisabled(true)
+          return;
+        }
+
+        if (selectedMoneyAccount === null || selectedMoneyAccount === 0) {
+          setIsButtonDisabled(true)
+          return;
+        }
+
+
+        const accountDetail = await getAccountDetailInfo();
+        const pay = accountDetail.currency === "TRY"
+          ? accountDetail.balance
+          : accountDetail.balance * (exchangeRate[accountDetail.currency]?.Buying || 0);
+
+
+        let totalPrice = 0;
+        if (assetType === "GOLD") {
+          totalPrice = goldItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
+        }
+        else if (assetType === "STOCK") {
+          totalPrice = stockItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
+        }
+
+        console.log("Bakiye Yetersiz mi? : " + (totalPrice > pay));
+        setIsButtonDisabled((totalPrice > pay));
+        return;
       }
 
 
-      //Kullanıcının daha önceden bir hesabı yoksa banka hesabından para çekmeden direkt olarak hesap açabilecek
       if (isFirstAsset) {
-        let fieldsValid = false;
-        if (assetType === "GOLD") {
-          fieldsValid = goldItems.every((goldData) =>
-            goldData.goldType !== "" &&
-            goldData.price > 0 &&
-            goldData.quantity > 0
-          );
-
-        }
-        else if (assetType === "STOCK") {
-          fieldsValid = stockItems.every((stockData) =>
-            stockData.price !== "" &&
-            stockData.price !== 0 &&
-            stockData.quantity !== "" &&
-            stockData.quantity !== 0 &&
-            stockData.stock !== ""
-          )
-        }
+        let fieldsValid = await checkField();
 
         setIsButtonDisabled(!fieldsValid || accountName === "");
         return;
 
-      }
-
-      //Kullanıcının daha önceden hesabı var
-      //Kullanıcı Hesap Seçmemiş
-      else if ((!isFirstAsset && selectedMoneyAccount === null) || (!isFirstAsset && selectedMoneyAccount === 0)) {
-        setIsButtonDisabled(true);
-        return;
-
-      }
-      //Kullanıcının daha önceden hesabı ver ve banka hesabı seçmiş
-      //Fieldları doldurmuş
-      //Hesap adı girmiş
-      //Seçilen banka hesabının parası ücreti karşılıyor
-      try {
-
-        if (!isFirstAsset) {
-          const accountDetail = await getAccountDetailInfo();
-          const pay = accountDetail.currency === "TRY"
-            ? accountDetail.balance
-            : accountDetail.balance * (exchangeRate[accountDetail.currency]?.Buying || 0);
-
-
-          let totalPrice = 0;
-          let fieldsValid = false;
-
-          if (assetType === "GOLD") {
-            totalPrice = goldItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
-
-
-            fieldsValid = goldItems.every((goldData) =>
-              goldData.goldType !== "" &&
-              goldData.price > 0 &&
-              goldData.quantity > 0
-            );
-
-          }
-          else if (assetType === "STOCK") {
-            totalPrice = stockItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
-
-            fieldsValid = stockItems.every((stockData) =>
-              stockData.price !== "" &&
-              stockData.price !== 0 &&
-              stockData.quantity !== "" &&
-              stockData.quantity !== 0 &&
-              stockData.stock !== ""
-            )
-          }
-          setIsButtonDisabled((totalPrice > pay) || !fieldsValid || accountName === "");
-        }
-      } catch (error) {
-        console.error("Hesap detayı alınamadı", error);
-        setIsButtonDisabled(true);
       }
     };
 
@@ -460,6 +450,21 @@ const AccountCreatePage = () => {
       if (accountType === "CURRENCY") {
         const finalAccountName = accountName || generateCurrencyAccountName();
 
+        const check = await axios.get(
+          `${backendUrl}/api/accounts/isThereThisAccountNameBefore?accountName=${accountName}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (check.data) {
+          setError("Bu hesap adı mevcut. Lütfen farklı bir hesap adı giriniz.")
+          return;
+        }
+
         const response = await axios.post(
           `${backendUrl}/api/accounts/create-money-account`,
           {
@@ -510,6 +515,21 @@ const AccountCreatePage = () => {
       } else if (accountType === "INVESTMENT") {
 
         console.log("User Assets Length: " + isFirstAsset);
+
+        const check = await axios.get(
+          `${backendUrl}/api/asset/isThereThisAssetNameBefore?assetName=${accountName}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (check.data) {
+          setError("Bu hesap adı mevcut. Lütfen farklı bir hesap adı giriniz.")
+          return;
+        }
 
         if (!isFirstAsset && !checkItemsGoldandStocks) {
           const selectedAccount = await getAccountDetailInfo();
@@ -691,7 +711,7 @@ const AccountCreatePage = () => {
 
           console.log("Selected Account:", selectedAccount);
           console.log("Updated Account:", updatedAccount);
-          
+
 
           await axios.put(
             `${backendUrl}/api/asset/update-money-account?updatedAccount=false&exchangeRate=${CURRENCIES.find(c => c.value === selectedAccount.currency)?.exchangeRates}`,

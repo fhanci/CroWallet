@@ -180,6 +180,11 @@ public class AssetController {
     }
     
     
+    @GetMapping("/isThereThisAssetNameBefore")
+    public Boolean isThereThisAssetNameBefore(@RequestParam String assetName) {
+        return assetService.isThereThisAssetNameBefore(assetName);
+    }
+    
     
 
 

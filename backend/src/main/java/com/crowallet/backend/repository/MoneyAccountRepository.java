@@ -35,4 +35,6 @@ public interface MoneyAccountRepository extends JpaRepository<MoneyAccount, Long
 
     List<MoneyAccount> findByUserAndIsActive(User user, Boolean isActive);
 
+    List<MoneyAccount> findAllByAccountName(String accountName);
+
 }

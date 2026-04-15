@@ -512,4 +512,9 @@ public class AccountService {
     //     return TransferMapper.INSTANCE.toTransferDTO(transfer);
     // }
 
+    public Boolean isThereThisAccountNameBefore(String accountName) {
+        List<MoneyAccount> allByMoneyAccountName = moneyAccountRepository.findAllByAccountName(accountName);
+        return allByMoneyAccountName.size() > 0;
+    }
+
 }

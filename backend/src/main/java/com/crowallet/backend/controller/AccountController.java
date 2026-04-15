@@ -21,6 +21,7 @@ import com.crowallet.backend.service.AccountService;
 import com.crowallet.backend.repository.UserRepository;
 
 
+
 ;
 
 @RestController
@@ -165,4 +166,10 @@ public class AccountController {
     // public void deleteAccount(@PathVariable Long id) {
     //     accountService.deleteAccount(id);
     // }
+
+    @GetMapping("/isThereThisAccountNameBefore")
+    public Boolean isThereThisAccountNameBefore(@RequestParam String accountName) {
+        return accountService.isThereThisAccountNameBefore(accountName);
+    }
+    
 }
