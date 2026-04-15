@@ -2,11 +2,15 @@ package com.crowallet.backend.mapper;
 
 import com.crowallet.backend.dto.DebtDTO;
 import com.crowallet.backend.dto.DebtPaymentDTO;
+import com.crowallet.backend.dto.DebtRequestDTO;
+import com.crowallet.backend.dto.DebtResponseDTO;
 import com.crowallet.backend.entity.Debt;
 import com.crowallet.backend.entity.DebtPayment;
 import com.crowallet.backend.entity.DebtType;
 import com.crowallet.backend.entity.PaymentFrequency;
 import com.crowallet.backend.entity.PaymentType;
+import com.crowallet.backend.requests.DebtResponse;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -14,7 +18,7 @@ import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 
-@Mapper
+@Mapper(uses = {DebtMapper.class, MoneyAccountMapper.class})
 public interface DebtMapper {
     DebtMapper INSTANCE = Mappers.getMapper(DebtMapper.class);
 
@@ -22,21 +26,23 @@ public interface DebtMapper {
     @Mapping(source = "debtType", target = "debtType", qualifiedByName = "stringToDebtType")
     @Mapping(source = "paymentType", target = "paymentType", qualifiedByName = "stringToPaymentType")
     @Mapping(source = "paymentFrequency", target = "paymentFrequency", qualifiedByName = "stringToPaymentFrequency")
-    @Mapping(target = "user", ignore = true)
-    @Mapping(target = "moneyAccount", ignore = true)
-    Debt toDebt(DebtDTO debtDTO);
+    Debt toDebt(DebtRequestDTO debtRequestDTO);
 
+
+    @Mapping(target = "userId", source = "user.id")
     @Mapping(source = "debtType", target = "debtType", qualifiedByName = "debtTypeToString")
     @Mapping(source = "paymentType", target = "paymentType", qualifiedByName = "paymentTypeToString")
     @Mapping(source = "paymentFrequency", target = "paymentFrequency", qualifiedByName = "paymentFrequencyToString")
-    @Mapping(target = "nextPayment", ignore = true)
-    @Mapping(target = "remainingInstallments", ignore = true)
-    @Mapping(target = "payments", ignore = true)
-    DebtDTO toDebtDTO(Debt debt);
+    // @Mapping(target = "nextPayment", ignore = true)
+    // @Mapping(target = "remainingInstallments", ignore = true)
+    DebtResponseDTO toDebtResponseDTO(Debt debt);
 
-    List<Debt> toDebtList(List<DebtDTO> debts);
+    List<Debt> toDebtList(List<DebtRequestDTO> debts);
+    List<DebtResponseDTO> toDebtResponseList(List<Debt> debts);
 
-    List<DebtDTO> toDebtDTOList(List<Debt> debts);
+
+    // @Mapping(target = "moneyAccountId", source = "debtResponseDTO.id", qualifiedByName = "getMoneyAccountId")
+    // DebtPayment toDebtPayment(DebtResponseDTO debtResponseDTO);
 
     // DebtPayment mappings
     @Mapping(source = "debt.id", target = "debtId")
@@ -63,6 +69,13 @@ public interface DebtMapper {
     @Named("debtTypeToString")
     default String debtTypeToString(DebtType debtType) {
         return debtType != null ? debtType.name() : null;
+    }
+
+    @Named("getMoneyAccountId")
+    default Long getMoneyAccountId(DebtResponseDTO debtResponseDTO) {
+        return debtResponseDTO != null && debtResponseDTO.getMoneyAccount() != null
+                ? debtResponseDTO.getMoneyAccount().getId()
+                : null;
     }
 
     @Named("stringToDebtType")

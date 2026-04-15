@@ -16,7 +16,6 @@ import com.crowallet.backend.repository.AccountRepository;
 import com.crowallet.backend.repository.AccounttoAccountTransferRepository;
 import com.crowallet.backend.repository.MoneyAccountRepository;
 import jakarta.transaction.Transactional;
-import lombok.experimental.var;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;

@@ -156,10 +156,10 @@ public class AccountController {
     //     return accountService.updateAccount(id, account);
     // }
 
-    @PostMapping("/withdraw-money")
-    public TransferDTO withdrawMoney(@RequestBody TransferDTO transferDTO) {
-        return accountService.withdrawMoney(transferDTO);
-    }
+    // @PostMapping("/withdraw-money")
+    // public TransferDTO withdrawMoney(@RequestBody TransferDTO transferDTO) {
+    //     return accountService.withdrawMoney(transferDTO);
+    // }
 
     // @DeleteMapping("/delete/{id}")
     // public void deleteAccount(@PathVariable Long id) {

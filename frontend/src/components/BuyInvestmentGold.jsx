@@ -9,9 +9,6 @@ import axios from 'axios';
 import Marquee from "react-fast-marquee";
 import { backendUrl } from '../utils/envVariables';
 import { exchangeRates } from '../data/currencies';
-import { LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import { formatDateTime, toLocalISOTime } from '../utils/localIsoTime';
 
@@ -345,15 +342,15 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
 
                             <Box sx={{ my: 3 }}>
 
-                                {/* <TextField
+                                <TextField
                                     label={"Kur Bilgisi"}
                                     type="number"
                                     fullWidth
-                                    //value={formatDateTime(item.buyingDateTime)}
+                                    value={formatDateTime(item.buyingDateTime)}
                                     //onChange={(e) => updateGoldItem(item.id, "buyingDateTime", e.target.value)}
                                     margin="normal"
                                     InputLabelProps={{ shrink: true }}
-                                /> */}
+                                />
 
 
                                 <TextField

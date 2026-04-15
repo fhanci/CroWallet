@@ -194,24 +194,24 @@ const AccountPage = () => {
   }, [user.id, token]);
 
   // Fetch upcoming payments (next 5)
-  useEffect(() => {
-    const fetchUpcomingPayments = async () => {
-      try {
-        const res = await axios.get(
-          `${backendUrl}/api/debts/upcoming/${user.id}?limit=5`,
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-            },
-          }
-        );
-        setUpcomingPayments(res.data);
-      } catch (error) {
-        console.error("Error fetching upcoming payments:", error);
-      }
-    };
-    fetchUpcomingPayments();
-  }, [user.id, token]);
+  // useEffect(() => {
+  //   const fetchUpcomingPayments = async () => {
+  //     try {
+  //       const res = await axios.get(
+  //         `${backendUrl}/api/debts/upcoming/${user.id}?limit=5`,
+  //         {
+  //           headers: {
+  //             Authorization: token ? `Bearer ${token}` : undefined,
+  //           },
+  //         }
+  //       );
+  //       setUpcomingPayments(res.data);
+  //     } catch (error) {
+  //       console.error("Error fetching upcoming payments:", error);
+  //     }
+  //   };
+  //   fetchUpcomingPayments();
+  // }, [user.id, token]);
 
   // Fetch user transfers
   useEffect(() => {
@@ -287,7 +287,7 @@ const AccountPage = () => {
     if (!debt.totalInstallments || debt.totalInstallments === 0) {
       return debt.status === "COMPLETED" ? 100 : 0;
     }
-    return ((debt.paidInstallments || 0) / debt.totalInstallments) * 100;
+    return ((debt.payments.reduce((acc, d) => d.status === "PAID" ? acc + 1 : acc, 0) || 0) / debt.totalInstallments) * 100;
   };
 
   // Modern glassy card style
@@ -469,7 +469,7 @@ const AccountPage = () => {
             <Box sx={{ mt: 1.5 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
                 <Typography variant="caption" sx={{ color: textSecondary, fontSize: "0.7rem" }}>
-                  Taksit: {debt.paidInstallments || 0}/{debt.totalInstallments}
+                  Taksit: {debt.payments.reduce((acc, d) => d.status === "PAID" ? acc + 1 : acc, 0) || 0} / {debt.totalInstallments}
                 </Typography>
                 <Typography variant="caption" sx={{ color: textSecondary, fontSize: "0.7rem" }}>
                   %{progress.toFixed(0)}
@@ -528,6 +528,20 @@ const AccountPage = () => {
     );
   };
 
+
+  const getNewChartData = (type, transfers) => {
+    const filteredTransfersByType = transfers.filter((t) => t.type === type);
+    const filteredTransfersByCategory = new Set(filteredTransfersByType.map((t) => t.category));
+    const total = Array.from(filteredTransfersByCategory).map((category) => {
+      const total = transfers
+        .filter((t) => t.category === category)
+        .reduce((sum, t) => sum + t.amount * (t.exchangeRate || 1), 0);
+      return { name: category, value: total };
+    });
+    return total;
+
+  }
+
   const getChartData = (sources, type, transfers) =>
     sources.map((source) => {
       const total = transfers
@@ -536,9 +550,11 @@ const AccountPage = () => {
       return { name: source, value: total };
     });
 
-  const incomeData = getChartData(incomeSources, "incoming", transfers);
-  const expenseData = getChartData(expenseSources, "outgoing", transfers);
 
+  const incomeData = getNewChartData("incoming", transfers)//getChartData(incomeSources, "incoming", transfers);
+  const expenseData = getNewChartData("outgoing", transfers)//getChartData(expenseSources, "outgoing", transfers);
+  console.log("GetChartDataIncoming: " + JSON.stringify(getNewChartData("incoming", transfers)))
+  console.log("GetChartDataOutgoing: " + JSON.stringify(getNewChartData("outgoing", transfers)))
 
   const convertToTRY2 = (amount, currency) => {
     console.log(`Para Hesapları - ${currency}: ${amount}`);
@@ -566,29 +582,34 @@ const AccountPage = () => {
 
   // Calculate total assets in TRY using real-time rates
   const calculateTotalAssetsTRY = () => {
-    if (!rates || Object.keys(rates).length === 0) {
-      return accountSummary?.totalBalanceTRY || 0;
-    }
-    let total = 0;
-    if (accountSummary?.currencyTotals) {
-      Object.entries(accountSummary.currencyTotals).forEach(([currency, amount]) => {
-        total += convertToTRY2(amount, currency);
-      });
-    }
-    total += accountSummary?.totalInvestmentValue || 0;
-    return total;
+    return accountSummary ? accountSummary.totalBalanceTRY : 0;
+    // if (!rates || Object.keys(rates).length === 0) {
+    //   return accountSummary?.totalBalanceTRY || 0;
+    // }
+    // let total = 0;
+    // if (accountSummary?.currencyTotals) {
+    //   Object.entries(accountSummary.currencyTotals).forEach(([currency, amount]) => {
+    //     total += convertToTRY2(amount, currency);
+    //   });
+    // }
+    // total += accountSummary?.totalInvestmentValue || 0;
+    // return total;
   };
 
   // Calculate total debts in TRY using real-time rates
   const calculateTotalDebtsTRY = () => {
-    if (!rates || Object.keys(rates).length === 0 || !debtSummary?.debts) {
-      return debtSummary?.totalRemainingAmount || 0;
-    }
-    let total = 0;
-    debtSummary.debts.forEach((debt) => {
-      total += convertToTRY2(debt.remainingAmount, debt.debtCurrency);
-    });
-    return total;
+    return debtSummary? Object.entries(debtSummary.debtsByCurrency).map(([currency,total]) => {
+      const exchangeRate = CURRENCIES.find(c => c.value === currency)?.exchangeRates || 1;
+      return total *= exchangeRate;
+    }).reduce((acc, curr) => acc + curr, 0) : 0;
+    // if (!rates || Object.keys(rates).length === 0 || !debtSummary?.debts) {
+    //   return debtSummary?.totalRemainingAmount || 0;
+    // }
+    // let total = 0;
+    // debtSummary.debts.forEach((debt) => {
+    //   total += convertToTRY2(debt.remainingAmount, debt.debtCurrency);
+    // });
+    // return total;
   };
 
   // Calculate net balance (assets - debts) with real-time conversion
@@ -847,7 +868,12 @@ const AccountPage = () => {
                 Toplam Borç
               </Typography>
               <Typography variant="h4" sx={{ fontWeight: 700, mb: 2, color: "#f44336" }}>
-                {formatCurrency(debtSummary?.totalRemainingAmount || 0, "TRY")}
+                {Math.max(0, Object.entries(debtSummary.debtsByCurrency).reduce((acc, [currency, total]) => {
+                  const rate = CURRENCIES.find((c) => c.value === currency)?.exchangeRates || 0;
+                  return acc + (rate * total);
+                }, 0)).toLocaleString("tr-TR") + " TRY"}
+
+                {/* {formatCurrency(Math.round(debtSummary?.totalRemainingAmount) || 0, "TRY")} */}
               </Typography>
 
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
@@ -858,7 +884,7 @@ const AccountPage = () => {
                         {currency}
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600, color: "#f44336" }}>
-                        {formatCurrency(total, currency)}
+                        {Math.max(0, total).toLocaleString("tr-TR") + " " + currency}
                       </Typography>
                     </Box>
                   ))}
@@ -872,16 +898,16 @@ const AccountPage = () => {
                   </Typography>
                 </Box>
 
-                {debtSummary?.totalPaidAmount > 0 && (
+                {/* {debtSummary?.totalPaidAmount > 0 && (
                   <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                     <Typography variant="body2" sx={{ opacity: 0.7, color: "#f44336" }}>
                       Ödenen
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: "#f44336" }}>
-                      {formatCurrency(debtSummary.totalPaidAmount, "TRY")}
+                      {formatCurrency(Math.round(debtSummary?.totalPaidAmount) || 0, "TRY")}
                     </Typography>
                   </Box>
-                )}
+                )} */}
               </Box>
             </Box>
           </Box>
@@ -1066,7 +1092,7 @@ const AccountPage = () => {
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             {transfers
-              .sort((b,a) => new Date(a.transactionDateTime) - new Date(b.transactionDateTime))
+              .sort((b, a) => new Date(a.transactionDateTime) - new Date(b.transactionDateTime))
               .slice(0, 4)
               .map((transaction, idx) => {
                 const isIncome = transaction.type === "incoming" ||
@@ -1104,7 +1130,7 @@ const AccountPage = () => {
                           {transaction.category || "Hesaplar Arası Transfer"}
                         </Typography>
                         <Typography variant="caption" sx={{ color: textSecondary }}>
-                          {transaction.accountName} • {new Date(transaction.transactionDateTime).toLocaleString ("tr-TR")}
+                          {transaction.accountName} • {new Date(transaction.transactionDateTime).toLocaleString("tr-TR")}
                         </Typography>
                       </Box>
                       <Typography
@@ -1319,10 +1345,10 @@ const AccountPage = () => {
             {t("noTransactions")}
           </Typography>
         ) : (
-          <Box sx={{ display: "flex", gap: 5, mt: 3, flexWrap: "wrap", justifyContent: "center" }}>
+          <Box sx={{ display: "flex", mt: 3, flexWrap: "wrap", gap: 4, justifyContent: "center" }}>
             <Box>
-              <Typography variant="h6">{t("incomeSources")}</Typography>
-              <PieChart width={400} height={300}>
+              <Typography variant="h5" sx={{ textAlign: "center" }}>{t("incomeSources")}</Typography>
+              <PieChart width={400} height={300} sx={{ textAlign: "center" }}>
                 <Pie
                   data={incomeData}
                   cx="50%"
@@ -1335,14 +1361,14 @@ const AccountPage = () => {
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => `${value} TRY`} />
+                <Tooltip formatter={(value) => `${value.toLocaleString("tr-TR")} TRY`} />
                 <Legend />
               </PieChart>
             </Box>
 
             <Box>
-              <Typography variant="h6">{t("expenseSources")}</Typography>
-              <PieChart width={400} height={300}>
+              <Typography variant="h5" sx={{ textAlign: "center" }}>{t("expenseSources")}</Typography>
+              <PieChart width={400} height={300} sx={{ textAlign: "center" }}>
                 <Pie
                   data={expenseData}
                   cx="50%"
@@ -1355,7 +1381,7 @@ const AccountPage = () => {
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => `${value} TRY`} />
+                <Tooltip formatter={(value) => `${value.toLocaleString("tr-TR")} TRY`} />
                 <Legend />
               </PieChart>
             </Box>

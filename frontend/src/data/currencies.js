@@ -1,9 +1,9 @@
 import axios from "axios";
 
 export const CURRENCIES = [
-  { value: "TRY", label: "₺ Türk Lirası", flag: "🇹🇷", exchangeRates: 1 },
-  { value: "USD", label: "$ Amerikan Doları", flag: "🇺🇸", exchangeRates: 1 },
-  { value: "EUR", label: "€ Euro", flag: "🇪🇺", exchangeRates: 1},
+  { value: "TRY", label: "₺ Türk Lirası", flag: "🇹🇷", symbol: "₺", exchangeRates: 1 },
+  { value: "USD", label: "$ Amerikan Doları", flag: "🇺🇸", symbol: "$", exchangeRates: 1 },
+  { value: "EUR", label: "€ Euro", flag: "🇪🇺", symbol: "€", exchangeRates: 1},
 ];
 
 

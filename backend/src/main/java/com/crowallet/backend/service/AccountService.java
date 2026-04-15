@@ -473,43 +473,43 @@ public class AccountService {
     //     return AccountMapper.INSTANCE.toAccountDTO(savedAccount);
     // }
 
-    @Transactional
-    public void deleteAccount(Long id) {
-        Account account = accountRepository.findById(id)
-                .orElseThrow(() -> new GeneralException("Account to be deleted not found: " + id));
+    // @Transactional
+    // public void deleteAccount(Long id) {
+    //     Account account = accountRepository.findById(id)
+    //             .orElseThrow(() -> new GeneralException("Account to be deleted not found: " + id));
 
-        transferRepository.deleteByAccountId(account.getId());
+    //     transferRepository.deleteByAccountId(account.getId());
 
-        accountRepository.delete(account);
-    }
+    //     accountRepository.delete(account);
+    // }
 
-    @Transactional
-    public TransferDTO withdrawMoney(TransferDTO transferDTO) {
-        Account account = accountRepository.findById(transferDTO.getAccount().getId())
-                .orElseThrow(() -> new GeneralException("Hesap bulunamadı"));
+    // @Transactional
+    // public TransferDTO withdrawMoney(TransferDTO transferDTO) {
+    //     Account account = accountRepository.findById(transferDTO.getAccount().getId())
+    //             .orElseThrow(() -> new GeneralException("Hesap bulunamadı"));
 
-        BigDecimal amount = transferDTO.getAmount();
-        BigDecimal currentBalance = account.getBalance();
+    //     BigDecimal amount = transferDTO.getAmount();
+    //     BigDecimal currentBalance = account.getBalance();
 
-        if (currentBalance.compareTo(amount) < 0) {
-            throw new GeneralException("Yetersiz bakiye");
-        }
+    //     if (currentBalance.compareTo(amount) < 0) {
+    //         throw new GeneralException("Yetersiz bakiye");
+    //     }
 
-        BigDecimal newBalance = currentBalance.subtract(amount);
-        account.setBalance(newBalance);
-        account.setUpdateDate(LocalDateTime.now());
-        accountRepository.save(account);
+    //     BigDecimal newBalance = currentBalance.subtract(amount);
+    //     account.setBalance(newBalance);
+    //     account.setUpdateDate(LocalDateTime.now());
+    //     accountRepository.save(account);
 
-        transferDTO.setType("outgoing");
-        transferDTO.setCreateDate(LocalDateTime.now());
-        transferDTO.setDate(LocalDate.now());
-        transferDTO.setOutputPreviousBalance(currentBalance);
-        transferDTO.setOutputNextBalance(newBalance);
+    //     transferDTO.setType("outgoing");
+    //     transferDTO.setCreateDate(LocalDateTime.now());
+    //     transferDTO.setDate(LocalDate.now());
+    //     transferDTO.setOutputPreviousBalance(currentBalance);
+    //     transferDTO.setOutputNextBalance(newBalance);
 
-        Transfer transfer = TransferMapper.INSTANCE.toTransfer(transferDTO);
-        transferRepository.save(transfer);
+    //     Transfer transfer = TransferMapper.INSTANCE.toTransfer(transferDTO);
+    //     transferRepository.save(transfer);
 
-        return TransferMapper.INSTANCE.toTransferDTO(transfer);
-    }
+    //     return TransferMapper.INSTANCE.toTransferDTO(transfer);
+    // }
 
 }

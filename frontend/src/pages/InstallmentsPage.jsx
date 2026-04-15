@@ -38,6 +38,8 @@ import LocalAtmIcon from "@mui/icons-material/LocalAtm";
 import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
 import useCurrencyRates from "../config/useCurrencyRates";
 import { backendUrl } from "../utils/envVariables";
+import { CURRENCIES, exchangeRates } from "../data/currencies";
+import { toLocalISOTime } from "../utils/localIsoTime";
 
 const InstallmentsPage = () => {
   const { t } = useTranslation();
@@ -58,7 +60,7 @@ const InstallmentsPage = () => {
   const [accountCategory, setAccountCategory] = useState("BANK"); // BANK or CASH
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [useRealTimeRate, setUseRealTimeRate] = useState(true);
-  const [customExchangeRate, setCustomExchangeRate] = useState("");
+  const [customExchangeRate, setCustomExchangeRate] = useState(0);
   const [paymentError, setPaymentError] = useState("");
   const [paymentLoading, setPaymentLoading] = useState(false);
 
@@ -69,9 +71,10 @@ const InstallmentsPage = () => {
     setAccountsLoading(true);
     try {
       const response = await axios.get(
-        `http://localhost:8082/api/accounts/currency/${user.id}`,
+        `http://localhost:8082/api/accounts/get-money-accounts?userId=${user.id}`,
         { headers: { Authorization: token ? `Bearer ${token}` : undefined } }
       );
+      console.log("Fetched accounts:", response.data);
       setAccounts(response.data || []);
     } catch (error) {
       console.error("Error fetching accounts:", error);
@@ -85,50 +88,51 @@ const InstallmentsPage = () => {
     try {
       // Fetch all debts to get all payments
       const response = await axios.get(
-        `${backendUrl}/api/debts/summary/${user.id}`,
+        `${backendUrl}/api/debts/getAllPayments`,
         {
           headers: { Authorization: token ? `Bearer ${token}` : undefined },
         }
       );
 
+      console.log("Fetched Payments:", response.data);
       // Collect all payments from all debts
-      const payments = [];
-      if (response.data.upcomingPayments) {
-        response.data.upcomingPayments.forEach((payment) => {
-          payments.push({ ...payment, status: payment.status || "PENDING" });
-        });
-      }
+      // const payments = [];
+      // if (response.data.upcomingPayments) {
+      //   response.data.upcomingPayments.forEach((payment) => {
+      //     payments.push({ ...payment, status: payment.status || "PENDING" });
+      //   });
+      // }
 
       // Also fetch paid payments by getting all debt details
-      if (response.data.debts) {
-        for (const debt of response.data.debts) {
-          try {
-            const debtPaymentsRes = await axios.get(
-              `${backendUrl}/api/debts/${debt.id}`,
-              {
-                headers: { Authorization: token ? `Bearer ${token}` : undefined },
-              }
-            );
-            if (debtPaymentsRes.data.payments) {
-              debtPaymentsRes.data.payments.forEach((p) => {
-                // Avoid duplicates
-                if (!payments.find((existing) => existing.id === p.id)) {
-                  payments.push({
-                    ...p,
-                    debtToWhom: debt.toWhom,
-                    debtCurrency: debt.debtCurrency,
-                    accountName: debt.account?.accountName,
-                  });
-                }
-              });
-            }
-          } catch (e) {
-            console.error("Error fetching debt payments:", e);
-          }
-        }
-      }
+      // if (response.data.debts) {
+      //   for (const debt of response.data.debts) {
+      //     try {  
+      //       const debtPaymentsRes = await axios.get(
+      //         `${backendUrl}/api/debts/${debt.id}`,
+      //         {
+      //           headers: { Authorization: token ? `Bearer ${token}` : undefined },
+      //         }
+      //       );
+      //       if (debtPaymentsRes.data.payments) {
+      //         debtPaymentsRes.data.payments.forEach((p) => {
+      //           // Avoid duplicates
+      //           if (!payments.find((existing) => existing.id === p.id)) {
+      //             payments.push({
+      //               ...p,
+      //               debtToWhom: debt.toWhom,
+      //               debtCurrency: debt.debtCurrency,
+      //               accountName: debt.account?.accountName,
+      //             });
+      //           }
+      //         });
+      //       }
+      //     } catch (e) {
+      //       console.error("Error fetching debt payments:", e);
+      //     }
+      //   }
+      // }
 
-      setAllPayments(payments);
+      setAllPayments(response.data);
     } catch (error) {
       console.error("Error fetching payments:", error);
     }
@@ -136,6 +140,7 @@ const InstallmentsPage = () => {
 
   useEffect(() => {
     fetchData();
+    exchangeRates();
   }, [user.id, token]);
 
   useEffect(() => {
@@ -204,6 +209,7 @@ const InstallmentsPage = () => {
     setPaymentLoading(true);
     setPaymentError("");
 
+
     try {
       const debtCurrency = payingPayment.debtCurrency;
       const accountCurrency = selectedAccount.currency;
@@ -211,7 +217,7 @@ const InstallmentsPage = () => {
 
       let exchangeRate = null;
       if (needsConversion) {
-        exchangeRate = getEffectiveExchangeRate();
+        exchangeRate = CURRENCIES.find((c) => c.value === debtCurrency)?.exchangeRates / CURRENCIES.find((c) => c.value === accountCurrency)?.exchangeRates;
 
         if (!exchangeRate || exchangeRate <= 0) {
           setPaymentError("Geçerli bir döviz kuru giriniz");
@@ -220,8 +226,10 @@ const InstallmentsPage = () => {
         }
       }
 
+      console.log("Paying Payment");
+      console.log(payingPayment);
       const payload = {
-        accountId: selectedAccount.id,
+        moneyAccountId: selectedAccount.id,
         userId: user.id,
         amount: payingPayment.amount,
         exchangeRate: exchangeRate,
@@ -234,15 +242,65 @@ const InstallmentsPage = () => {
           headers: { Authorization: token ? `Bearer ${token}` : undefined },
         }
       );
-      
+
+
+
+
+      const previousBalance = selectedAccount.balance;
+      const nextBalance = previousBalance - calculateDeductAmount();
+      const rate = CURRENCIES.find(c => c.value === selectedAccount.currency)?.exchangeRates
+
+      // Hesaptan Para Düş
+      await axios.put(
+        `${backendUrl}/api/asset/update-money-account?updatedAccount=false&exchangeRate=${rate}`,
+        {
+          ...selectedAccount,
+          balance: selectedAccount.balance - calculateDeductAmount(),
+        },
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("Account updated successfully");
+      console.log(payingPayment)
+      //Transfer Kaydı da Ekle
+      await axios.post(
+        `${backendUrl}/api/transfers/create`,
+        {
+          type: "debt_payment",
+          moneyAccountId: selectedAccount.id,
+          outputPreviousBalance: previousBalance,
+          outputNextBalance: nextBalance,
+          exchangeRate: rate,
+          details: "Taksit #" + payingPayment.paymentNumber + " " + payingPayment.debtToWhom,
+          description: "Borç Ödemesi - " + payingPayment.debtToWhom,
+          transactionDateTime: toLocalISOTime(new Date()),
+          category: "Borç Ödemesi",
+          amount: calculateDeductAmount(),
+          currency: selectedAccount.currency,
+        },
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
+          },
+        }
+      )
+
+
+
       handleCloseDialog();
       fetchData();
     } catch (error) {
       console.error("Error marking payment as paid:", error);
       setPaymentError(
         error.response?.data?.message ||
-          error.response?.data ||
-          "Ödeme işlemi başarısız oldu"
+        error.response?.data ||
+        "Ödeme işlemi başarısız oldu"
       );
     } finally {
       setPaymentLoading(false);
@@ -254,7 +312,7 @@ const InstallmentsPage = () => {
     setSelectedAccount(null);
     setAccountCategory("BANK");
     setUseRealTimeRate(true);
-    setCustomExchangeRate("");
+    setCustomExchangeRate(0);
     setPaymentError("");
     setPayDialogOpen(true);
     fetchAccounts();
@@ -340,6 +398,18 @@ const InstallmentsPage = () => {
 
   // Calculate amount to deduct from account
   const calculateDeductAmount = () => {
+
+    console.log("customExchangeRate:", customExchangeRate);
+    console.log("useRealTimeRate:", useRealTimeRate);
+
+    let effectiveRate = 0;
+    if (!useRealTimeRate) {
+      effectiveRate = customExchangeRate;
+    }
+    else {
+      effectiveRate = CURRENCIES.find((c) => c.value === payingPayment?.debtCurrency)?.exchangeRates / CURRENCIES.find((c) => c.value === selectedAccount.currency)?.exchangeRates;
+    }
+
     if (!payingPayment || !selectedAccount) return null;
     const debtCurrency = payingPayment.debtCurrency;
     const accountCurrency = selectedAccount.currency;
@@ -348,7 +418,6 @@ const InstallmentsPage = () => {
       return payingPayment.amount;
     }
 
-    const effectiveRate = getEffectiveExchangeRate();
     if (!effectiveRate || effectiveRate <= 0) return null;
     return payingPayment.amount * effectiveRate;
   };
@@ -372,6 +441,7 @@ const InstallmentsPage = () => {
     return account.balance >= requiredAmount;
   };
 
+  console.log("Filtered Payments:", allPayments);
   const pendingCount = allPayments.filter((p) => p.status === "PENDING").length;
   const paidCount = allPayments.filter((p) => p.status === "PAID").length;
 
@@ -444,8 +514,8 @@ const InstallmentsPage = () => {
           {statusFilter === "PENDING"
             ? "Bekleyen taksit bulunmuyor."
             : statusFilter === "PAID"
-            ? "Ödenen taksit bulunmuyor."
-            : "Taksit bulunmuyor."}
+              ? "Ödenen taksit bulunmuyor."
+              : "Taksit bulunmuyor."}
         </Alert>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
@@ -463,22 +533,21 @@ const InstallmentsPage = () => {
                   bgcolor: isPaid
                     ? "rgba(76, 175, 80, 0.08)"
                     : isOverdue
-                    ? "rgba(244, 67, 54, 0.12)"
-                    : isUrgent
-                    ? "rgba(255, 152, 0, 0.12)"
-                    : isDarkMode 
-                      ? "rgba(255, 255, 255, 0.03)"
-                      : "rgba(0,0,0,0.02)",
+                      ? "rgba(244, 67, 54, 0.12)"
+                      : isUrgent
+                        ? "rgba(255, 152, 0, 0.12)"
+                        : isDarkMode
+                          ? "rgba(255, 255, 255, 0.03)"
+                          : "rgba(0,0,0,0.02)",
                   borderRadius: 2,
-                  borderLeft: `4px solid ${
-                    isPaid
-                      ? "#4caf50"
-                      : isOverdue
+                  borderLeft: `4px solid ${isPaid
+                    ? "#4caf50"
+                    : isOverdue
                       ? "#d32f2f"
                       : isUrgent
-                      ? "#ff9800"
-                      : isDarkMode ? "rgba(255, 255, 255, 0.3)" : "#9e9e9e"
-                  }`,
+                        ? "#ff9800"
+                        : isDarkMode ? "rgba(255, 255, 255, 0.3)" : "#9e9e9e"
+                    }`,
                 }}
               >
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -518,8 +587,8 @@ const InstallmentsPage = () => {
                             isOverdue
                               ? `${Math.abs(daysUntil)} gün geçti`
                               : daysUntil === 0
-                              ? "Bugün"
-                              : `${daysUntil} gün kaldı`
+                                ? "Bugün"
+                                : `${daysUntil} gün kaldı`
                           }
                           size="small"
                           color={isOverdue ? "error" : isUrgent ? "warning" : "default"}
@@ -542,7 +611,7 @@ const InstallmentsPage = () => {
                         startIcon={<CheckCircleIcon />}
                         onClick={() => handleOpenPayDialog(payment)}
                       >
-                        Ödendi
+                        Öde
                       </Button>
                     )}
                   </Box>
@@ -554,10 +623,10 @@ const InstallmentsPage = () => {
       )}
 
       {/* Pay Confirmation Dialog with Account Selection */}
-      <Dialog 
-        open={payDialogOpen} 
-        onClose={handleCloseDialog} 
-        maxWidth="sm" 
+      <Dialog
+        open={payDialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
         fullWidth
         disableScrollLock
       >
@@ -569,11 +638,11 @@ const InstallmentsPage = () => {
         </DialogTitle>
         <DialogContent>
           {/* Payment Info */}
-          <Box sx={{ 
-            bgcolor: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)", 
-            p: 2, 
-            borderRadius: 2, 
-            mb: 3 
+          <Box sx={{
+            bgcolor: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
+            p: 2,
+            borderRadius: 2,
+            mb: 3
           }}>
             <Typography variant="body2" color="text.secondary">
               Ödenecek Taksit
@@ -616,15 +685,15 @@ const InstallmentsPage = () => {
           <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
             Hesap Seçin
           </Typography>
-          
+
           {accountsLoading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
               <CircularProgress size={24} />
             </Box>
           ) : filteredAccounts.length === 0 ? (
             <Alert severity="info" sx={{ mb: 2 }}>
-              {accountCategory === "BANK" 
-                ? "Banka hesabınız bulunmuyor" 
+              {accountCategory === "BANK"
+                ? "Banka hesabınız bulunmuyor"
                 : "Nakit hesabınız bulunmuyor"}
             </Alert>
           ) : (
@@ -646,16 +715,16 @@ const InstallmentsPage = () => {
                       sx={{
                         mb: 1,
                         p: 0,
-                        border: selectedAccount?.id === account.id 
-                          ? "2px solid" 
+                        border: selectedAccount?.id === account.id
+                          ? "2px solid"
                           : "1px solid",
                         borderColor: selectedAccount?.id === account.id
                           ? "primary.main"
                           : sufficient
-                          ? "divider"
-                          : "error.main",
-                        bgcolor: !sufficient 
-                          ? "rgba(244, 67, 54, 0.08)" 
+                            ? "divider"
+                            : "error.main",
+                        bgcolor: !sufficient
+                          ? "rgba(244, 67, 54, 0.08)"
                           : "transparent",
                         opacity: !sufficient ? 0.7 : 1,
                         cursor: sufficient ? "pointer" : "not-allowed",
@@ -668,16 +737,16 @@ const InstallmentsPage = () => {
                         value={account.id}
                         control={<Radio disabled={!sufficient} />}
                         disabled={!sufficient}
-                        sx={{ 
-                          m: 0, 
-                          p: 1.5, 
+                        sx={{
+                          m: 0,
+                          p: 1.5,
                           width: "100%",
                           "& .MuiFormControlLabel-label": { width: "100%" }
                         }}
                         label={
-                          <Box sx={{ 
-                            display: "flex", 
-                            justifyContent: "space-between", 
+                          <Box sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
                             alignItems: "center",
                             width: "100%"
                           }}>
@@ -690,9 +759,9 @@ const InstallmentsPage = () => {
                               </Typography>
                             </Box>
                             <Box sx={{ textAlign: "right" }}>
-                              <Typography 
-                                variant="body1" 
-                                sx={{ 
+                              <Typography
+                                variant="body1"
+                                sx={{
                                   fontWeight: 600,
                                   color: sufficient ? "success.main" : "error.main"
                                 }}
@@ -716,114 +785,114 @@ const InstallmentsPage = () => {
           )}
 
           {/* Currency Conversion Section */}
-          {selectedAccount && 
+          {selectedAccount &&
             payingPayment?.debtCurrency !== selectedAccount.currency && (
-            <>
-              <Divider sx={{ my: 2 }} />
-              <Box sx={{ 
-                bgcolor: isDarkMode ? "rgba(255,152,0,0.1)" : "rgba(255,152,0,0.08)", 
-                p: 2, 
-                borderRadius: 2,
-                border: "1px solid",
-                borderColor: "warning.main"
-              }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-                  <CurrencyExchangeIcon color="warning" />
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                    Döviz Kuru Dönüşümü
-                  </Typography>
-                </Box>
-
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Borç para birimi ({payingPayment?.debtCurrency}) ile hesap para birimi ({selectedAccount.currency}) farklı.
-                </Typography>
-
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-                  <Typography variant="body2">
-                    Anlık kuru kullan
-                  </Typography>
-                  <Switch
-                    checked={useRealTimeRate}
-                    onChange={(e) => setUseRealTimeRate(e.target.checked)}
-                  />
-                </Box>
-
-                {useRealTimeRate ? (
-                  <Box sx={{ 
-                    bgcolor: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)", 
-                    p: 1.5, 
-                    borderRadius: 1 
-                  }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Anlık Kur
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      1 {getRateDisplayConfig()?.baseCurrency || payingPayment?.debtCurrency} = {getDisplayedRateFromEffective(calculateRealTimeRate())?.toFixed(4) || "..."} {getRateDisplayConfig()?.quoteCurrency || selectedAccount.currency}
+              <>
+                <Divider sx={{ my: 2 }} />
+                <Box sx={{
+                  bgcolor: isDarkMode ? "rgba(255,152,0,0.1)" : "rgba(255,152,0,0.08)",
+                  p: 2,
+                  borderRadius: 2,
+                  border: "1px solid",
+                  borderColor: "warning.main"
+                }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                    <CurrencyExchangeIcon color="warning" />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      Döviz Kuru Dönüşümü
                     </Typography>
                   </Box>
-                ) : (
-                  <TextField
-                    fullWidth
-                    label="Döviz Kuru"
-                    type="number"
-                    value={customExchangeRate}
-                    onChange={(e) => setCustomExchangeRate(e.target.value)}
-                    placeholder={`1 ${getRateDisplayConfig()?.baseCurrency || payingPayment?.debtCurrency} = ? ${getRateDisplayConfig()?.quoteCurrency || selectedAccount.currency}`}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          1 {getRateDisplayConfig()?.baseCurrency || payingPayment?.debtCurrency} =
-                        </InputAdornment>
-                      ),
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          {getRateDisplayConfig()?.quoteCurrency || selectedAccount.currency}
-                        </InputAdornment>
-                      ),
-                    }}
-                    sx={{ mb: 1 }}
-                  />
-                )}
 
-                {/* Calculated Amount */}
-                {calculateDeductAmount() && (
-                  <Box sx={{ 
-                    mt: 2, 
-                    p: 1.5, 
-                    bgcolor: "success.main", 
-                    color: "white",
-                    borderRadius: 1 
-                  }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Borç para birimi ({payingPayment?.debtCurrency}) ile hesap para birimi ({selectedAccount.currency}) farklı.
+                  </Typography>
+
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
                     <Typography variant="body2">
-                      Hesaptan düşülecek tutar
+                      Anlık kuru kullan
                     </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                      {formatCurrency(calculateDeductAmount(), selectedAccount.currency)}
-                    </Typography>
+                    <Switch
+                      checked={useRealTimeRate}
+                      onChange={(e) => setUseRealTimeRate(e.target.checked)}
+                    />
                   </Box>
-                )}
-              </Box>
-            </>
-          )}
+
+                  {useRealTimeRate ? (
+                    <Box sx={{
+                      bgcolor: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
+                      p: 1.5,
+                      borderRadius: 1
+                    }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Anlık Kur
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        1 {payingPayment?.debtCurrency} = {(CURRENCIES.find((c) => c.value === payingPayment?.debtCurrency)?.exchangeRates / CURRENCIES.find((c) => c.value === selectedAccount.currency)?.exchangeRates || 0).toLocaleString("tr-TR")} {getRateDisplayConfig()?.quoteCurrency || selectedAccount.currency}
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <TextField
+                      fullWidth
+                      label="Döviz Kuru"
+                      type="number"
+                      value={customExchangeRate}
+                      onChange={(e) => setCustomExchangeRate(parseFloat(e.target.value))}
+                      placeholder={`1 ${getRateDisplayConfig()?.baseCurrency || payingPayment?.debtCurrency} = ? ${getRateDisplayConfig()?.quoteCurrency || selectedAccount.currency}`}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            1 {getRateDisplayConfig()?.baseCurrency || payingPayment?.debtCurrency} =
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            {getRateDisplayConfig()?.quoteCurrency || selectedAccount.currency}
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{ mb: 1 }}
+                    />
+                  )}
+
+                  {/* Calculated Amount */}
+                  {calculateDeductAmount() && (
+                    <Box sx={{
+                      mt: 2,
+                      p: 1.5,
+                      bgcolor: "success.main",
+                      color: "white",
+                      borderRadius: 1
+                    }}>
+                      <Typography variant="body2">
+                        Hesaptan düşülecek tutar
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        {formatCurrency(calculateDeductAmount(), selectedAccount.currency)}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </>
+            )}
 
           {/* Same Currency Amount Display */}
-          {selectedAccount && 
+          {selectedAccount &&
             payingPayment?.debtCurrency === selectedAccount.currency && (
-            <Box sx={{ 
-              mt: 2, 
-              p: 1.5, 
-              bgcolor: "success.main", 
-              color: "white",
-              borderRadius: 1 
-            }}>
-              <Typography variant="body2">
-                Hesaptan düşülecek tutar
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                {formatCurrency(payingPayment?.amount, selectedAccount.currency)}
-              </Typography>
-            </Box>
-          )}
+              <Box sx={{
+                mt: 2,
+                p: 1.5,
+                bgcolor: "success.main",
+                color: "white",
+                borderRadius: 1
+              }}>
+                <Typography variant="body2">
+                  Hesaptan düşülecek tutar
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                  {formatCurrency(payingPayment?.amount, selectedAccount.currency)}
+                </Typography>
+              </Box>
+            )}
 
           {/* Error Message */}
           {paymentError && (
@@ -836,11 +905,11 @@ const InstallmentsPage = () => {
           <Button onClick={handleCloseDialog} disabled={paymentLoading}>
             İptal
           </Button>
-          <Button 
-            variant="contained" 
-            color="success" 
+          <Button
+            variant="contained"
+            color="success"
             onClick={handleMarkPaid}
-            disabled={!selectedAccount || paymentLoading}
+            disabled={!selectedAccount || paymentLoading || selectedAccount.balance < calculateDeductAmount()}
             startIcon={paymentLoading ? <CircularProgress size={16} color="inherit" /> : <CheckCircleIcon />}
           >
             {paymentLoading ? "İşleniyor..." : "Ödemeyi Onayla"}

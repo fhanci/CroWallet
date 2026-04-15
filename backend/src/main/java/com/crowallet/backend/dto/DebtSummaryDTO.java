@@ -15,6 +15,6 @@ public class DebtSummaryDTO {
     private int activeDebts;
     private int completedDebts;
     private List<DebtPaymentDTO> upcomingPayments;
-    private List<DebtDTO> debts;
+    private List<DebtResponseDTO> debts;
 }
 

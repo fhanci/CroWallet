@@ -4,7 +4,6 @@ import com.crowallet.backend.dto.AccounttoAccountTransferRequestDTO;
 import com.crowallet.backend.dto.AccounttoAccountTransferResponseDTO;
 import com.crowallet.backend.dto.TransferDTO;
 import com.crowallet.backend.dto.TransferResponseDTO;
-import com.crowallet.backend.entity.AccounttoAccountTransfer;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
