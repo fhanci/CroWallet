@@ -21,4 +21,6 @@ public class AssetResponse {
     private BigDecimal totalValue;
     private Long userId;
     private Long transactionId;
+    private BigDecimal exchangeRate;
+    private String currency;
 }

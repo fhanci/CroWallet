@@ -104,12 +104,6 @@ public class AssetController {
     }
     
 
-
-    // @GetMapping("/get-difference-total-sold-and-new-quantity")
-    // public Long getDifferenceTotalSoldAndNewQuantity(@RequestParam Long transactionId, @RequestParam BigDecimal newQuantity) {
-    //     return assetService.getDifferenceTotalSoldAndNewQuantity(transactionId, newQuantity);
-    // }
-
     @GetMapping("/get-selling-count")
     public Long getSellingCount(@RequestParam Long transactionId) {
         return assetService.getSellingCount(transactionId);

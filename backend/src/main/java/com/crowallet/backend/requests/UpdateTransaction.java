@@ -23,5 +23,8 @@ public class UpdateTransaction {
     private Long transactionId;
     private Long updatedId;
     private BigDecimal updatedQuantity;
-    private BigDecimal updatedPurchasePrice;    
+    private BigDecimal updatedPurchasePrice;
+    private BigDecimal exchangeRate;
+    private String currency;
+    private BigDecimal updatedCurrentPrice;
 }

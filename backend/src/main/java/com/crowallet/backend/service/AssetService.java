@@ -170,7 +170,7 @@ public class AssetService {
         // İşlem toplamını hesapla
         BigDecimal sumBigDecimal = BigDecimal.ZERO;
         for (Transactions transactions : allByAsset) {
-            sumBigDecimal = sumBigDecimal.add(transactions.getQuantity().multiply(transactions.getUnitPrice()));
+            sumBigDecimal = sumBigDecimal.add(transactions.getQuantity().multiply(transactions.getUnitPrice().multiply(transactions.getExchangeRate())));
         }
         return sumBigDecimal;
     }
@@ -255,6 +255,8 @@ public class AssetService {
                         .setTotalValue(BigDecimal.ZERO);
                 rAssetResponse.setProfitLoss(BigDecimal.ZERO);
                 rAssetResponse.setTransactionId(0L);
+                rAssetResponse.setExchangeRate(BigDecimal.ONE);
+                rAssetResponse.setCurrency("TRY");
                 rListAssetResponse.add(rAssetResponse);
                 continue;
             }
@@ -298,6 +300,8 @@ public class AssetService {
                                 .setTotalValue(BigDecimal.ZERO);
                         rAssetResponse.setProfitLoss(BigDecimal.ZERO);
                         rAssetResponse.setTransactionId(0L);
+                        rAssetResponse.setExchangeRate(transaction.getExchangeRate());
+                        rAssetResponse.setCurrency(transaction.getCurrency());
                         rListAssetResponse.add(rAssetResponse);
                         continue;
                     }
@@ -317,6 +321,8 @@ public class AssetService {
                             .setTotalValue(rAssetResponse.getCurrentPrice().multiply(rAssetResponse.getQuantity()));
                     rAssetResponse.setProfitLoss(positions.get(0).getProfitLoss());
                     rAssetResponse.setTransactionId(transaction.getId());
+                    rAssetResponse.setExchangeRate(transaction.getExchangeRate());
+                    rAssetResponse.setCurrency(transaction.getCurrency());
                     rListAssetResponse.add(rAssetResponse);
                 } else {
 
@@ -341,6 +347,8 @@ public class AssetService {
                     rAssetResponse.setQuantity(transaction.getQuantity());
                     rAssetResponse.setTotalValue(transaction.getUnitPrice().multiply(transaction.getQuantity()));
                     rAssetResponse.setTransactionId(transaction.getId());
+                    rAssetResponse.setExchangeRate(transaction.getExchangeRate());
+                    rAssetResponse.setCurrency(transaction.getCurrency());
                     rListAssetResponse.add(rAssetResponse);
                 }
 
@@ -406,7 +414,9 @@ public class AssetService {
         // 1. YAPILAN İŞLEMLERİN SATILAN MİKTARLARI TOPLANIYOR VE YENİ MİKTARLA
         // KARŞILAŞTIRILIYOR
         BigDecimal oldQuantity = mainTransactions.getQuantity();
-        BigDecimal oldPrice = mainTransactions.getUnitPrice();
+        BigDecimal oldUnitPrice = mainTransactions.getUnitPrice();
+        BigDecimal exchangeRate = mainTransactions.getExchangeRate();
+        BigDecimal oldCurrentPrice = mainTransactions.getCurrentValue();
 
         BigDecimal totalSold = relatedTransactionsRepository.findBySourceTransactions(mainTransactions)
                 .stream().map(rt -> rt.getTargetTransactions().getQuantity())
@@ -420,21 +430,28 @@ public class AssetService {
         mainTransactions.setQuantity(updateTransaction.getUpdatedQuantity());
         mainTransactions.setUnitPrice(updateTransaction.getUpdatedPurchasePrice());
         mainTransactions.setTransactionType(TransactionType.UPDATE);
+        mainTransactions.setExchangeRate(updateTransaction.getExchangeRate());
+        mainTransactions.setCurrency(updateTransaction.getCurrency());
+        mainTransactions.setCurrentValue(updateTransaction.getUpdatedCurrentPrice());
+        mainTransactions.setTotalValue(updateTransaction.getUpdatedQuantity().multiply(updateTransaction.getUpdatedPurchasePrice()));
         transactionRepository.save(mainTransactions);
 
         // Satılmamış Adet
         BigDecimal remainingQuantity = updateTransaction.getUpdatedQuantity().subtract(totalSold);
 
-        // Fiyat Farkı
-        BigDecimal oldCost = oldQuantity.subtract(totalSold).multiply(oldPrice);
-        BigDecimal newCost = remainingQuantity
-                .multiply(updateTransaction.getUpdatedPurchasePrice());
-        BigDecimal costDifference = newCost.subtract(oldCost);
+        //Eski Maliyet Ne kadar?
+        BigDecimal eskiMaliyet = oldQuantity.multiply(oldUnitPrice).multiply(exchangeRate);
+        
+        
+        BigDecimal eskiEder = oldQuantity.multiply(oldCurrentPrice).multiply(exchangeRate);
 
-        // Güncel Değer Farkı
-        BigDecimal lastPrice = getLastPrices(List.of(mainTransactions)).get(mainTransactions.getAssetSymbol());
-        BigDecimal valueDifference = updateTransaction.getUpdatedQuantity().subtract(oldQuantity)
-                .multiply(lastPrice != null ? lastPrice : BigDecimal.ZERO);
+        // şİMDİ NE KADAR EDER
+        //Yeni Maliyet Ne Kadar?
+        BigDecimal yeniMaliyet = remainingQuantity.multiply(updateTransaction.getUpdatedPurchasePrice()).multiply(exchangeRate);
+
+
+        //Yeni Ederi Ne Kadar?
+        BigDecimal yeniEder = remainingQuantity.multiply(updateTransaction.getUpdatedCurrentPrice()).multiply(exchangeRate);
 
         // İşlemden sonraki pozisyonları bul ve güncelle
         List<Positions> affectedPositions = positionRepository.findAllByAssetAndCreatedDateGreaterThanEqual(
@@ -443,9 +460,10 @@ public class AssetService {
         );
 
         for (Positions pos : affectedPositions) {
-            pos.setCostBasis(pos.getCostBasis().add(costDifference));
-            pos.setCurrentValue(pos.getCurrentValue().add(valueDifference));
+            pos.setCostBasis(pos.getCostBasis().add(yeniMaliyet.subtract(eskiMaliyet)));
+            pos.setCurrentValue(pos.getCurrentValue().add(yeniEder.subtract(eskiEder)));
             pos.setProfitLoss(pos.getCurrentValue().subtract(pos.getCostBasis()));
+
 
             positionRepository.save(pos);
         }
@@ -641,9 +659,15 @@ public class AssetService {
         // Her bir varlık sembolü için en son fiyatı bul ve bir haritaya ekle
         Map<String, BigDecimal> lastPrices = new HashMap<>();
         for (String symbol : symbols) {
-            BigDecimal price = transactionRepository.findByAssetSymbolOrderByIdDesc(symbol)
-                    .get(0).getCurrentValue();
-            lastPrices.put(symbol, price);
+            List<Transactions> byAssetSymbolOrderByIdDesc = transactionRepository.findByAssetSymbolOrderByIdDesc(symbol);
+            BigDecimal checkBigDecimal = BigDecimal.ZERO;
+            for (Transactions transaction : byAssetSymbolOrderByIdDesc) {
+                BigDecimal price = transaction.getCurrentValue().multiply(transaction.getExchangeRate());
+                if (price.compareTo(checkBigDecimal) > 0) {
+                    checkBigDecimal = price;
+                }
+            }
+            lastPrices.put(symbol, checkBigDecimal);
         }
 
         // İlgili asset'e ait tüm işlemler geziliyor
@@ -669,16 +693,18 @@ public class AssetService {
 
                 // Elde kalan adet
                 BigDecimal remainingQuantity = transactions.getQuantity().subtract(soldQuantity);
+                System.out.println("Elde Kalan Adet: " + remainingQuantity);
 
                 if (remainingQuantity.compareTo(BigDecimal.ZERO) > 0) {
 
                     // Maliyet = Elde kalan adet * transaction alındığı zamanki fiyat
-                    costBasis = costBasis.add(remainingQuantity.multiply(transactions.getUnitPrice()));
-
+                    costBasis = costBasis.add(remainingQuantity.multiply(transactions.getUnitPrice().multiply(transactions.getExchangeRate())));
+                    System.out.println("Güncel Maliyet: " + costBasis);
                     // Güncel değer = Kalan adet * en güncel fiyat
                     BigDecimal lastPrice = lastPrices.get(transactions.getAssetSymbol());
                     if (lastPrice != null) {
                         currentValue = currentValue.add(remainingQuantity.multiply(lastPrice));
+                        System.out.println("Güncel Değer: " + currentValue);
                     }
                 }
             }
@@ -698,6 +724,7 @@ public class AssetService {
 
     @Transactional
     public List<TransactionDTO> addTransaction(List<TransactionDTO> listTransactionDTOs) {
+
 
         // İşlemlerden ilkini alarak ilgili varlığı bul
         Optional<Asset> assetOptional = assetRepository.findById(listTransactionDTOs.get(0).getAssetId());
@@ -745,6 +772,8 @@ public class AssetService {
             transactions.setCurrentValue(sellInvestmentRequest.getCurrentPrice());
             transactions.setBuyingDateTime(sellInvestmentRequest.getBuyingDateTime()); // Satış tarihi
             transactions.setSellingPrice(sellInvestmentRequest.getSalesPrice());
+            transactions.setExchangeRate(sellInvestmentRequest.getExchangeRate());
+            transactions.setCurrency(sellInvestmentRequest.getCurrency());
             Transactions savedTransactions = transactionRepository.save(transactions);
 
             // Kimden Kime Satıldığı Loglandı

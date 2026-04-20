@@ -18,4 +18,6 @@ public class TransactionDTO {
     private BigDecimal currentValue;
     private LocalDateTime buyingDateTime;
     private BigDecimal sellingPrice;
+    private BigDecimal exchangeRate;
+    private String currency;
 }

@@ -18,4 +18,6 @@ public class SellInvestmentRequest {
     private BigDecimal currentPrice;
     private LocalDateTime buyingDateTime;
     private BigDecimal salesPrice;
+    private String currency;
+    private BigDecimal exchangeRate;
 }

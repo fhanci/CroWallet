@@ -158,7 +158,7 @@ const AccountCreatePage = () => {
       return fieldsValid && accountName !== "";
     }
 
-    const checkAccountIsEmpty = async() => {
+    const checkAccountIsEmpty = async () => {
       let fieldsValid = false;
       if (assetType === "GOLD") {
         fieldsValid = goldItems.every((goldData) =>
@@ -183,12 +183,10 @@ const AccountCreatePage = () => {
       console.log("İlk hesap mı? : ", isFirstAsset)
       if (!isFirstAsset) {
 
-        if (await checkAccountIsEmpty()){
-          console.log("Girdim")
+        if (await checkAccountIsEmpty()) {
           setIsButtonDisabled(false);
           return;
         }
-        console.log("Giremedim")
 
         let fieldsValid = false;
         if (assetType === "GOLD" || assetType === "STOCK") {
@@ -214,11 +212,12 @@ const AccountCreatePage = () => {
 
 
         let totalPrice = 0;
+        const rate = accountDetail.currency === "TRY" ? 1 : accountDetail.currency === "USD" ? exchangeRate.USD.Buying : exchangeRate.EUR.Buying;
         if (assetType === "GOLD") {
-          totalPrice = goldItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
+          totalPrice = goldItems.reduce((start, cur) => (cur.price * cur.quantity * rate) + start, 0);
         }
         else if (assetType === "STOCK") {
-          totalPrice = stockItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
+          totalPrice = stockItems.reduce((start, cur) => (cur.price * cur.quantity * rate) + start, 0);
         }
 
         console.log("Bakiye Yetersiz mi? : " + (totalPrice > pay));
@@ -399,15 +398,14 @@ const AccountCreatePage = () => {
       totalPrice = stockItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
     }
 
-
-    if (selectedAccount.currency === "EUR") {
-      totalPrice = totalPrice / (await exchangeRates()).EUR.Selling
-      console.log("Bu bir EURO hesabı olduğu için para birimi düşme işlemi buna göre yapıdlı")
-    }
-    else if (selectedAccount.currency === "USD") {
-      totalPrice = totalPrice / (await exchangeRates()).USD.Selling
-      console.log("Bu bir USD hesabı olduğu için para birimi düşme işlemi buna göre yapıdlı")
-    }
+    // if (selectedAccount.currency === "EUR") {
+    //   totalPrice = totalPrice / (await exchangeRates()).EUR.Selling
+    //   console.log("Bu bir EURO hesabı olduğu için para birimi düşme işlemi buna göre yapıdlı")
+    // }
+    // else if (selectedAccount.currency === "USD") {
+    //   totalPrice = totalPrice / (await exchangeRates()).USD.Selling
+    //   console.log("Bu bir USD hesabı olduğu için para birimi düşme işlemi buna göre yapıdlı")
+    // }
     return totalPrice;
   }
 
@@ -512,6 +510,12 @@ const AccountCreatePage = () => {
           setError("Bir hata oluştu, lütfen tekrar deneyin.");
         }
 
+        setOpenSnackbar(true);
+        setTimeout(() => {
+          navigate("/accounts/my");
+        }, 1000);
+        setAccountName("");
+
       } else if (accountType === "INVESTMENT") {
 
         console.log("User Assets Length: " + isFirstAsset);
@@ -544,10 +548,10 @@ const AccountCreatePage = () => {
           if (assetType === "GOLD") {
             for (const item of goldItems) {
               const itemTotal = parseFloat(item.quantity) * parseFloat(item.price);
-              const itemValueInAccountCurrency = itemTotal / rate;
+              // const itemValueInAccountCurrency = itemTotal / rate;
 
               const previousBalance = currentBalance;
-              currentBalance -= itemValueInAccountCurrency;
+              currentBalance -= itemTotal;
 
 
               transferPayloads.push({
@@ -559,17 +563,18 @@ const AccountCreatePage = () => {
                 description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
                 transactionDateTime: toLocalISOTime(item.buyingDateTime),
                 category: "Satın Alım",
-                amount: itemValueInAccountCurrency,
+                amount: itemTotal,//itemValueInAccountCurrency,
                 currency: selectedAccount.currency
               })
             }
+            console.log("Çıkış yapılacak transfer payloadları:", transferPayloads);
           }
           else {
             for (const item of stockItems) {
               const itemTotal = parseFloat(item.quantity) * parseFloat(item.price);
-              const itemValueInAccountCurrency = itemTotal / rate;
+              // const itemValueInAccountCurrency = itemTotal / rate;
               const previousBalance = currentBalance;
-              currentBalance -= itemValueInAccountCurrency;
+              currentBalance -= itemTotal;
               transferPayloads.push({
                 type: "outgoing",
                 moneyAccountId: selectedAccount.id,
@@ -579,7 +584,7 @@ const AccountCreatePage = () => {
                 description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
                 transactionDateTime: toLocalISOTime(item.buyingDateTime),
                 category: "Satın Alım",
-                amount: itemValueInAccountCurrency,
+                amount: itemTotal,//itemValueInAccountCurrency,
                 currency: selectedAccount.currency,
               })
 
@@ -757,7 +762,16 @@ const AccountCreatePage = () => {
           }
         )
 
-
+        let rate;
+        let selectedAccount;
+        if (selectedMoneyAccount === 0){
+          rate = 1;
+        }else{
+          selectedAccount = await getAccountDetailInfo();
+          const rates = await exchangeRates();
+          rate = selectedAccount.currency === "TRY" ? 1 :
+            selectedAccount.currency === "USD" ? rates.USD.Selling : rates.EUR.Selling;
+        }
 
         const holdings2 = assetType === "GOLD"
           ? goldItems.map((item) => {
@@ -771,8 +785,10 @@ const AccountCreatePage = () => {
               unitPrice: parseFloat(item.price),
               quantity: parseFloat(item.quantity),
               assetName: goldTypeInfo?.label || item.goldType,
-              currentValue: parseFloat(goldTypeInfo.Buying),
-              buyingDateTime: item.buyingDateTime.toISOString()
+              currentValue: parseFloat(goldTypeInfo.Buying / rate),
+              buyingDateTime: item.buyingDateTime.toISOString(),
+              exchangeRate: rate,
+              currency: selectedMoneyAccount === 0 ? "TRY" : selectedAccount.currency
 
             };
           })
@@ -783,8 +799,10 @@ const AccountCreatePage = () => {
             quantity: parseFloat(item.quantity),
             unitPrice: parseFloat(item.price),
             assetName: item.stock.name,
-            currentValue: parseFloat(item.stock.price),
-            buyingDateTime: item.buyingDateTime.toISOString()
+            currentValue: parseFloat(item.stock.price / rate),
+            buyingDateTime: item.buyingDateTime.toISOString(),
+            exchangeRate: rate,
+            currency: selectedMoneyAccount === 0 ? "TRY" : selectedAccount.currency
           }));
 
 
@@ -799,9 +817,9 @@ const AccountCreatePage = () => {
 
         await axios.post(`${backendUrl}/api/asset/create-position`, {
           assetId: response.data,
-          costBasis: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.unitPrice), 0),
-          currentValue: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.currentValue), 0),
-          profitLoss: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.currentValue), 0) - holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.unitPrice), 0)
+          costBasis: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.unitPrice * cur.exchangeRate), 0),
+          currentValue: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.currentValue * cur.exchangeRate), 0),
+          profitLoss: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.currentValue * cur.exchangeRate), 0) - holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.unitPrice * cur.exchangeRate), 0)
         }, {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
@@ -809,14 +827,14 @@ const AccountCreatePage = () => {
           }
         })
 
-
+        setOpenSnackbar(true);
+        setTimeout(() => {
+          navigate("/investment/stock_and_gold");
+        }, 1000);
+        setAccountName("");
       }
 
-      setOpenSnackbar(true);
-      setTimeout(() => {
-        navigate("/investment/stock_and_gold");
-      }, 1000);
-      setAccountName("");
+
     } catch (error) {
       console.error("Hata:", error);
       setError("Bir hata oluştu, tekrar deneyiniz.");
@@ -1109,7 +1127,7 @@ const AccountCreatePage = () => {
                     accountType !== "INVESTMENT" ? "white" : "black"
                 }}
               >
-                Kaydet
+                Satın Al
               </Button>
             </Box>
           )}

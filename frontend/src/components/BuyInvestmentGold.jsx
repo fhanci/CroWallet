@@ -8,7 +8,7 @@ import { useTheme } from "../config/ThemeContext";
 import axios from 'axios';
 import Marquee from "react-fast-marquee";
 import { backendUrl } from '../utils/envVariables';
-import { exchangeRates } from '../data/currencies';
+import { CURRENCIES, exchangeRates } from '../data/currencies';
 import dayjs from "dayjs";
 import { formatDateTime, toLocalISOTime } from '../utils/localIsoTime';
 
@@ -32,6 +32,9 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
 
     //BU
     const [getPrices, setGetPrices] = useState(false)
+
+    const [selectedMoneyAccountDetail, setSelectedMoneyAccountDetail] = useState({})
+    const [previousMoneyAccountDetail, setPreviousMoneyAccountDetail] = useState({})
 
     //BU
     useEffect(() => {
@@ -75,6 +78,35 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
         }
     };
 
+    useEffect(() => {
+        const accountId = parseFloat(selectedMoneyAccount);
+        if (accountId !== 0) {
+            const account = moneyAccountPersons.find((acc) => acc.id === accountId);
+            if (account) {
+                setPreviousMoneyAccountDetail(selectedMoneyAccountDetail);
+                setSelectedMoneyAccountDetail(account);
+            }
+            else {
+                setSelectedMoneyAccountDetail({});
+            }
+        }
+    }, [selectedMoneyAccount]);
+
+    useEffect(() => {
+        const currentAccountExchangeRate = CURRENCIES.find((cur) => cur.value === selectedMoneyAccountDetail.currency)?.exchangeRates;
+        const previousAccountExchangeRate = CURRENCIES.find((cur) => cur.value === previousMoneyAccountDetail.currency)?.exchangeRates || 1;
+        console.log("Selected account changed. Previous currency:", previousMoneyAccountDetail.currency, "Current currency:", selectedMoneyAccountDetail.currency);
+        setGoldItems(goldItems.map((item) => {
+            if (item.price) {
+                const price = item.price * previousAccountExchangeRate; //TL Dönüşümü
+                const newPrice = Math.round((price / currentAccountExchangeRate) * 100) / 100;
+                console.log(`Updated price for item ${item.id} based on selected currency ${selectedMoneyAccountDetail.currency}: ${newPrice}`);
+                return { ...item, price: newPrice };
+            }
+            return item;
+        }));
+    }, [selectedMoneyAccountDetail]);
+
     const updateGoldItem = (id, field, value) => {
         console.log(`Updating gold item ${id}: setting ${field} to ${value}`);
 
@@ -93,26 +125,51 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
         }
 
         else if (field === "goldType") {
+            const exchangeRate = CURRENCIES.find((cur) => cur.value === selectedMoneyAccountDetail.currency)?.exchangeRates;
+            const currentGoldPrice = ["GRAM", "CEYREK", "YARIM", "TAM", "CUMHURIYET"].includes(value) ? goldPrice.find((data) => data.Name.split("ALTIN")[0] === value).Selling : item.price
+            const price = Math.round((exchangeRate ? currentGoldPrice / exchangeRate : currentGoldPrice) * 100) / 100;
             setGoldItems(
                 goldItems.map((item) =>
-                    item.id === id ? { ...item, [field]: value, price: ["GRAM", "CEYREK", "YARIM", "TAM", "CUMHURIYET"].includes(value) ? goldPrice.find((data) => data.Name.split("ALTIN")[0] === value).Selling : item.price } : item
+                    item.id === id ? { ...item, [field]: value, price: price } : item
                 )
             );
+
+            console.log("Updated gold items:", goldItems);
         }
         else if (field === "price") {
+            // if (selectedMoneyAccountDetail) {
+            //     const exchangeRate = CURRENCIES.find((cur) => cur.value === selectedMoneyAccountDetail.currency)?.exchangeRates;
+            //     value /= exchangeRate;
+            // }
+
+
             setGoldItems(
                 goldItems.map((item) =>
                     item.id === id ? { ...item, [field]: value } : item)
             )
 
+            console.log("Updated gold items:", goldItems)
+
 
         }
     };
 
-    const calculateGoldTotal = () => {
+    const calculateGoldTotal = (totalAccount) => {
+
+        if (totalAccount) {
+            return goldItems.reduce((total, item) => {
+                if (item.quantity && item.price) {
+                    return total + parseFloat(item.quantity) * parseFloat(item.price);
+                }
+                return total;
+            }, 0);
+
+        }
+
+        const rate = exchangeRate[selectedMoneyAccountDetail.currency]?.Buying || 1;
         return goldItems.reduce((total, item) => {
             if (item.quantity && item.price) {
-                return total + parseFloat(item.quantity) * parseFloat(item.price);
+                return total + parseFloat(item.quantity) * parseFloat(item.price) * rate;
             }
             return total;
         }, 0);
@@ -127,6 +184,10 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
     useEffect(() => {
         getMoneyAccountOfPerson();
     }, [])
+
+    useEffect(() => {
+        console.log("Gold items updated:", goldItems);
+    }, [goldItems])
 
     const [userAssets, setUserAsset] = useState([]);
     const [isExitsAssets, setIsExitsAssets] = useState(0);
@@ -220,8 +281,138 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
             {/* GOLD FORM */}
             <Fade in={true} unmountOnExit>
                 <Box>
+                    {userAssets.length === 0 && isExitsAssets === 0 ? "" : (userAssets.length !== 0 || (userAssets.length === 0 && isExitsAssets !== 0)) && moneyAccountPersons.length === 0 ?
+                        <Typography
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 1.5,
+                                p: 2,
+                                my: 2,
+                                border: "1px solid",
+                                borderColor: 'error.light',
+                                borderRadius: "12px",
+                                textAlign: "center",
+                                color: "error.main",
+                                bgcolor: "#fff5f5",
+                                fontWeight: '500',
+                                fontSize: '0.95rem',
+                                boxShadow: '0 2px 8px rgba(211, 47, 47, 0.1)',
+                                fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                            }}
+                        >
+
+                            <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                            Lütfen öncelikle bir banka/para hesabı ekleyiniz. Aksi halde işleme devam edilemeyecektir.
+                        </Typography>
+                        :
+                        <FormControl component="fieldset" sx={{ width: '100%' }}>
+                            <FormLabel id="selectMoneyAccount" sx={{ fontWeight: 'bold', mb: 2, color: 'text.primary' }}>
+                                Banka Hesap Seçimi
+                            </FormLabel>
+                            <RadioGroup
+                                aria-labelledby="selectMoneyAccount"
+                                name="radio-buttons-group"
+                                value={selectedMoneyAccount || ""}
+                                onChange={(e) => setSelectedMoneyAccount(e.target.value)}
+                            >
+                                {moneyAccountPersons.map((data) => {
+                                    const isInsufficient = data.currency !== "TRY"
+                                        ? (data.balance * (exchangeRate[data.currency]?.Buying || 0)) < calculateGoldTotal()
+                                        : data.balance < calculateGoldTotal();
+
+                                    // Seçili olanı kontrol et (Vurgulamak için)
+                                    const isSelected = selectedMoneyAccount === String(data.id);
+
+                                    return (
+                                        <FormControlLabel
+                                            key={data.id}
+                                            value={data.id}
+                                            control={<Radio sx={{ display: 'none' }} />} // Radyo butonunu gizleyip kartı buton yapıyoruz
+                                            sx={{
+                                                margin: '0.5rem 0',
+                                                width: '100%',
+                                                border: '2px solid',
+                                                borderColor: isSelected ? 'primary.main' : 'divider',
+                                                borderRadius: '12px',
+                                                padding: '12px 16px',
+                                                transition: 'all 0.2s ease',
+                                                backgroundColor: isSelected ? 'action.selected' : 'background.paper',
+                                                '&:hover': {
+                                                    borderColor: 'primary.light',
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                                                },
+                                                // Label kısmını tüm genişliğe yay
+                                                '& .MuiFormControlLabel-label': {
+                                                    width: '100%',
+                                                    fontFamily: 'monospace',
+                                                    whiteSpace: 'pre-wrap', // Alt satıra geçebilmesi için
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: '4px'
+                                                }
+                                            }}
+                                            label={
+                                                <>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                        <Typography sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
+                                                            {data.accountName?.toUpperCase() || ""}
+                                                        </Typography>
+                                                        <Typography sx={{
+                                                            color: isInsufficient ? 'error.main' : 'success.main',
+                                                            fontWeight: 'bold',
+                                                            fontSize: '0.9rem',
+                                                            bgcolor: isInsufficient ? '#ffebee' : '#e8f5e9',
+                                                            px: 1, borderRadius: 1
+                                                        }}>
+                                                            {isInsufficient ? "Yetersiz Bakiye" : "Bakiye Uygun"}
+                                                        </Typography>
+                                                    </Box>
+
+                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, opacity: 0.8 }}>
+                                                        <span>Tür: {data.currency}</span>
+                                                        <span>Bakiye: {showMoneytoLocalString(data.balance || 0)} {data.currency === "TRY" ? "₺" : data.currency === "EUR" ? "€" : "$"}</span>
+                                                    </Box>
+
+                                                    {/* {data.currency !== "TRY" && (
+                                                        <Box sx={{ textAlign: 'right', mt: 0.5, fontStyle: 'italic', fontSize: '0.8rem' }}>
+                                                            TL Karşılığı: {showMoneytoLocalString(data.balance * (exchangeRate[data.currency]?.Buying || 0))} ₺
+                                                        </Box>
+                                                    )} */}
+                                                </>
+                                            }
+                                        />
+                                    );
+                                })}
+                            </RadioGroup>
+                        </FormControl>}
                     {/* Gold Items */}
-                    {goldItems.map((item, index) => (
+                    {isExitsAssets > 0 && selectedMoneyAccount === 0 ? <Typography
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 1.5,
+                            p: 2,
+                            my: 2,
+                            border: "1px solid",
+                            borderColor: 'error.light',
+                            borderRadius: "12px",
+                            textAlign: "center",
+                            color: "error.main",
+                            bgcolor: "#fff5f5",
+                            fontWeight: '500',
+                            fontSize: '0.95rem',
+                            boxShadow: '0 2px 8px rgba(211, 47, 47, 0.1)',
+                            fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                        }}
+                    >
+
+                        <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                        Lütfen öncelikle bir banka/para hesabı seçiniz. Aksi halde işleme devam edilemeyecektir.
+                    </Typography> : goldItems.map((item, index) => (
 
                         <Paper
                             key={item.id}
@@ -329,7 +520,7 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
                                     placeholder="0.00"
                                     InputProps={{
                                         startAdornment: (
-                                            <InputAdornment position="start">₺</InputAdornment>
+                                            <InputAdornment position="start">{CURRENCIES.find((c) => c.value === selectedMoneyAccountDetail.currency)?.symbol || "₺"}</InputAdornment>
                                         ),
                                     }}
                                     sx={{
@@ -341,7 +532,7 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
                             </Box>
 
                             <Box sx={{ my: 3 }}>
-
+                                {/* 
                                 <TextField
                                     label={"Kur Bilgisi"}
                                     type="number"
@@ -350,7 +541,7 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
                                     //onChange={(e) => updateGoldItem(item.id, "buyingDateTime", e.target.value)}
                                     margin="normal"
                                     InputLabelProps={{ shrink: true }}
-                                />
+                                /> */}
 
 
                                 <TextField
@@ -399,7 +590,7 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
                                         variant="body2"
                                         sx={{ fontWeight: 600, color: "#d4af37" }}
                                     >
-                                        ₺
+                                        {(selectedMoneyAccountDetail.currency || "₺") + " "}
                                         {(
                                             parseFloat(item.quantity) * parseFloat(item.price)
                                         ).toLocaleString("tr-TR", {
@@ -467,120 +658,14 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
                                         variant="h6"
                                         sx={{ fontWeight: 600, color: "#d4af37" }}
                                     >
-                                        ₺
-                                        {calculateGoldTotal().toLocaleString("tr-TR", {
+                                        {(selectedMoneyAccountDetail.currency || "₺") + " "}
+                                        {calculateGoldTotal(1).toLocaleString("tr-TR", {
                                             minimumFractionDigits: 2,
                                         })}
                                     </Typography>
                                 </Box>
 
-                                {userAssets.length === 0 && isExitsAssets === 0 ? "" : (userAssets.length !== 0 || (userAssets.length === 0 && isExitsAssets !== 0)) && moneyAccountPersons.length === 0 ?
-                                    <Typography
-                                        sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: 1.5,
-                                            p: 2,
-                                            my: 2,
-                                            border: "1px solid",
-                                            borderColor: 'error.light',
-                                            borderRadius: "12px",
-                                            textAlign: "center",
-                                            color: "error.main",
-                                            bgcolor: "#fff5f5",
-                                            fontWeight: '500',
-                                            fontSize: '0.95rem',
-                                            boxShadow: '0 2px 8px rgba(211, 47, 47, 0.1)',
-                                            fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-                                        }}
-                                    >
 
-                                        <span style={{ fontSize: '1.2rem' }}>⚠️</span>
-                                        Lütfen öncelikle bir banka/para hesabı ekleyiniz. Aksi halde işleme devam edilemeyecektir.
-                                    </Typography>
-                                    :
-                                    <FormControl component="fieldset" sx={{ width: '100%' }}>
-                                        <FormLabel id="selectMoneyAccount" sx={{ fontWeight: 'bold', mb: 2, color: 'text.primary' }}>
-                                            Banka Hesap Seçimi
-                                        </FormLabel>
-                                        <RadioGroup
-                                            aria-labelledby="selectMoneyAccount"
-                                            name="radio-buttons-group"
-                                            value={selectedMoneyAccount || ""}
-                                            onChange={(e) => setSelectedMoneyAccount(e.target.value)}
-                                        >
-                                            {moneyAccountPersons.map((data) => {
-                                                const isInsufficient = data.currency !== "TRY"
-                                                    ? (data.balance * (exchangeRate[data.currency]?.Buying || 0)) < calculateGoldTotal()
-                                                    : data.balance < calculateGoldTotal();
-
-                                                // Seçili olanı kontrol et (Vurgulamak için)
-                                                const isSelected = selectedMoneyAccount === String(data.id);
-
-                                                return (
-                                                    <FormControlLabel
-                                                        key={data.id}
-                                                        value={data.id}
-                                                        control={<Radio sx={{ display: 'none' }} />} // Radyo butonunu gizleyip kartı buton yapıyoruz
-                                                        sx={{
-                                                            margin: '0.5rem 0',
-                                                            width: '100%',
-                                                            border: '2px solid',
-                                                            borderColor: isSelected ? 'primary.main' : 'divider',
-                                                            borderRadius: '12px',
-                                                            padding: '12px 16px',
-                                                            transition: 'all 0.2s ease',
-                                                            backgroundColor: isSelected ? 'action.selected' : 'background.paper',
-                                                            '&:hover': {
-                                                                borderColor: 'primary.light',
-                                                                transform: 'translateY(-2px)',
-                                                                boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                                                            },
-                                                            // Label kısmını tüm genişliğe yay
-                                                            '& .MuiFormControlLabel-label': {
-                                                                width: '100%',
-                                                                fontFamily: 'monospace',
-                                                                whiteSpace: 'pre-wrap', // Alt satıra geçebilmesi için
-                                                                display: 'flex',
-                                                                flexDirection: 'column',
-                                                                gap: '4px'
-                                                            }
-                                                        }}
-                                                        label={
-                                                            <>
-                                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                    <Typography sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
-                                                                        {data.accountName.toUpperCase()}
-                                                                    </Typography>
-                                                                    <Typography sx={{
-                                                                        color: isInsufficient ? 'error.main' : 'success.main',
-                                                                        fontWeight: 'bold',
-                                                                        fontSize: '0.9rem',
-                                                                        bgcolor: isInsufficient ? '#ffebee' : '#e8f5e9',
-                                                                        px: 1, borderRadius: 1
-                                                                    }}>
-                                                                        {isInsufficient ? "Yetersiz Bakiye" : "Bakiye Uygun"}
-                                                                    </Typography>
-                                                                </Box>
-
-                                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, opacity: 0.8 }}>
-                                                                    <span>Tür: {data.currency}</span>
-                                                                    <span>Bakiye: {showMoneytoLocalString(data.balance)} {data.currency === "TRY" ? "₺" : data.currency === "EUR" ? "€" : "$"}</span>
-                                                                </Box>
-
-                                                                {data.currency !== "TRY" && (
-                                                                    <Box sx={{ textAlign: 'right', mt: 0.5, fontStyle: 'italic', fontSize: '0.8rem' }}>
-                                                                        TL Karşılığı: {showMoneytoLocalString(data.balance * (exchangeRate[data.currency]?.Buying || 0))} ₺
-                                                                    </Box>
-                                                                )}
-                                                            </>
-                                                        }
-                                                    />
-                                                );
-                                            })}
-                                        </RadioGroup>
-                                    </FormControl>}
 
 
 

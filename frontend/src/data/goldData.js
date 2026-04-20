@@ -31,12 +31,7 @@ export const getGoldCurrentValue = async () => {
     GOLD_TYPES[index].Selling = goldType.Selling;
   });
 
-  // GOLD_TYPES.map((goldType) =>
-  // {
-  //   ...goldType,
-  //   goldType.Selling = goldPrices.find((data) => data.Name.split("ALTIN")[0] === goldType.value)?.Selling,
-  //   goldType.Buying = goldPrices.find((data) => data.Name.split("ALTIN")[0] === goldType.value)?.Buying)
-  // }
+
   return updatedGoldTypes.map((goldType) => ({ Name: `${goldType.value}ALTIN`, Buying: goldType.Buying, Selling: goldType.Selling }));
 };
 

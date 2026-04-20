@@ -68,4 +68,9 @@ public class Transactions extends BaseEntity {
     @Column(name = "selling_price")
     private BigDecimal sellingPrice;
 
+    @Column(name = "exchange_rate")
+    private BigDecimal exchangeRate;
+
+    @Column(name = "currency")
+    private String currency;
 }
