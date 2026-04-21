@@ -1,6 +1,8 @@
 import axios from "axios";
 import { backendUrl } from "../utils/envVariables";
 
+const token = localStorage.getItem("token");
+
 export const STOCKS = [
   { symbol: "AKBNK", name: "Akbank T.A.Ş.", price: 90.15 },
   { symbol: "GARAN", name: "Garanti BBVA", price: 159.05 },
@@ -79,11 +81,41 @@ export const getStockCurrentValue = async () => {
       stockItem.push({ symbol: stock.symbol, value: await getStocksValueApi(stock.symbol) })
     })
   );
+
+
+  await axios.post(`${backendUrl}/api/asset/setInvestmentPrice`,
+    stockItem.map((stock) => {
+      return {
+        assetSymbol: stock.symbol,
+        price: stock.value
+      }
+    }),
+    {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
   return stockItem
 };
 
 
 export const getStocksValue = () => {
-  return STOCKS.map((stock) => ({symbol: stock.symbol, value: stock.price}))
+  axios.post(`${backendUrl}/api/asset/setInvestmentPrice`,
+    STOCKS.map((stock) => {
+      return {
+        assetSymbol: stock.symbol,
+        price: stock.price
+      }
+    }),
+    {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  return STOCKS.map((stock) => ({ symbol: stock.symbol, value: stock.price }))
 
 }

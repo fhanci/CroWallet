@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:sqlite:./data/wallet.db
+    url: jdbc:sqlite:./data/wallet.db?busy_timeout=5000
     driver-class-name: org.sqlite.JDBC
   jpa:
     hibernate:

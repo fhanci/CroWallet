@@ -2,6 +2,7 @@ package com.crowallet.backend.service;
 
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -11,8 +12,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.crowallet.backend.dto.ExchangeRateDTO;
+import com.crowallet.backend.dto.ExchangeRateRequestDTO;
+import com.crowallet.backend.entity.ExchangeRate;
+import com.crowallet.backend.mapper.ExchangeRateMapper;
+import com.crowallet.backend.repository.ExchangeRateRepository;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.transaction.Transactional;
 
 @Service
 public class CurrencyService {
@@ -20,6 +26,10 @@ public class CurrencyService {
     private static final Logger logger = LoggerFactory.getLogger(CurrencyService.class);
     
     private final RestTemplate restTemplate = new RestTemplate();
+
+    private final ExchangeRateMapper exchangeRateMapper;
+
+    private final ExchangeRateRepository exchangeRateRepository;
     
     // Frankfurter API - Free, no API key required
     // Base currency is TRY, getting rates for USD and EUR
@@ -28,6 +38,11 @@ public class CurrencyService {
     private Map<String, Double> cachedRates = new HashMap<>();
     private LocalDate lastUpdated;
     private String baseCurrency = "TRY";
+
+    public CurrencyService(ExchangeRateMapper exchangeRateMapper, ExchangeRateRepository exchangeRateRepository) {
+        this.exchangeRateMapper = exchangeRateMapper;
+        this.exchangeRateRepository = exchangeRateRepository;
+    }
 
     @PostConstruct
     public void init() {
@@ -156,4 +171,35 @@ public class CurrencyService {
             this.rates = rates;
         }
     }
+
+
+    @Transactional
+    public List<ExchangeRateRequestDTO> setExchangeRate(List<ExchangeRateRequestDTO> exchangeRateDTO) {
+
+        List<ExchangeRate> existingRates = exchangeRateRepository.findAll();
+
+        for (ExchangeRateRequestDTO dto : exchangeRateDTO) {
+            ExchangeRate existingRate = existingRates.stream()
+                    .filter(rate -> rate.getCurrency().equalsIgnoreCase(dto.getCurrency()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (existingRate != null) {
+                existingRate.setRate(dto.getRate());
+            } else {
+                ExchangeRate newRate = exchangeRateMapper.toEntity(dto);
+                existingRates.add(newRate);
+            }
+        }
+
+        exchangeRateRepository.saveAll(existingRates);
+        return exchangeRateMapper.toDtoList(existingRates);
+    }
+
+    @Transactional
+    public void deleteExchangeRate() {
+        exchangeRateRepository.deleteAll();
+    }
+
+
 }

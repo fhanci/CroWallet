@@ -22,7 +22,9 @@ import { useTheme } from "../config/ThemeContext";
 import useCurrencyRates from "../config/useCurrencyRates";
 import axios from "axios";
 import { backendUrl } from "../utils/envVariables";
-import { CURRENCIES, exchangeRates } from "../data/currencies";
+import { CURRENCIES, exchangeRates, getCurrentCurrencyRates } from "../data/currencies";
+import { getGoldCurrentValue } from "../data/goldData";
+import { getStocksValue } from "../data/stocksData";
 
 // Currency Rates Display Component - Shows EUR/TRY, EUR/USD rates
 const CurrencyRatesDisplay = ({ isDarkMode }) => {
@@ -124,6 +126,31 @@ const AccountPage = () => {
     "#A83279",
     "#6A89CC",
   ];
+
+
+
+
+
+  useEffect(() => {
+    const fetchDataSequentially = async () => {
+      try {
+        // Önce altın fiyatlarını bekle ve bitir
+        await getGoldCurrentValue();
+
+        await getCurrentCurrencyRates();
+
+        // Altın işlemi TAMAMEN bittikten sonra hisseleri başlat
+        await getStocksValue();
+
+        console.log("İşlemler sırasıyla bitti.");
+      } catch (error) {
+        console.error("Hata oluştu:", error);
+      }
+    };
+
+    fetchDataSequentially();
+  }, []);
+
 
   // Fetch user account summary
   useEffect(() => {
@@ -598,7 +625,7 @@ const AccountPage = () => {
 
   // Calculate total debts in TRY using real-time rates
   const calculateTotalDebtsTRY = () => {
-    return debtSummary? Object.entries(debtSummary.debtsByCurrency).map(([currency,total]) => {
+    return debtSummary ? Object.entries(debtSummary.debtsByCurrency).map(([currency, total]) => {
       const exchangeRate = CURRENCIES.find(c => c.value === currency)?.exchangeRates || 1;
       return total *= exchangeRate;
     }).reduce((acc, curr) => acc + curr, 0) : 0;
@@ -781,9 +808,16 @@ const AccountPage = () => {
                       <Typography variant="body2" sx={{ opacity: 0.7 }}>
                         {currency}
                       </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {formatCurrency(total, currency)}
-                      </Typography>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {formatCurrency(total, currency) + " "}
+                        </Typography>
+                        {currency !== "TRY" && (
+                          <Typography variant="body2" sx={{ color: "#fff", opacity: 0.7 }}>
+                            Kur: {CURRENCIES.find((c) => c.value === currency)?.exchangeRates + " ₺"}
+                          </Typography>
+                        )}
+                      </Box>
                     </Box>
                   ))}
 

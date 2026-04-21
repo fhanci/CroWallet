@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.crowallet.backend.dto.AccountSummaryResponseDTO;
 import com.crowallet.backend.dto.AssetDTO;
 import com.crowallet.backend.dto.AssetResponse;
+import com.crowallet.backend.dto.InvestmentDTO;
 import com.crowallet.backend.dto.MoneyAccountResponseDTO;
 import com.crowallet.backend.dto.PositionDTO;
 import com.crowallet.backend.dto.TransactionDTO;
@@ -180,9 +181,11 @@ public class AssetController {
     }
     
     
-
-
-    
+    @PostMapping("/setInvestmentPrice")
+    public ResponseEntity<Boolean> setInvestmentPrice(@RequestBody List<InvestmentDTO> request) {
+        assetService.setInvestmentPrice(request);
+        return ResponseEntity.ok(true);
+    } 
 
     
 

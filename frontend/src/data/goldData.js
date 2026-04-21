@@ -1,4 +1,7 @@
 import axios from "axios";
+import { backendUrl } from "../utils/envVariables";
+
+const token = localStorage.getItem("token");
 
 export const GOLD_TYPES = [
   { value: "GRAM", label: "Gram Altın", symbol: "gr", Buying: 0, Selling: 0 },
@@ -30,6 +33,22 @@ export const getGoldCurrentValue = async () => {
     GOLD_TYPES[index].Buying = goldType.Buying; 
     GOLD_TYPES[index].Selling = goldType.Selling;
   });
+
+  await axios.post(`${backendUrl}/api/asset/setInvestmentPrice`,
+    updatedGoldTypes.map((goldType) => {
+      return {
+        assetSymbol: goldType.value,
+        price: goldType.Buying
+      }
+    }),
+    {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
 
 
   return updatedGoldTypes.map((goldType) => ({ Name: `${goldType.value}ALTIN`, Buying: goldType.Buying, Selling: goldType.Selling }));

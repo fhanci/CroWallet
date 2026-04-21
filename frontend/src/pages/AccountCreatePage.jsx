@@ -143,7 +143,9 @@ const AccountCreatePage = () => {
         fieldsValid = goldItems.every((goldData) =>
           (goldData.goldType !== "" && goldData.goldType !== 0 && goldData.goldType !== null) &&
           (goldData.price !== "" && goldData.price !== 0 && goldData.price !== null) &&
-          (goldData.quantity !== "" && goldData.quantity !== 0 && goldData.quantity !== null)
+          (goldData.quantity !== "" && goldData.quantity !== 0 && goldData.quantity !== null) &&
+          (goldData.buyingDateTime !== "" && goldData.buyingDateTime !== 0 && goldData.buyingDateTime !== null) &&
+          (goldData.exchangeRate !== "" && goldData.exchangeRate !== 0 && goldData.exchangeRate !== null)
         );
 
       }
@@ -151,7 +153,9 @@ const AccountCreatePage = () => {
         fieldsValid = stockItems.every((stockData) =>
           (stockData.price !== 0 && stockData.price !== "" && stockData.price !== null) &&
           (stockData.quantity !== 0 && stockData.quantity !== "" && stockData.quantity !== null) &&
-          (stockData.stock !== 0 && stockData.stock !== "" && stockData.stock !== null)
+          (stockData.stock !== 0 && stockData.stock !== "" && stockData.stock !== null) &&
+          (stockData.buyingDateTime !== 0 && stockData.buyingDateTime !== "" && stockData.buyingDateTime !== null) &&
+          (stockData.exchangeRate !== 0 && stockData.exchangeRate !== "" && stockData.exchangeRate !== null)
         )
 
       }
@@ -205,7 +209,7 @@ const AccountCreatePage = () => {
         }
 
 
-        const accountDetail = await getAccountDetailInfo();
+        const accountDetail = await getAccountDetailInfo();/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         const pay = accountDetail.currency === "TRY"
           ? accountDetail.balance
           : accountDetail.balance * (exchangeRate[accountDetail.currency]?.Buying || 0);
@@ -559,7 +563,7 @@ const AccountCreatePage = () => {
                 moneyAccountId: selectedAccount.id,
                 outputPreviousBalance: previousBalance,
                 outputNextBalance: currentBalance,
-                exchangeRate: rate,
+                exchangeRate: item.exchangeRate,
                 description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
                 transactionDateTime: toLocalISOTime(item.buyingDateTime),
                 category: "Satın Alım",
@@ -580,7 +584,7 @@ const AccountCreatePage = () => {
                 moneyAccountId: selectedAccount.id,
                 outputPreviousBalance: previousBalance,
                 outputNextBalance: currentBalance,
-                exchangeRate: rate,
+                exchangeRate: item.exchangeRate,
                 description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
                 transactionDateTime: toLocalISOTime(item.buyingDateTime),
                 category: "Satın Alım",
@@ -787,7 +791,7 @@ const AccountCreatePage = () => {
               assetName: goldTypeInfo?.label || item.goldType,
               currentValue: parseFloat(goldTypeInfo.Buying / rate),
               buyingDateTime: item.buyingDateTime.toISOString(),
-              exchangeRate: rate,
+              exchangeRate: item.exchangeRate,
               currency: selectedMoneyAccount === 0 ? "TRY" : selectedAccount.currency
 
             };
@@ -801,7 +805,7 @@ const AccountCreatePage = () => {
             assetName: item.stock.name,
             currentValue: parseFloat(item.stock.price / rate),
             buyingDateTime: item.buyingDateTime.toISOString(),
-            exchangeRate: rate,
+            exchangeRate: item.exchangeRate,
             currency: selectedMoneyAccount === 0 ? "TRY" : selectedAccount.currency
           }));
 
@@ -815,11 +819,12 @@ const AccountCreatePage = () => {
           }
         )
 
+        
         await axios.post(`${backendUrl}/api/asset/create-position`, {
           assetId: response.data,
           costBasis: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.unitPrice * cur.exchangeRate), 0),
-          currentValue: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.currentValue * cur.exchangeRate), 0),
-          profitLoss: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.currentValue * cur.exchangeRate), 0) - holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.unitPrice * cur.exchangeRate), 0)
+          currentValue: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.currentValue * (CURRENCIES.find(c => c.value === cur.currency)?.exchangeRates || 1)), 0),
+          profitLoss: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.currentValue * (CURRENCIES.find(c => c.value === cur.currency)?.exchangeRates || 1)), 0) - holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.unitPrice * cur.exchangeRate), 0)
         }, {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,

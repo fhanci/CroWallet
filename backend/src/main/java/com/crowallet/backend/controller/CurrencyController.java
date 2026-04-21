@@ -1,19 +1,25 @@
 package com.crowallet.backend.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.crowallet.backend.dto.ExchangeRateDTO;
+import com.crowallet.backend.dto.ExchangeRateRequestDTO;
 import com.crowallet.backend.service.CurrencyService;
 
 @RestController
 @RequestMapping("/api/currencies")
+@CrossOrigin(origins = "http://localhost:3000")
 public class CurrencyController {
 
     private final CurrencyService currencyService;
@@ -85,4 +91,17 @@ public class CurrencyController {
     public ResponseEntity<ExchangeRateDTO> refreshRates() {
         return ResponseEntity.ok(currencyService.refreshRates());
     }
+
+
+    @PostMapping("/setRate")
+    public ResponseEntity<List<ExchangeRateRequestDTO>> setRate(@RequestBody List<ExchangeRateRequestDTO> exchangeRateDTO) {
+        return ResponseEntity.ok(currencyService.setExchangeRate(exchangeRateDTO));
+    }
+
+    // @DeleteMapping("/deleteRate")
+    // public ResponseEntity<Void> deleteRate() {
+    //     currencyService.deleteExchangeRate();
+    //     return ResponseEntity.noContent().build();
+    // }
+
 }

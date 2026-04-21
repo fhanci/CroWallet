@@ -9,6 +9,7 @@ import lombok.Data;
 @Data
 public class TransactionDTO {
     private Long assetId;
+    private Long id;
     private TransactionType transactionType;
     private String assetSymbol;
     private BigDecimal unitPrice;
@@ -20,4 +21,5 @@ public class TransactionDTO {
     private BigDecimal sellingPrice;
     private BigDecimal exchangeRate;
     private String currency;
+    private BigDecimal purchaseExchangeRate;
 }

@@ -8,7 +8,7 @@ import { useTheme } from "../config/ThemeContext";
 import axios from 'axios';
 import Marquee from "react-fast-marquee";
 import { backendUrl } from '../utils/envVariables';
-import { CURRENCIES, exchangeRates } from '../data/currencies';
+import { CURRENCIES, exchangeRates, getExchangeRateByPastDate } from '../data/currencies';
 import dayjs from "dayjs";
 import { formatDateTime, toLocalISOTime } from '../utils/localIsoTime';
 
@@ -67,8 +67,9 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
         const newId = Math.max(...goldItems.map((item) => item.id)) + 1;
         setGoldItems([
             ...goldItems,
-            { id: newId, goldType: "", quantity: "", price: "", buyingDateTime: dayjs() },
+            { id: newId, goldType: "", quantity: "", price: "", buyingDateTime: dayjs(), exchangeRate: 1 },
         ]);
+        setChangeExchangeRate(true);
         console.log("Added new gold item:", goldItems);
     };
 
@@ -107,6 +108,46 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
         }));
     }, [selectedMoneyAccountDetail]);
 
+
+    const [changeExchangeRate, setChangeExchangeRate] = useState(false);
+
+    useEffect(() => {
+        const getExchangeRate = async () => {
+            const rates = await Promise.all(goldItems.map(async item => {
+                const response = await getExchangeRateByPastDate(
+                    selectedMoneyAccountDetail.currency || "TRY",
+                    item.buyingDateTime.format("YYYY-MM-DD"),
+                    "TRY"
+                );
+                
+                if (response === undefined || response.length === 0) {
+                    return 1;
+                }
+                return response.rate;
+            }));
+
+            console.log("Exchange rates fetched:", rates);  
+            
+            setGoldItems(
+                goldItems.map((item, index) => ({
+                    ...item,
+                    exchangeRate: String(rates[index])
+                }))
+            )
+        };
+
+        if (changeExchangeRate) {
+            getExchangeRate();
+            setChangeExchangeRate(false);
+        }
+    }, [goldItems, selectedMoneyAccount])
+
+
+    useEffect(() => {
+        setChangeExchangeRate(true);
+    },[selectedMoneyAccount])
+
+
     const updateGoldItem = (id, field, value) => {
         console.log(`Updating gold item ${id}: setting ${field} to ${value}`);
 
@@ -116,10 +157,11 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
 
         //Tarih
         if (field === "buyingDateTime" || field === "quantity") {
+            setChangeExchangeRate(true);
             value = field === "buyingDateTime" ? dayjs(value) : value;
             setGoldItems(
                 goldItems.map((item) =>
-                    item.id === id ? { ...item, [field]: value } : item
+                    item.id === id ? { ...item, [field]: value, } : item
                 )
             );
         }
@@ -149,8 +191,14 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
             )
 
             console.log("Updated gold items:", goldItems)
+        }
 
 
+        else if (field === "exchangeRate") {
+            setGoldItems(
+                goldItems.map((item) =>
+                    item.id === id ? { ...item, [field]: value } : item)
+            )
         }
     };
 
@@ -532,16 +580,6 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
                             </Box>
 
                             <Box sx={{ my: 3 }}>
-                                {/* 
-                                <TextField
-                                    label={"Kur Bilgisi"}
-                                    type="number"
-                                    fullWidth
-                                    value={formatDateTime(item.buyingDateTime)}
-                                    //onChange={(e) => updateGoldItem(item.id, "buyingDateTime", e.target.value)}
-                                    margin="normal"
-                                    InputLabelProps={{ shrink: true }}
-                                /> */}
 
 
                                 <TextField
@@ -554,20 +592,16 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
                                     margin="normal"
                                     InputLabelProps={{ shrink: true }}
                                 />
-                                {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                    <DatePicker
-                                        label="Tarih Seç"
-                                        value={item.buyingDateTime}
-                                        onChange={(newValue) => updateGoldItem(item.id, "buyingDateTime", newValue)}
-                                        disableFuture={true}
 
-                                        slotProps={{
-                                            textField: { fullWidth: true },
-
-                                        }}
-
-                                    />
-                                </LocalizationProvider> */}
+                                <TextField
+                                    label={"Kur Bilgisi"}
+                                    type="number"
+                                    fullWidth
+                                    value={(item.exchangeRate || 1).toLocaleString("tr-TR")}
+                                    onChange={(e) => updateGoldItem(item.id, "exchangeRate", e.target.value)}
+                                    margin="normal"
+                                    InputLabelProps={{ shrink: true }}
+                                />
 
                             </Box>
 
