@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 
 @Data
 public class PayDebt {
-    private Long accountId;
+    private Long moneyAccountId;
     private Long userId;
     private BigDecimal amount;
     private BigDecimal exchangeRate;

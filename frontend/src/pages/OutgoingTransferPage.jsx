@@ -24,11 +24,12 @@ import { t } from "i18next";
 import axios from "axios";
 import { useUser } from "../config/UserStore";
 import { backendUrl } from "../utils/envVariables";
+import { CURRENCIES } from "../data/currencies";
+import { toLocalISOTime } from "../utils/localIsoTime";
 
 const OutgoingTransferPage = () => {
   const navigate = useNavigate();
   const { user } = useUser();
-  const now = new Date();
   const token = localStorage.getItem("token");
   const [accounts, setAccounts] = useState([]);
   const [selectedTransferAccount, setSelectedTransferAccount] = useState(null);
@@ -51,19 +52,15 @@ const OutgoingTransferPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await axios.get(
-          `${backendUrl}/api/accounts/get/${user.id}`,
+        const currencyAccounts = await axios.get(
+          `${backendUrl}/api/accounts/get-money-accounts?userId=${user.id}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
             },
           }
-        );
-        // Only show CURRENCY type accounts
-        const currencyAccounts = res.data.filter(
-          acc => !acc.accountType || acc.accountType === "CURRENCY"
-        );
-        setAccounts(currencyAccounts);
+        )
+        setAccounts(currencyAccounts.data);
       } catch (err) {
         console.error("Hesaplar alınamadı:", err);
       }
@@ -105,8 +102,8 @@ const OutgoingTransferPage = () => {
 
   const handleSubmit = async () => {
     // Determine final category
-    const finalCategory = selectedTransfer.category === "Diğer" 
-      ? customCategory 
+    const finalCategory = selectedTransfer.category === "Diğer"
+      ? customCategory
       : selectedTransfer.category;
 
     if (
@@ -137,28 +134,27 @@ const OutgoingTransferPage = () => {
       return;
     }
 
-    const createDate = new Date(
-      now.getTime() + 3 * 60 * 60 * 1000
-    ).toISOString();
+
+    console.log("selectedTransfer:", selectedTransfer);
+    console.log("selectedTransferAccount:", selectedTransferAccount);
 
     const transferPayload = {
-      ...selectedTransfer,
       category: finalCategory,
-      exchangeRate: 1,
+      exchangeRate: CURRENCIES.find(c => c.value === selectedTransferAccount.currency)?.exchangeRates || 1,
+      currency: selectedTransferAccount.currency,
       type: "outgoing",
-      createDate,
-      user: { id: parseInt(user.id) },
-      account: { id: parseInt(selectedTransferAccount.id) },
-      amount,
-      date: selectedTransfer.date,
+      moneyAccountId: parseInt(selectedTransferAccount.id),
+      description: selectedTransfer.description,
+      amount: amount,
+      details: selectedTransfer.details,
+      transactionDateTime: toLocalISOTime(selectedTransfer.date),
       outputPreviousBalance: currentBalance,
-      outputNextBalance: currentBalance - amount,
+      outputNextBalance: currentBalance - amount
     };
 
     const updatedAccount = {
       ...selectedTransferAccount,
-      balance: currentBalance - amount,
-      updateDate: createDate,
+      balance: currentBalance - parseFloat(selectedTransfer.amount),
     };
 
     try {
@@ -174,7 +170,7 @@ const OutgoingTransferPage = () => {
       );
 
       await axios.put(
-        `${backendUrl}/api/accounts/update/${selectedTransferAccount.id}`,
+        `${backendUrl}/api/asset/update-money-account?updatedAccount=false&exchangeRate=${transferPayload.exchangeRate}`,
         updatedAccount,
         {
           headers: {
@@ -253,6 +249,17 @@ const OutgoingTransferPage = () => {
     ? selectedTransferAccount.balance - parseFloat(selectedTransfer.amount || 0)
     : null;
 
+
+  useEffect(() => {
+    if ((selectedTransferAccount ? selectedTransferAccount.balance : 0) < parseFloat(selectedTransfer.amount || 0)){
+      setError(t("insufficientBalance"));
+    }
+    else{
+      setError(null);
+    }
+
+  },[selectedTransferAccount, selectedTransfer.amount])
+
   return (
     <Container maxWidth="sm" sx={{ mt: 2 }}>
       <Card sx={{ borderRadius: 3, boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}>
@@ -282,9 +289,9 @@ const OutgoingTransferPage = () => {
                 <MenuItem key={account.id} value={account.id}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
                     <span>{account.accountName}</span>
-                    <Chip 
-                      label={`${account.balance} ${account.currency}`} 
-                      size="small" 
+                    <Chip
+                      label={`${account.balance.toLocaleString("tr-TR")} ${account.currency}`}
+                      size="small"
                       sx={{ ml: "auto" }}
                     />
                   </Box>
@@ -322,15 +329,15 @@ const OutgoingTransferPage = () => {
 
           {/* Balance preview */}
           {newBalance !== null && selectedTransfer.amount && (
-            <Box sx={{ 
-              bgcolor: newBalance >= 0 ? "warning.light" : "error.light", 
-              p: 2, 
-              borderRadius: 2, 
+            <Box sx={{
+              bgcolor: newBalance >= 0 ? "warning.light" : "error.light",
+              p: 2,
+              borderRadius: 2,
               mb: 2,
               opacity: 0.9
             }}>
               <Typography variant="body2" color={newBalance >= 0 ? "warning.dark" : "error.dark"}>
-                İşlem sonrası bakiye: <strong>{newBalance.toFixed(2)} {selectedTransferAccount.currency}</strong>
+                İşlem sonrası bakiye: <strong>{newBalance.toLocaleString("tr-TR")} {selectedTransferAccount.currency}</strong>
                 {newBalance < 0 && " (Yetersiz bakiye!)"}
               </Typography>
             </Box>
@@ -338,8 +345,9 @@ const OutgoingTransferPage = () => {
 
           <TextField
             label={t("date")}
-            type="date"
+            type="datetime-local"
             value={selectedTransfer.date || ""}
+            inputProps={{step: 1}}
             onChange={(e) =>
               setSelectedTransfer({ ...selectedTransfer, date: e.target.value })
             }
@@ -385,9 +393,14 @@ const OutgoingTransferPage = () => {
             freeSolo
             options={selectedDetailsOptions}
             value={selectedTransfer.details || ""}
-            onChange={(e, newValue) =>
-              setSelectedTransfer({ ...selectedTransfer, details: newValue })
-            }
+            onChange={(event, newValue) => {
+              setSelectedTransfer({ ...selectedTransfer, details: newValue });
+              console.log("Updated Details:", newValue);
+            }}
+            onInputChange={(event, newValue) => {
+              setSelectedTransfer({ ...selectedTransfer, details: newValue });
+              console.log("Updated Details:", newValue);
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -422,8 +435,8 @@ const OutgoingTransferPage = () => {
           )}
 
           <Box display="flex" gap={2} mt={3}>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               onClick={() => navigate("/transfer")}
               sx={{ flex: 1, borderRadius: 2 }}
             >
@@ -434,7 +447,8 @@ const OutgoingTransferPage = () => {
               color="error"
               startIcon={<SaveIcon />}
               onClick={handleSubmit}
-              sx={{ flex: 1, borderRadius: 2 }}
+              disabled={(selectedTransferAccount ? selectedTransferAccount.balance : 0) < parseFloat(selectedTransfer.amount || 0)}
+              sx={{ flex: 1, borderRadius: 2 }}            
             >
               {t("save")}
             </Button>

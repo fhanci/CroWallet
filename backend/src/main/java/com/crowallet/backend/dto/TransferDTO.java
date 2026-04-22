@@ -8,13 +8,9 @@ import java.time.LocalDateTime;
 
 @Data
 public class TransferDTO {
-    private Long id;
     private String category;
     private BigDecimal amount;
-    private LocalDate date;
-    private LocalDateTime createDate;
     private String description;
-    private Long receiverId;
     private String type;
     private String details;
     private BigDecimal exchangeRate;
@@ -22,7 +18,10 @@ public class TransferDTO {
     private BigDecimal inputPreviousBalance;
     private BigDecimal outputNextBalance;
     private BigDecimal outputPreviousBalance;
-    private UserDTO user;
-    private AccountDTO account;
+    private Long moneyAccountId;
+    private String currency;
+    private LocalDateTime transactionDateTime;
+    private Boolean isAccountToAccountTransfer;
+    private Long transferId;
 }
 

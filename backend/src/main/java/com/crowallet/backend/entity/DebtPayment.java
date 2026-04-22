@@ -3,6 +3,8 @@ package com.crowallet.backend.entity;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -24,6 +26,7 @@ public class DebtPayment {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonBackReference
     @JoinColumn(name = "debt_id", nullable = false)
     private Debt debt;
 
@@ -45,9 +48,9 @@ public class DebtPayment {
     @Column(name = "note")
     private String note;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id")
-    private Account account;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "money_account_id")
+    private MoneyAccount moneyAccount;
 
     @Column(name = "paid_currency")
     private String paidCurrency;

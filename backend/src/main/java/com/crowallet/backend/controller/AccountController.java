@@ -6,6 +6,9 @@ import com.crowallet.backend.entity.User;
 import com.crowallet.backend.dto.AccountSummaryDTO;
 import com.crowallet.backend.dto.CreateInvestmentAccountDTO;
 import com.crowallet.backend.dto.InvestmentHoldingDTO;
+import com.crowallet.backend.dto.MoneyAccountRequestDTO;
+import com.crowallet.backend.dto.MoneyAccountResponseDTO;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -15,9 +18,14 @@ import java.util.List;
 import java.util.Map;
 
 import com.crowallet.backend.service.AccountService;
-import com.crowallet.backend.repository.UserRepository;;
+import com.crowallet.backend.repository.UserRepository;
+
+
+
+;
 
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping("/api/accounts")
 public class AccountController {
 
@@ -34,7 +42,7 @@ public class AccountController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getMe(Authentication authentication) {
+    public ResponseEntity<Long> getMe(Authentication authentication) {
         String username = authentication.getName();
 
         User user = userRepository.findByUsername(username).orElseThrow();
@@ -58,6 +66,7 @@ public class AccountController {
     public List<AccountDTO> getUserCurrencyAccounts(@PathVariable Long userId) {
         return accountService.getUserCurrencyAccounts(userId);
     }
+    
 
     // Get only investment accounts
     @GetMapping("/investment/{userId}")
@@ -82,15 +91,51 @@ public class AccountController {
     //     return accountService.findByAccountInvesment(id);
     // }
 
-    @PostMapping("/create-account")
-    public AccountDTO createAccount(@RequestBody AccountDTO account) {
-        return accountService.createAccount(account);
+    // @PostMapping("/create-account")
+    // public AccountDTO createAccount(@RequestBody AccountDTO account) {
+    //     return accountService.createAccount(account);
+    // }
+
+    @PostMapping("/create-money-account")
+    public ResponseEntity<MoneyAccountResponseDTO> createMoneyAccount(@RequestBody MoneyAccountRequestDTO moneyAccountRequestDTO) {        
+        MoneyAccountResponseDTO moneyAccounts = accountService.createMoneyAccount(moneyAccountRequestDTO);
+        return ResponseEntity.ok(moneyAccounts);
     }
+
+    @GetMapping("/get-money-accounts")
+    public ResponseEntity<List<MoneyAccountResponseDTO>> getMoneyAccounts(@RequestParam(required = true) Long userId) {
+        List<MoneyAccountResponseDTO> moneyAccounts = accountService.getMoneyAccount(userId);
+        return ResponseEntity.ok(moneyAccounts);
+    }
+
+    @GetMapping("/get-money-accounts-active-passive")
+    public ResponseEntity<List<MoneyAccountResponseDTO>> getMoneyAccountsActiveAndPassive(@RequestParam(required = true) Long userId) {
+        List<MoneyAccountResponseDTO> moneyAccounts = accountService.getMoneyAccountActiveAndPassive(userId);
+        return ResponseEntity.ok(moneyAccounts);
+    }
+
+    // @PutMapping("/update-money-account")
+    // public ResponseEntity<MoneyAccountResponseDTO> updateMoneyAccount(@RequestParam(required = true) Long exchangeRate,@RequestBody MoneyAccountResponseDTO moneyAccountResponseDTO) {
+    //     MoneyAccountResponseDTO updateMoneyAccount = accountService.updateMoneyAccount(exchangeRate,moneyAccountResponseDTO);
+    //     return ResponseEntity.ok(updateMoneyAccount);
+    // }
+    
+    @GetMapping("/get-money-account")
+    public ResponseEntity<MoneyAccountResponseDTO> getMoneyAccountById(@RequestParam Long moneyAccountId) {
+        MoneyAccountResponseDTO moneyAccountById = accountService.getMoneyAccountById(moneyAccountId);
+        return ResponseEntity.ok(moneyAccountById);        
+    }   
+    
 
     // Create investment account with multiple holdings
     @PostMapping("/create-investment")
-    public AccountDTO createInvestmentAccount(@RequestBody CreateInvestmentAccountDTO dto) {
+    public AccountDTO createInvestmentAccount(@RequestBody CreateInvestmentAccountDTO dto) {        
         return accountService.createInvestmentAccount(dto);
+    }
+
+    @PostMapping("/add-investment")
+    public AccountDTO addInvestmentAccount(@RequestBody CreateInvestmentAccountDTO dto) {
+        return accountService.addInvestmentAccount(dto);
     }
 
     // Add holding to existing investment account
@@ -113,18 +158,26 @@ public class AccountController {
         accountService.removeHoldingFromAccount(holdingId);
     }
 
-    @PutMapping("/update/{id}")
-    public AccountDTO updateAccount(@PathVariable Long id, @RequestBody AccountDTO account) {
-        return accountService.updateAccount(id, account);
+    // @PutMapping("/update/{id}")
+    // public AccountDTO updateAccount(@PathVariable Long id, @RequestBody AccountDTO account) {
+    //     return accountService.updateAccount(id, account);
+    // }
+
+    // @PostMapping("/withdraw-money")
+    // public TransferDTO withdrawMoney(@RequestBody TransferDTO transferDTO) {
+    //     return accountService.withdrawMoney(transferDTO);
+    // }
+
+    // @DeleteMapping("/delete/{id}")
+    // public void deleteAccount(@PathVariable Long id) {
+    //     accountService.deleteAccount(id);
+    // }
+
+    @GetMapping("/isThereThisAccountNameBefore")
+    public Boolean isThereThisAccountNameBefore(@RequestParam String accountName) {
+        return accountService.isThereThisAccountNameBefore(accountName);
     }
 
-    @PostMapping("/withdraw-money")
-    public TransferDTO withdrawMoney(@RequestBody TransferDTO transferDTO) {
-        return accountService.withdrawMoney(transferDTO);
-    }
-
-    @DeleteMapping("/delete/{id}")
-    public void deleteAccount(@PathVariable Long id) {
-        accountService.deleteAccount(id);
-    }
+    
+    
 }

@@ -53,14 +53,14 @@ const DebtsPage = () => {
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
   const styles = getCardStyles(isDarkMode);
-  
+
   const [debtSummary, setDebtSummary] = useState(null);
   const [viewMode, setViewMode] = useState("active"); // "active" or "completed"
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingDebtId, setDeletingDebtId] = useState(null);
   const [payDialogOpen, setPayDialogOpen] = useState(false);
   const [payingPayment, setPayingPayment] = useState(null);
-  
+
   // Edit dialog states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingDebt, setEditingDebt] = useState(null);
@@ -69,7 +69,7 @@ const DebtsPage = () => {
   const [editDueDate, setEditDueDate] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editWarningPeriod, setEditWarningPeriod] = useState("");
-  
+
   const { user } = useUser();
   const token = localStorage.getItem("token");
 
@@ -329,8 +329,8 @@ const DebtsPage = () => {
       console.error("Error marking payment as paid:", error);
       setPaymentError(
         error.response?.data?.message ||
-          error.response?.data ||
-          "Ödeme işlemi başarısız oldu"
+        error.response?.data ||
+        "Ödeme işlemi başarısız oldu"
       );
     } finally {
       setPaymentLoading(false);
@@ -352,6 +352,18 @@ const DebtsPage = () => {
       const newAmount = parseFloat(editDebtAmount);
       const amountDiff = newAmount - (editingDebt.debtAmount || 0);
       const newRemainingAmount = (editingDebt.remainingAmount || 0) + amountDiff;
+
+      console.log("Editing Debt:", {
+        ...editingDebt,
+        toWhom: editToWhom,
+        debtAmount: newAmount,
+        remainingAmount: newRemainingAmount > 0 ? newRemainingAmount : 0,
+        dueDate: editDueDate,
+        description: editDescription,
+        warningPeriod: parseInt(editWarningPeriod) || 7,
+      });
+      console.log("Amount Difference:", amountDiff);
+
 
       await axios.put(
         `${backendUrl}/api/debts/update/${editingDebt.id}`,
@@ -379,7 +391,7 @@ const DebtsPage = () => {
     if (!debt.totalInstallments || debt.totalInstallments === 0) {
       return debt.status === "COMPLETED" ? 100 : 0;
     }
-    return ((debt.paidInstallments || 0) / debt.totalInstallments) * 100;
+    return ((debt.payments.reduce((acc, d) => d.status === "PAID" ? acc + 1 : acc, 0) || 0) / debt.totalInstallments) * 100;
   };
 
   const activeDebts =
@@ -394,7 +406,7 @@ const DebtsPage = () => {
       <Box
         sx={{
           display: "flex",
-          flexWrap:"wrap",
+          flexWrap: "wrap",
           justifyContent: "space-between",
           alignItems: "center",
           mb: 3,
@@ -403,7 +415,7 @@ const DebtsPage = () => {
         <Typography variant="h4" sx={{ fontWeight: 600 }}>
           {t("myDebts")}
         </Typography>
-        <Box sx={{ display: "flex", gap: 2, flexWrap:"wrap" }}>
+        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
           <Button
             variant="outlined"
             startIcon={<ListAltIcon />}
@@ -439,11 +451,18 @@ const DebtsPage = () => {
               borderRadius: 3,
             }}
           >
+            {console.log("Rendering Total Remaining Amount:", debtSummary)}
             <Typography variant="body2" sx={{ opacity: 0.8 }}>
               Toplam Kalan Borç
             </Typography>
             <Typography variant="h5" sx={{ fontWeight: 700 }}>
-              {formatCurrency(debtSummary.totalRemainingAmount, "TRY")}
+              {debtSummary.debts.filter((d) => d.debtCurrency === "TRY").reduce((acc, d) => acc + (d.remainingAmount < 0 ? 0 : d.remainingAmount), 0).toLocaleString("tr-TR") + " ₺"}
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+              {debtSummary.debts.filter((d) => d.debtCurrency === "EUR").reduce((acc, d) => acc + (d.remainingAmount < 0 ? 0 : d.remainingAmount), 0).toLocaleString("tr-TR") + " €"}
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+              {debtSummary.debts.filter((d) => d.debtCurrency === "USD").reduce((acc, d) => acc + (d.remainingAmount < 0 ? 0 : d.remainingAmount), 0).toLocaleString("tr-TR") + " $"}
             </Typography>
           </Card>
           <Card
@@ -457,29 +476,35 @@ const DebtsPage = () => {
             }}
           >
             <Typography variant="body2" sx={{ opacity: 0.8 }}>
-              Toplam Ödenen
+              Toplam Ödenen Borç
             </Typography>
             <Typography variant="h5" sx={{ fontWeight: 700 }}>
-              {formatCurrency(debtSummary.totalPaidAmount, "TRY")}
+              {Math.round(debtSummary.debts.filter((d) => d.debtCurrency === "TRY").reduce((acc, d) => acc + (d.debtAmount - d.remainingAmount), 0)).toLocaleString("tr-TR") + " ₺"}
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+              {Math.round(debtSummary.debts.filter((d) => d.debtCurrency === "EUR").reduce((acc, d) => acc + (d.debtAmount - d.remainingAmount), 0)).toLocaleString("tr-TR") + " €"}
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+              {Math.round(debtSummary.debts.filter((d) => d.debtCurrency === "USD").reduce((acc, d) => acc + (d.debtAmount - d.remainingAmount), 0)).toLocaleString("tr-TR") + " $"}
             </Typography>
           </Card>
-        <Card
-          sx={{
-            flex: 1,
-            minWidth: 200,
-            p: 2,
-            bgcolor: isDarkMode ? "rgba(30, 42, 58, 0.90)" : "#fff",
-            borderRadius: 3,
-            border: isDarkMode ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid #e0e0e0",
-          }}
-        >
-          <Typography variant="body2" color="text.secondary">
-            Aktif / Tamamlanan
-          </Typography>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: isDarkMode ? "#fff" : "inherit" }}>
-            {debtSummary.activeDebts} / {debtSummary.completedDebts}
-          </Typography>
-        </Card>
+          <Card
+            sx={{
+              flex: 1,
+              minWidth: 200,
+              p: 2,
+              bgcolor: isDarkMode ? "rgba(30, 42, 58, 0.90)" : "#fff",
+              borderRadius: 3,
+              border: isDarkMode ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid #e0e0e0",
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              Aktif / Tamamlanan
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: isDarkMode ? "#fff" : "inherit" }}>
+              {debtSummary.activeDebts} / {debtSummary.completedDebts}
+            </Typography>
+          </Card>
         </Box>
       )}
 
@@ -492,9 +517,9 @@ const DebtsPage = () => {
             if (newValue !== null) setViewMode(newValue);
           }}
           sx={{
-            display:"flex",
-            justifyContent:"space-evenly  ",
-            flexWrap:"wrap",
+            display: "flex",
+            justifyContent: "space-evenly  ",
+            flexWrap: "wrap",
             "& .MuiToggleButton-root": {
               px: 4,
               py: 1.5,
@@ -530,6 +555,7 @@ const DebtsPage = () => {
         </Alert>
       )}
 
+      {console.log(displayedDebts)}
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {displayedDebts
           .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
@@ -547,10 +573,10 @@ const DebtsPage = () => {
                 sx={{
                   borderRadius: 3,
                   overflow: "hidden",
-                  bgcolor: isCompleted 
-                    ? "rgba(76, 175, 80, 0.08)" 
-                    : isDarkMode 
-                      ? "rgba(30, 42, 58, 0.90)" 
+                  bgcolor: isCompleted
+                    ? "rgba(76, 175, 80, 0.08)"
+                    : isDarkMode
+                      ? "rgba(30, 42, 58, 0.90)"
                       : "white",
                 }}
               >
@@ -647,7 +673,7 @@ const DebtsPage = () => {
                           color: isCompleted ? "#4caf50" : "#f44336",
                         }}
                       >
-                        {formatCurrency(debt.remainingAmount, debt.debtCurrency)}
+                        {formatCurrency(Math.max(0, debt.remainingAmount), debt.debtCurrency)}
                       </Typography>
                     </Box>
                     {debt.paymentType === "PERIODIC" && (
@@ -656,7 +682,7 @@ const DebtsPage = () => {
                           Taksit
                         </Typography>
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          {debt.paidInstallments || 0} / {debt.totalInstallments}
+                          {debt.payments.reduce((acc, d) => d.status === "PAID" ? acc + 1 : acc, 0) || 0} / {debt.totalInstallments}
                         </Typography>
                       </Box>
                     )}
@@ -883,8 +909,8 @@ const DebtsPage = () => {
                           selectedAccount?.id === account.id
                             ? "primary.main"
                             : sufficient
-                            ? "divider"
-                            : "error.main",
+                              ? "divider"
+                              : "error.main",
                         bgcolor: !sufficient
                           ? "rgba(244, 67, 54, 0.08)"
                           : "transparent",

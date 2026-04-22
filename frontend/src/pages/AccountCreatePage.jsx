@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Container,
   Typography,
@@ -27,7 +27,6 @@ import {
   ListItemButton,
   IconButton,
   Chip,
-  Paper,
 } from "@mui/material";
 import axios from "axios";
 import SaveIcon from "@mui/icons-material/Save";
@@ -39,17 +38,19 @@ import ViewInArIcon from "@mui/icons-material/ViewInAr";
 import ShowChartIcon from "@mui/icons-material/ShowChart";
 import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
-import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../config/UserStore";
 import { useTheme } from "../config/ThemeContext";
 import { backendUrl } from "../utils/envVariables";
-import {TURKISH_BANKS} from "../data/bankData"
-import {CURRENCIES} from "../data/currencies"
-import {GOLD_TYPES} from "../data/goldData"
-import {STOCKS} from "../data/stocksData"
+import { TURKISH_BANKS } from "../data/bankData"
+import { CURRENCIES, exchangeRates } from "../data/currencies"
+import { GOLD_TYPES } from "../data/goldData"
+import { STOCKS } from "../data/stocksData"
+import { BuyInvestmentGold } from "../components/BuyInvestmentGold";
+import { BuyInvestmentStock } from "../components/BuyInvestmentStock";
+import dayjs from "dayjs";
+import { toLocalISOTime } from "../utils/localIsoTime";
 
 
 
@@ -57,7 +58,6 @@ const AccountCreatePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useUser();
-  const { isDarkMode } = useTheme();
   const token = localStorage.getItem("token");
 
   // Main account type: CURRENCY or INVESTMENT
@@ -74,12 +74,12 @@ const AccountCreatePage = () => {
 
   // Multiple gold items
   const [goldItems, setGoldItems] = useState([
-    { id: 1, goldType: "", quantity: "", price: "" },
+    { id: 1, goldType: "", quantity: "", price: "", buyingDateTime: dayjs() },
   ]);
 
   // Multiple stock items
   const [stockItems, setStockItems] = useState([
-    { id: 1, stock: null, quantity: "", price: "" },
+    { id: 1, stock: null, quantity: "", price: "", buyingDateTime: dayjs() },
   ]);
 
   // Common fields
@@ -93,6 +93,10 @@ const AccountCreatePage = () => {
   // Alerts and states
   const [error, setError] = useState("");
   const [openSnackbar, setOpenSnackbar] = useState(false);
+
+  const [selectedMoneyAccount, setSelectedMoneyAccount] = useState(0)
+  const [exchangeRate, setExchangeRate] = useState({})
+  const [isButtonDisabled, setIsButtonDisabled] = useState(true);
 
   // Filter stocks based on search (exclude already selected stocks)
   const filteredStocks = useMemo(() => {
@@ -116,14 +120,142 @@ const AccountCreatePage = () => {
     return available;
   }, [stockSearch, stockItems]);
 
-  // Get available gold types (exclude already selected)
-  const getAvailableGoldTypes = (currentItemId) => {
-    const selectedTypes = goldItems
-      .filter((item) => item.id !== currentItemId && item.goldType)
-      .map((item) => item.goldType);
 
-    return GOLD_TYPES.filter((type) => !selectedTypes.includes(type.value));
-  };
+  const getAccountDetailInfo = async () => {
+    const response = await axios.get(
+      `${backendUrl}/api/accounts/get-money-account?moneyAccountId=${selectedMoneyAccount}`,
+      {
+        headers:
+        {
+          Authorization: token ? `Bearer ${token}` : undefined,
+        },
+      }
+    );
+    return response.data
+  }
+
+
+  useEffect(() => {
+
+    const checkField = async () => {
+      let fieldsValid = false;
+      if (assetType === "GOLD") {
+        fieldsValid = goldItems.every((goldData) =>
+          (goldData.goldType !== "" && goldData.goldType !== 0 && goldData.goldType !== null) &&
+          (goldData.price !== "" && goldData.price !== 0 && goldData.price !== null) &&
+          (goldData.quantity !== "" && goldData.quantity !== 0 && goldData.quantity !== null) &&
+          (goldData.buyingDateTime !== "" && goldData.buyingDateTime !== 0 && goldData.buyingDateTime !== null) &&
+          (goldData.exchangeRate !== "" && goldData.exchangeRate !== 0 && goldData.exchangeRate !== null)
+        );
+
+      }
+      else if (assetType === "STOCK") {
+        fieldsValid = stockItems.every((stockData) =>
+          (stockData.price !== 0 && stockData.price !== "" && stockData.price !== null) &&
+          (stockData.quantity !== 0 && stockData.quantity !== "" && stockData.quantity !== null) &&
+          (stockData.stock !== 0 && stockData.stock !== "" && stockData.stock !== null) &&
+          (stockData.buyingDateTime !== 0 && stockData.buyingDateTime !== "" && stockData.buyingDateTime !== null) &&
+          (stockData.exchangeRate !== 0 && stockData.exchangeRate !== "" && stockData.exchangeRate !== null)
+        )
+
+      }
+      return fieldsValid && accountName !== "";
+    }
+
+    const checkAccountIsEmpty = async () => {
+      let fieldsValid = false;
+      if (assetType === "GOLD") {
+        fieldsValid = goldItems.every((goldData) =>
+          (goldData.goldType === "" || goldData.goldType === 0 || goldData.goldType === null) &&
+          (goldData.price === "" || goldData.price === 0 || goldData.price === null) &&
+          (goldData.quantity === "" || goldData.quantity === 0 || goldData.quantity === null)
+        );
+
+      }
+      else if (assetType === "STOCK") {
+        fieldsValid = stockItems.every((stockData) =>
+          (stockData.price === 0 || stockData.price === "" || stockData.price === null) &&
+          (stockData.quantity === 0 || stockData.quantity === "" || stockData.quantity === null) &&
+          (stockData.stock === 0 || stockData.stock === "" || stockData.stock === null)
+        )
+      }
+      return accountName !== "" && fieldsValid;
+    }
+
+    const validate = async () => {
+
+      console.log("İlk hesap mı? : ", isFirstAsset)
+      if (!isFirstAsset) {
+
+        if (await checkAccountIsEmpty()) {
+          setIsButtonDisabled(false);
+          return;
+        }
+
+        let fieldsValid = false;
+        if (assetType === "GOLD" || assetType === "STOCK") {
+          fieldsValid = await checkField();
+          console.log(fieldsValid)
+        }
+
+        if (!fieldsValid) {
+          setIsButtonDisabled(true)
+          return;
+        }
+
+        if (selectedMoneyAccount === null || selectedMoneyAccount === 0) {
+          setIsButtonDisabled(true)
+          return;
+        }
+
+
+        const accountDetail = await getAccountDetailInfo();/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        const pay = accountDetail.currency === "TRY"
+          ? accountDetail.balance
+          : accountDetail.balance * (exchangeRate[accountDetail.currency]?.Buying || 0);
+
+
+        let totalPrice = 0;
+        const rate = accountDetail.currency === "TRY" ? 1 : accountDetail.currency === "USD" ? exchangeRate.USD.Buying : exchangeRate.EUR.Buying;
+        if (assetType === "GOLD") {
+          totalPrice = goldItems.reduce((start, cur) => (cur.price * cur.quantity * rate) + start, 0);
+        }
+        else if (assetType === "STOCK") {
+          totalPrice = stockItems.reduce((start, cur) => (cur.price * cur.quantity * rate) + start, 0);
+        }
+
+        console.log("Bakiye Yetersiz mi? : " + (totalPrice > pay));
+        setIsButtonDisabled((totalPrice > pay));
+        return;
+      }
+
+
+      if (isFirstAsset) {
+        let fieldsValid = await checkField();
+
+        setIsButtonDisabled(!fieldsValid || accountName === "");
+        return;
+
+      }
+    };
+
+    validate();
+  }, [selectedMoneyAccount, goldItems, stockItems, exchangeRate, accountName, assetType]);
+
+
+  useEffect(() => {
+    const getMoneyAccountOfPerson = async () => {
+
+      const exchangeRates2 = await exchangeRates();
+      setExchangeRate(exchangeRates2)
+    }
+
+    getMoneyAccountOfPerson();
+
+  }, [])
+
+
+
 
   const handleAccountTypeChange = (event, newType) => {
     if (newType !== null) {
@@ -134,8 +266,9 @@ const AccountCreatePage = () => {
       setBalance("");
       setCurrency("");
       setAssetType("");
-      setGoldItems([{ id: 1, goldType: "", quantity: "", price: "" }]);
-      setStockItems([{ id: 1, stock: null, quantity: "", price: "" }]);
+      setSelectedMoneyAccount(0)
+      setGoldItems([{ id: 1, goldType: "", quantity: "", price: "", buyingDateTime: dayjs() }]);
+      setStockItems([{ id: 1, stock: null, quantity: "", price: "", buyingDateTime: dayjs() }]);
       setAccountName("");
       setError("");
     }
@@ -153,58 +286,15 @@ const AccountCreatePage = () => {
   const handleAssetTypeChange = (event, newAssetType) => {
     if (newAssetType !== null) {
       setAssetType(newAssetType);
+      setSelectedMoneyAccount(0)
       // Reset investment-specific fields
-      setGoldItems([{ id: 1, goldType: "", quantity: "", price: "" }]);
-      setStockItems([{ id: 1, stock: null, quantity: "", price: "" }]);
+      setGoldItems([{ id: 1, goldType: "", quantity: "", price: "", buyingDateTime: dayjs() }]);
+      setStockItems([{ id: 1, stock: null, quantity: "", price: "", buyingDateTime: dayjs() }]);
       // setAccountName("");
     }
   };
 
-  // Gold item handlers
-  const addGoldItem = () => {
-    const newId = Math.max(...goldItems.map((item) => item.id)) + 1;
-    setGoldItems([
-      ...goldItems,
-      { id: newId, goldType: "", quantity: "", price: "" },
-    ]);
-  };
 
-  const removeGoldItem = (id) => {
-    if (goldItems.length > 1) {
-      setGoldItems(goldItems.filter((item) => item.id !== id));
-    }
-  };
-
-  const updateGoldItem = (id, field, value) => {
-    setGoldItems(
-      goldItems.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
-    );
-  };
-
-  // Stock item handlers
-  const addStockItem = () => {
-    const newId = Math.max(...stockItems.map((item) => item.id)) + 1;
-    setStockItems([
-      ...stockItems,
-      { id: newId, stock: null, quantity: "", price: "" },
-    ]);
-  };
-
-  const removeStockItem = (id) => {
-    if (stockItems.length > 1) {
-      setStockItems(stockItems.filter((item) => item.id !== id));
-    }
-  };
-
-  const updateStockItem = (id, field, value) => {
-    setStockItems(
-      stockItems.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
-    );
-  };
 
   const handleStockSelect = (stock) => {
     if (activeStockItemId) {
@@ -215,10 +305,6 @@ const AccountCreatePage = () => {
     setActiveStockItemId(null);
   };
 
-  const openStockDialog = (itemId) => {
-    setActiveStockItemId(itemId);
-    setStockDialogOpen(true);
-  };
 
   // Generate account name based on selections
   const generateCurrencyAccountName = () => {
@@ -243,25 +329,40 @@ const AccountCreatePage = () => {
     }
   }, [holdingType, selectedBank, currency, accountType]);
 
-  // Calculate total value for gold items
-  const calculateGoldTotal = () => {
-    return goldItems.reduce((total, item) => {
-      if (item.quantity && item.price) {
-        return total + parseFloat(item.quantity) * parseFloat(item.price);
-      }
-      return total;
-    }, 0);
-  };
 
-  // Calculate total value for stock items
-  const calculateStockTotal = () => {
-    return stockItems.reduce((total, item) => {
-      if (item.quantity && item.price) {
-        return total + parseFloat(item.quantity) * parseFloat(item.price);
-      }
-      return total;
-    }, 0);
-  };
+  const [userAssets, setUserAsset] = useState([]);
+  const [isFirstAsset, setIsFirstAsset] = useState(false);
+
+  useEffect(() => {
+    const getUserAssets = async () => {
+      const response = await axios.get(
+        `${backendUrl}/api/asset/my-assets`,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
+          },
+        }
+      )
+      setUserAsset(response.data);
+
+      const isFirstAssetResponse = await axios.get(
+        `${backendUrl}/api/asset/isFirstAsset`,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
+          },
+        }
+      )
+
+      setIsFirstAsset(isFirstAssetResponse.data);
+    }
+    getUserAssets();
+
+  }, [token])
+
+
 
   // Validation checks
   const isCurrencyFormValid = () => {
@@ -291,6 +392,50 @@ const AccountCreatePage = () => {
     return false;
   };
 
+  const getTotalPrice = async (selectedAccount) => {
+
+    let totalPrice;
+    if (assetType === "GOLD") {
+      totalPrice = goldItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
+    }
+    else if (assetType === "STOCK") {
+      totalPrice = stockItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
+    }
+
+    // if (selectedAccount.currency === "EUR") {
+    //   totalPrice = totalPrice / (await exchangeRates()).EUR.Selling
+    //   console.log("Bu bir EURO hesabı olduğu için para birimi düşme işlemi buna göre yapıdlı")
+    // }
+    // else if (selectedAccount.currency === "USD") {
+    //   totalPrice = totalPrice / (await exchangeRates()).USD.Selling
+    //   console.log("Bu bir USD hesabı olduğu için para birimi düşme işlemi buna göre yapıdlı")
+    // }
+    return totalPrice;
+  }
+
+  const checkItemsGoldandStocks = useMemo(() => {
+    let fieldsValid = false;
+    if (assetType === "GOLD") {
+      fieldsValid = goldItems.every((goldData) =>
+        (goldData.goldType === "" || goldData.goldType === 0) &&
+        (goldData.price === "" || goldData.price === 0) &&
+        (goldData.quantity === "" || goldData.quantity === 0)
+      );
+
+    }
+    else if (assetType === "STOCK") {
+      fieldsValid = stockItems.every((stockData) =>
+        (stockData.price === 0 || stockData.price === "" || stockData.price === null) &&
+        (stockData.quantity === 0 || stockData.quantity === "" || stockData.quantity === null) &&
+        (stockData.stock === 0 || stockData.stock === "" || stockData.stock === null)
+      )
+    }
+
+    return fieldsValid;
+
+  }, [stockItems, goldItems])
+
+
   // Add account
   const handleAddAccount = async () => {
     if (accountType === "CURRENCY" && !isCurrencyFormValid()) {
@@ -298,25 +443,34 @@ const AccountCreatePage = () => {
       return;
     }
 
-    if (accountType === "INVESTMENT" && !isInvestmentFormValid()) {
-      setError("Lütfen tüm alanları doldurun!");
-      return;
-    }
+    // if (accountType === "INVESTMENT" && !isInvestmentFormValid()) {
+    //   setError("Lütfen tüm alanları doldurun!");
+    //   return;
+    // }
 
     try {
       if (accountType === "CURRENCY") {
         const finalAccountName = accountName || generateCurrencyAccountName();
-        const now = new Date();
-        const updateDate = new Date(
-          now.getTime() + 3 * 60 * 60 * 1000
-        ).toISOString();
 
-        await axios.post(
-          `${backendUrl}/api/accounts/create-account`,
+        const check = await axios.get(
+          `${backendUrl}/api/accounts/isThereThisAccountNameBefore?accountName=${accountName}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (check.data) {
+          setError("Bu hesap adı mevcut. Lütfen farklı bir hesap adı giriniz.")
+          return;
+        }
+
+        const response = await axios.post(
+          `${backendUrl}/api/accounts/create-money-account`,
           {
             userId: user.id,
-            updateDate,
-            accountType,
             accountName: finalAccountName,
             balance: parseFloat(balance),
             currency,
@@ -329,28 +483,257 @@ const AccountCreatePage = () => {
             },
           }
         );
+
+        const transferPayload = {
+          type: "incoming",
+          moneyAccountId: response.data.id,
+          inputPreviousBalance: 0,
+          inputNextBalance: Number(balance),
+          exchangeRate: currency === "TRY" ? 1 : currency === "USD" ? (await exchangeRates()).USD.Selling : (await exchangeRates()).EUR.Selling,
+          description: "Hesap yeni açıldığı için başlangıç bakiyesi",
+          category: "Başlangıç Bakiyesi",
+          transactionDateTime: toLocalISOTime(new Date()),
+          amount: Number(balance),
+          currency: currency
+        };
+
+
+        try {
+          await axios.post(
+            `${backendUrl}/api/transfers/create`,
+            transferPayload,
+            {
+              headers: {
+                Authorization: token ? `Bearer ${token}` : undefined,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+        } catch (error) {
+          console.error("Transfer hatası:", error);
+          setError("Bir hata oluştu, lütfen tekrar deneyin.");
+        }
+
+        setOpenSnackbar(true);
+        setTimeout(() => {
+          navigate("/accounts/my");
+        }, 1000);
+        setAccountName("");
+
       } else if (accountType === "INVESTMENT") {
+
+        console.log("User Assets Length: " + isFirstAsset);
+
+        const check = await axios.get(
+          `${backendUrl}/api/asset/isThereThisAssetNameBefore?assetName=${accountName}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (check.data) {
+          setError("Bu hesap adı mevcut. Lütfen farklı bir hesap adı giriniz.")
+          return;
+        }
+
+        if (!isFirstAsset && !checkItemsGoldandStocks) {
+          const selectedAccount = await getAccountDetailInfo();
+          const rates = await exchangeRates();
+          const rate = selectedAccount.currency === "TRY" ? 1 :
+            selectedAccount.currency === "USD" ? rates.USD.Selling : rates.EUR.Selling;
+
+          const transferPayloads = [];
+
+          let currentBalance = selectedAccount.balance;
+
+          if (assetType === "GOLD") {
+            for (const item of goldItems) {
+              const itemTotal = parseFloat(item.quantity) * parseFloat(item.price);
+              // const itemValueInAccountCurrency = itemTotal / rate;
+
+              const previousBalance = currentBalance;
+              currentBalance -= itemTotal;
+
+
+              transferPayloads.push({
+                type: "outgoing",
+                moneyAccountId: selectedAccount.id,
+                outputPreviousBalance: previousBalance,
+                outputNextBalance: currentBalance,
+                exchangeRate: item.exchangeRate,
+                description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
+                transactionDateTime: toLocalISOTime(item.buyingDateTime),
+                category: "Satın Alım",
+                amount: itemTotal,//itemValueInAccountCurrency,
+                currency: selectedAccount.currency
+              })
+            }
+            console.log("Çıkış yapılacak transfer payloadları:", transferPayloads);
+          }
+          else {
+            for (const item of stockItems) {
+              const itemTotal = parseFloat(item.quantity) * parseFloat(item.price);
+              // const itemValueInAccountCurrency = itemTotal / rate;
+              const previousBalance = currentBalance;
+              currentBalance -= itemTotal;
+              transferPayloads.push({
+                type: "outgoing",
+                moneyAccountId: selectedAccount.id,
+                outputPreviousBalance: previousBalance,
+                outputNextBalance: currentBalance,
+                exchangeRate: item.exchangeRate,
+                description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
+                transactionDateTime: toLocalISOTime(item.buyingDateTime),
+                category: "Satın Alım",
+                amount: itemTotal,//itemValueInAccountCurrency,
+                currency: selectedAccount.currency,
+              })
+
+
+            }
+
+          };
+
+          console.log("Transfer payloadları:", transferPayloads);
+
+
+          // const transferPayload = {
+          //   type: "outgoing",
+          //   moneyAccountId: selectedAccount.id,
+          //   outputPreviousBalance: selectedAccount.balance,
+          //   outputNextBalance: selectedAccount.balance - await getTotalPrice(selectedAccount),
+          //   exchangeRate: selectedAccount.currency === "TRY" ? 1 : selectedAccount.currency === "USD" ? (await exchangeRates()).USD.Selling : (await exchangeRates()).EUR.Selling,
+          //   description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
+          //   transactionDateTime: new Date(selectedTransfer.date).toISOString().slice(0, 19),
+          //   category: "Satın Alım",
+          //   amount: await getTotalPrice(selectedAccount),
+          //   currency: selectedAccount.currency
+          // };
+
+          const updatedAccount = {
+            ...selectedAccount,
+            balance: selectedAccount.balance - await getTotalPrice(selectedAccount),
+          };
+
+          try {
+
+            await axios.put(
+              `${backendUrl}/api/asset/update-money-account?updatedAccount=false&exchangeRate=${CURRENCIES.find(c => c.value === selectedAccount.currency)?.exchangeRates}`,
+              updatedAccount,
+              {
+                headers: {
+                  Authorization: token ? `Bearer ${token}` : undefined,
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+
+            for (const transferPayload of transferPayloads) {
+              await axios.post(
+                `${backendUrl}/api/transfers/create`,
+                transferPayload,
+                {
+                  headers: {
+                    Authorization: token ? `Bearer ${token}` : undefined,
+                    "Content-Type": "application/json",
+                  },
+                }
+              );
+            }
+
+          }
+          catch (err) {
+            console.error("Transfer hatası:", err);
+            setError("Bir hata oluştu, lütfen tekrar deneyin.");
+          }
+        }
+
+        if (!isFirstAsset && checkItemsGoldandStocks) {
+          const response = await axios.post(`${backendUrl}/api/asset/create-asset`,
+            {
+              assetName: accountName,
+              accountType: accountType,
+              assetType: assetType,
+              holdingType: accountType === "INVESTMENT" ? null : holdingType,
+            },
+            {
+              headers: {
+                Authorization: token ? `Bearer ${token}` : undefined,
+                "Content-Type": "application/json",
+              }
+            }
+          )
+
+          await axios.post(`${backendUrl}/api/asset/create-position`, {
+            assetId: response.data,
+            costBasis: 0,
+            currentValue: 0,
+            profitLoss: 0
+          }, {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+            }
+          })
+
+
+          setOpenSnackbar(true);
+          setTimeout(() => {
+            navigate("/account");
+          }, 1000);
+          setAccountName("");
+          return;
+        }
+
         // Create single investment account with multiple holdings
         const holdings = assetType === "GOLD"
           ? goldItems.map((item) => {
-              const goldTypeInfo = GOLD_TYPES.find(
-                (g) => g.value === item.goldType
-              );
-              return {
-                assetSymbol: item.goldType,
-                assetName: goldTypeInfo?.label || item.goldType,
-                quantity: parseFloat(item.quantity),
-                purchasePrice: parseFloat(item.price),
-                currentPrice: parseFloat(item.price),
-              };
-            })
-          : stockItems.map((item) => ({
-              assetSymbol: item.stock.symbol,
-              assetName: item.stock.name,
+            const goldTypeInfo = GOLD_TYPES.find(
+              (g) => g.value === item.goldType
+            );
+            return {
+              assetSymbol: item.goldType,
+              assetName: goldTypeInfo?.label || item.goldType,
               quantity: parseFloat(item.quantity),
               purchasePrice: parseFloat(item.price),
               currentPrice: parseFloat(item.price),
-            }));
+            };
+          })
+          : stockItems.map((item) => ({
+            assetSymbol: item.stock.symbol,
+            assetName: item.stock.name,
+            quantity: parseFloat(item.quantity),
+            purchasePrice: parseFloat(item.price),
+            currentPrice: parseFloat(item.price),
+          }));
+
+
+
+        if (!isFirstAsset) {
+          const selectedAccount = await getAccountDetailInfo();
+          const updatedAccount = {
+            ...selectedAccount,
+          };
+
+          console.log("Selected Account:", selectedAccount);
+          console.log("Updated Account:", updatedAccount);
+
+
+          await axios.put(
+            `${backendUrl}/api/asset/update-money-account?updatedAccount=false&exchangeRate=${CURRENCIES.find(c => c.value === selectedAccount.currency)?.exchangeRates}`,
+            updatedAccount,
+            {
+              headers: {
+                Authorization: token ? `Bearer ${token}` : undefined,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+        }
 
         await axios.post(
           `${backendUrl}/api/accounts/create-investment`,
@@ -367,24 +750,102 @@ const AccountCreatePage = () => {
             },
           }
         );
+
+        const response = await axios.post(`${backendUrl}/api/asset/create-asset`,
+          {
+            assetName: accountName,
+            accountType: accountType,
+            assetType: assetType,
+            holdingType: accountType === "INVESTMENT" ? null : holdingType,
+          },
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+            }
+          }
+        )
+
+        let rate;
+        let selectedAccount;
+        if (selectedMoneyAccount === 0){
+          rate = 1;
+        }else{
+          selectedAccount = await getAccountDetailInfo();
+          const rates = await exchangeRates();
+          rate = selectedAccount.currency === "TRY" ? 1 :
+            selectedAccount.currency === "USD" ? rates.USD.Selling : rates.EUR.Selling;
+        }
+
+        const holdings2 = assetType === "GOLD"
+          ? goldItems.map((item) => {
+            const goldTypeInfo = GOLD_TYPES.find(
+              (g) => g.value === item.goldType
+            );
+            return {
+              assetId: response.data,
+              transactionType: "CREATE",
+              assetSymbol: item.goldType,
+              unitPrice: parseFloat(item.price),
+              quantity: parseFloat(item.quantity),
+              assetName: goldTypeInfo?.label || item.goldType,
+              currentValue: parseFloat(goldTypeInfo.Buying / rate),
+              buyingDateTime: item.buyingDateTime.toISOString(),
+              exchangeRate: item.exchangeRate,
+              currency: selectedMoneyAccount === 0 ? "TRY" : selectedAccount.currency
+
+            };
+          })
+          : stockItems.map((item) => ({
+            assetId: response.data,
+            transactionType: "CREATE",
+            assetSymbol: item.stock.symbol,
+            quantity: parseFloat(item.quantity),
+            unitPrice: parseFloat(item.price),
+            assetName: item.stock.name,
+            currentValue: parseFloat(item.stock.price / rate),
+            buyingDateTime: item.buyingDateTime.toISOString(),
+            exchangeRate: item.exchangeRate,
+            currency: selectedMoneyAccount === 0 ? "TRY" : selectedAccount.currency
+          }));
+
+
+        await axios.post(`${backendUrl}/api/asset/create-transaction`, holdings2,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              "Content-Type": "application/json",
+            }
+          }
+        )
+
+        
+        await axios.post(`${backendUrl}/api/asset/create-position`, {
+          assetId: response.data,
+          costBasis: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.unitPrice * cur.exchangeRate), 0),
+          currentValue: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.currentValue * (CURRENCIES.find(c => c.value === cur.currency)?.exchangeRates || 1)), 0),
+          profitLoss: holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.currentValue * (CURRENCIES.find(c => c.value === cur.currency)?.exchangeRates || 1)), 0) - holdings2.reduce((sum, cur) => sum + (cur.quantity * cur.unitPrice * cur.exchangeRate), 0)
+        }, {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "application/json",
+          }
+        })
+
+        setOpenSnackbar(true);
+        setTimeout(() => {
+          navigate("/investment/stock_and_gold");
+        }, 1000);
+        setAccountName("");
       }
 
-      setOpenSnackbar(true);
-      setTimeout(() => {
-        navigate("/account");
-      }, 1000);
-      setAccountName("");
+
     } catch (error) {
       console.error("Hata:", error);
       setError("Bir hata oluştu, tekrar deneyiniz.");
     }
   };
 
-  // Check if we can add more gold types
-  const canAddMoreGold = goldItems.length < GOLD_TYPES.length;
-
-  // Check if we can add more stocks
-  const canAddMoreStocks = stockItems.length < STOCKS.length;
 
   return (
     <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
@@ -443,7 +904,7 @@ const AccountCreatePage = () => {
           <Divider sx={{ my: 2 }} />
 
           {/* CURRENCY ACCOUNT FORM */}
-          <Fade in={accountType === "CURRENCY"} unmountOnExit>
+          {accountType === "CURRENCY" ? <Fade in={accountType === "CURRENCY"} unmountOnExit>
             <Box>
               {/* Holding Type Selection */}
               <Box sx={{ mb: 3 }}>
@@ -568,498 +1029,79 @@ const AccountCreatePage = () => {
                 }}
               />
             </Box>
+
           </Fade>
 
-          {/* INVESTMENT ACCOUNT FORM */}
-          <Fade in={accountType === "INVESTMENT"} unmountOnExit>
-            <Box>
-              {/* Account Name - at the top for investment accounts - Hesap Adı*/}
-              <TextField
-                label="Hesap Adı"
-                fullWidth
-                value={accountName}
-                onChange={(e) => setAccountName(e.target.value)}
-                margin="normal"
-                placeholder="Örn: Altın Yatırımlarım veya Hisse Portföyüm"
-                sx={{
-                  mb: 3,
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 2,
-                  },
-                }}
-              />
-
-              {/* Asset Type Selection - Yatırım Türü??*/}
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 500 }}>
-                  Yatırım Türü
-                </Typography>
-                <ToggleButtonGroup
-                  value={assetType}
-                  exclusive
-                  onChange={handleAssetTypeChange}
-                  fullWidth
-                  sx={{
-                    "& .MuiToggleButton-root": {
-                      py: 1.5,
-                      borderRadius: 2,
-                      "&.Mui-selected": {
-                        bgcolor: "#d4af37",
-                        color: "white",
-                        "&:hover": {
-                          bgcolor: "#c9a227",
-                        },
+            : accountType === "INVESTMENT" ?
+              <Fade in={true} unmountOnExit>
+                <Box>
+                  {/* Account Name - at the top for investment accounts - Hesap Adı*/}
+                  <TextField
+                    label="Hesap Adı"
+                    fullWidth
+                    value={accountName}
+                    onChange={(e) => setAccountName(e.target.value)}
+                    margin="normal"
+                    placeholder="Örn: Altın Yatırımlarım veya Hisse Portföyüm"
+                    sx={{
+                      mb: 3,
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 2,
                       },
-                    },
-                  }}
-                >
-                  <ToggleButton value="GOLD" sx={{ gap: 1 }}>
-                    <ViewInArIcon />
-                    Altın
-                  </ToggleButton>
-                  <ToggleButton value="STOCK" sx={{ gap: 1 }}>
-                    <ShowChartIcon />
-                    Hisse Senedi
-                  </ToggleButton>
-                </ToggleButtonGroup>
-              </Box>
+                    }}
+                  />
 
-              {/* GOLD FORM */}
-              <Fade in={assetType === "GOLD"} unmountOnExit>
-                <Box>
-                  {/* Gold Items */}
-                  {goldItems.map((item, index) => (
-                    <Paper
-                      key={item.id}
-                      elevation={1}
-                      sx={{
-                        p: 2,
-                        mb: 2,
-                        borderRadius: 2,
-                        border: "1px solid",
-                        borderColor: "divider",
-                        position: "relative",
-                      }}
-                    >
-                      {goldItems.length > 1 && (
-                        <IconButton
-                          size="small"
-                          onClick={() => removeGoldItem(item.id)}
-                          sx={{
-                            position: "absolute",
-                            top: 8,
-                            right: 8,
-                            color: "error.main",
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      )}
-
-                      <Typography
-                        variant="subtitle2"
-                        sx={{ mb: 1.5, color: "text.secondary" }}
-                      >
-                        Altın #{index + 1}
-                      </Typography>
-
-                      {/* Gold Type Selection */}
-                      <FormControl fullWidth sx={{ mb: 2 }}>
-                        <InputLabel id={`gold-type-label-${item.id}`}>
-                          Altın Türü
-                        </InputLabel>
-                        <Select
-                          labelId={`gold-type-label-${item.id}`}
-                          label="Altın Türü"
-                          value={item.goldType}
-                          onChange={(e) =>
-                            updateGoldItem(item.id, "goldType", e.target.value)
-                          }
-                          sx={{ borderRadius: 2 }}
-                        >
-                          {getAvailableGoldTypes(item.id).map((gold) => (
-                            <MenuItem key={gold.value} value={gold.value}>
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 1,
-                                }}
-                              >
-                                <ViewInArIcon
-                                  sx={{ fontSize: 20, color: "#d4af37" }}
-                                />
-                                {gold.label}
-                              </Box>
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-
-                      <Box sx={{ display: "flex", gap: 2 }}>
-                        {/* Gold Quantity */}
-                        <TextField
-                          label="Miktar"
-                          type="number"
-                          fullWidth
-                          value={item.quantity}
-                          onChange={(e) =>
-                            updateGoldItem(item.id, "quantity", e.target.value)
-                          }
-                          placeholder="0"
-                          InputProps={{
-                            endAdornment: item.goldType && (
-                              <InputAdornment position="end">
-                                {GOLD_TYPES.find(
-                                  (g) => g.value === item.goldType
-                                )?.symbol || "adet"}
-                              </InputAdornment>
-                            ),
-                          }}
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              borderRadius: 2,
-                            },
-                          }}
-                        />
-
-                        {/* Gold Price */}
-                        <TextField
-                          label="Birim Fiyat"
-                          type="number"
-                          fullWidth
-                          value={item.price}
-                          onChange={(e) =>
-                            updateGoldItem(item.id, "price", e.target.value)
-                          }
-                          placeholder="0.00"
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">₺</InputAdornment>
-                            ),
-                          }}
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              borderRadius: 2,
-                            },
-                          }}
-                        />
-                      </Box>
-
-                      {/* Item Total */}
-                      {item.quantity && item.price && (
-                        <Box
-                          sx={{
-                            mt: 1.5,
-                            p: 1,
-                            bgcolor: isDarkMode ? "rgba(212, 175, 55, 0.15)" : "#fef9e7",
-                            borderRadius: 1,
-                            display: "flex",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <Typography variant="body2" sx={{ color: isDarkMode ? "rgba(255, 255, 255, 0.7)" : "text.secondary" }}>
-                            Değer:
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{ fontWeight: 600, color: "#d4af37" }}
-                          >
-                            ₺
-                            {(
-                              parseFloat(item.quantity) * parseFloat(item.price)
-                            ).toLocaleString("tr-TR", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Paper>
-                  ))}
-
-                  {/* Add Gold Button */}
-                  {canAddMoreGold && (
-                    <Button
+                  {/* Asset Type Selection - Yatırım Türü??*/}
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 500 }}>
+                      Yatırım Türü
+                    </Typography>
+                    <ToggleButtonGroup
+                      value={assetType}
+                      exclusive
+                      onChange={handleAssetTypeChange}
                       fullWidth
-                      variant="outlined"
-                      startIcon={<AddIcon />}
-                      onClick={addGoldItem}
                       sx={{
-                        mb: 2,
-                        py: 1.5,
-                        borderRadius: 2,
-                        borderStyle: "dashed",
-                        borderColor: "#d4af37",
-                        color: "#d4af37",
-                        "&:hover": {
-                          borderColor: "#c9a227",
-                          bgcolor: "rgba(212, 175, 55, 0.05)",
-                        },
-                      }}
-                    >
-                      Altın Ekle
-                    </Button>
-                  )}
-
-                  {/* Total Value Preview */}
-                  {calculateGoldTotal() > 0 && (
-                    <Card
-                      sx={{
-                        bgcolor: isDarkMode ? "rgba(212, 175, 55, 0.15)" : "#fef9e7",
-                        border: "2px solid #d4af37",
-                        borderRadius: 2,
-                        mb: 2,
-                      }}
-                    >
-                      <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <Typography variant="body1" sx={{ fontWeight: 500, color: isDarkMode ? "#fff" : "inherit" }}>
-                            Toplam Hesap Değeri:
-                          </Typography>
-                          <Typography
-                            variant="h6"
-                            sx={{ fontWeight: 600, color: "#d4af37" }}
-                          >
-                            ₺
-                            {calculateGoldTotal().toLocaleString("tr-TR", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </Typography>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  )}
-                </Box>
-              </Fade>
-
-              {/* STOCK FORM */}
-              <Fade in={assetType === "STOCK"} unmountOnExit>
-                <Box>
-                  {/* Stock Items */}
-                  {stockItems.map((item, index) => (
-                    <Paper
-                      key={item.id}
-                      elevation={1}
-                      sx={{
-                        p: 2,
-                        mb: 2,
-                        borderRadius: 2,
-                        border: "1px solid",
-                        borderColor: "divider",
-                        position: "relative",
-                      }}
-                    >
-                      {stockItems.length > 1 && (
-                        <IconButton
-                          size="small"
-                          onClick={() => removeStockItem(item.id)}
-                          sx={{
-                            position: "absolute",
-                            top: 8,
-                            right: 8,
-                            color: "error.main",
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      )}
-
-                      <Typography
-                        variant="subtitle2"
-                        sx={{ mb: 1.5, color: "text.secondary" }}
-                      >
-                        Hisse #{index + 1}
-                      </Typography>
-
-                      {/* Stock Selection Button */}
-                      <Button
-                        fullWidth
-                        variant="outlined"
-                        onClick={() => openStockDialog(item.id)}
-                        startIcon={<SearchIcon />}
-                        sx={{
-                          mb: 2,
+                        "& .MuiToggleButton-root": {
                           py: 1.5,
                           borderRadius: 2,
-                          justifyContent: "flex-start",
-                          borderColor: item.stock ? "primary.main" : "grey.300",
-                          bgcolor: item.stock ? "primary.50" : "transparent",
-                        }}
-                      >
-                        {item.stock ? (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <Chip
-                              label={item.stock.symbol}
-                              size="small"
-                              color="primary"
-                            />
-                            <Typography variant="body2" noWrap>
-                              {item.stock.name}
-                            </Typography>
-                          </Box>
-                        ) : (
-                          "Hisse senedi ara..."
-                        )}
-                      </Button>
-
-                      <Box sx={{ display: "flex", gap: 2 }}>
-                        {/* Stock Price */}
-                        <TextField
-                          label="Hisse Fiyatı"
-                          type="number"
-                          fullWidth
-                          value={item.price}
-                          onChange={(e) =>
-                            updateStockItem(item.id, "price", e.target.value)
-                          }
-                          placeholder="0.00"
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">₺</InputAdornment>
-                            ),
-                          }}
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              borderRadius: 2,
+                          "&.Mui-selected": {
+                            bgcolor: "#d4af37",
+                            color: "white",
+                            "&:hover": {
+                              bgcolor: "#c9a227",
                             },
-                          }}
-                        />
-
-                        {/* Stock Quantity */}
-                        <TextField
-                          label="Miktar"
-                          type="number"
-                          fullWidth
-                          value={item.quantity}
-                          onChange={(e) =>
-                            updateStockItem(item.id, "quantity", e.target.value)
-                          }
-                          placeholder="0"
-                          InputProps={{
-                            endAdornment: (
-                              <InputAdornment position="end">adet</InputAdornment>
-                            ),
-                          }}
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              borderRadius: 2,
-                            },
-                          }}
-                        />
-                      </Box>
-
-                      {/* Item Total */}
-                      {item.quantity && item.price && (
-                        <Box
-                          sx={{
-                            mt: 1.5,
-                            p: 1,
-                            bgcolor: isDarkMode ? "rgba(76, 175, 80, 0.15)" : "#e8f5e9",
-                            borderRadius: 1,
-                            display: "flex",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <Typography variant="body2" sx={{ color: isDarkMode ? "rgba(255, 255, 255, 0.7)" : "text.secondary" }}>
-                            Değer:
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{ fontWeight: 600, color: "#4caf50" }}
-                          >
-                            ₺
-                            {(
-                              parseFloat(item.quantity) * parseFloat(item.price)
-                            ).toLocaleString("tr-TR", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Paper>
-                  ))}
-
-                  {/* Add Stock Button */}
-                  {canAddMoreStocks && (
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      startIcon={<AddIcon />}
-                      onClick={addStockItem}
-                      sx={{
-                        mb: 2,
-                        py: 1.5,
-                        borderRadius: 2,
-                        borderStyle: "dashed",
-                        borderColor: "#4caf50",
-                        color: "#4caf50",
-                        "&:hover": {
-                          borderColor: "#388e3c",
-                          bgcolor: "rgba(76, 175, 80, 0.05)",
+                          },
                         },
                       }}
                     >
-                      Hisse Ekle
-                    </Button>
-                  )}
+                      <ToggleButton value="GOLD" sx={{ gap: 1 }}>
+                        <ViewInArIcon />
+                        Altın
+                      </ToggleButton>
+                      <ToggleButton value="STOCK" sx={{ gap: 1 }}>
+                        <ShowChartIcon />
+                        Hisse Senedi
+                      </ToggleButton>
+                    </ToggleButtonGroup>
 
-                  {/* Total Value Preview */}
-                  {calculateStockTotal() > 0 && (
-                    <Card
-                      sx={{
-                        bgcolor: isDarkMode ? "rgba(76, 175, 80, 0.15)" : "#e8f5e9",
-                        border: "2px solid #4caf50",
-                        borderRadius: 2,
-                        mb: 2,
-                      }}
-                    >
-                      <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <Typography variant="body1" sx={{ fontWeight: 500, color: isDarkMode ? "#fff" : "inherit" }}>
-                            Toplam Hesap Değeri:
-                          </Typography>
-                          <Typography
-                            variant="h6"
-                            sx={{ fontWeight: 600, color: "#4caf50" }}
-                          >
-                            ₺
-                            {calculateStockTotal().toLocaleString("tr-TR", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </Typography>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  )}
+                    {assetType === "GOLD" ?
+                      <BuyInvestmentGold setGoldItems={setGoldItems} goldItems={goldItems} setSelectedMoneyAccount={setSelectedMoneyAccount} selectedMoneyAccount={selectedMoneyAccount}></BuyInvestmentGold> : assetType === "STOCK" ?
+                        <BuyInvestmentStock setStockItems={setStockItems} stockItems={stockItems} setSelectedMoneyAccount={setSelectedMoneyAccount} selectedMoneyAccount={selectedMoneyAccount}></BuyInvestmentStock> :
+                        <Box></Box>}
+
+
+                  </Box>
                 </Box>
               </Fade>
-            </Box>
-          </Fade>
+              : <Box></Box>
+          }
 
           {error && (
             <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>
               {error}
             </Alert>
           )}
-
           {accountType && (
             <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
               <Button
@@ -1077,7 +1119,7 @@ const AccountCreatePage = () => {
                 disabled={
                   accountType === "CURRENCY"
                     ? !isCurrencyFormValid()
-                    : !isInvestmentFormValid()
+                    : isButtonDisabled
                 }
                 sx={{
                   borderRadius: 2,
@@ -1090,7 +1132,7 @@ const AccountCreatePage = () => {
                     accountType !== "INVESTMENT" ? "white" : "black"
                 }}
               >
-                Kaydet
+                Satın Al
               </Button>
             </Box>
           )}

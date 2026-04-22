@@ -30,12 +30,10 @@ import { useUser } from "../config/UserStore";
 import { useTheme } from "../config/ThemeContext";
 import axios from "axios";
 import { backendUrl } from "../utils/envVariables";
+import { CURRENCIES, exchangeRates } from "../data/currencies";
+import { toLocalISOTime } from "../utils/localIsoTime";
 
-const CURRENCIES = [
-  { value: "TRY", label: "₺ Türk Lirası", symbol: "₺" },
-  { value: "USD", label: "$ Amerikan Doları", symbol: "$" },
-  { value: "EUR", label: "€ Euro", symbol: "€" },
-];
+
 
 const PAYMENT_FREQUENCIES = [
   { value: "WEEKLY", label: "Haftalık" },
@@ -90,7 +88,7 @@ const DebtCreatePage = () => {
     const fetchAccounts = async () => {
       try {
         const response = await axios.get(
-          `${backendUrl}/api/accounts/currency/${user.id}`,
+          `${backendUrl}/api/accounts/get-money-accounts?userId=${user.id}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
@@ -103,6 +101,8 @@ const DebtCreatePage = () => {
       }
     };
     fetchAccounts();
+    exchangeRates();
+
   }, [user.id, token]);
 
   // Auto-calculate installment amount when total amount or installments change
@@ -174,7 +174,7 @@ const DebtCreatePage = () => {
     if (!debtType || !paymentType || !debtAmount) {
       return false;
     }
-    
+
     // For Kredi (ACCOUNT_DEBT), account is required, toWhom is optional
     if (debtType === "ACCOUNT_DEBT") {
       if (!selectedAccount) return false;
@@ -190,7 +190,7 @@ const DebtCreatePage = () => {
         return false;
       }
     }
-    
+
     if (paymentType === "SINGLE_DATE" && !dueDate) {
       return false;
     }
@@ -206,11 +206,15 @@ const DebtCreatePage = () => {
       return;
     }
 
+
     try {
       // For Kredi, if toWhom is empty, use account name + " Kredi"
       const finalToWhom = debtType === "ACCOUNT_DEBT" && !toWhom.trim()
         ? `${selectedAccount.accountName} Kredi`
         : toWhom;
+
+
+      console.log("Final To Whom:", finalToWhom);
 
       // Calculate description with exchange rate info if applicable
       let finalDescription = description;
@@ -219,6 +223,8 @@ const DebtCreatePage = () => {
         const rateInfo = `[Kur: 1 ${currentCurrency} = ${parseFloat(exchangeRate).toLocaleString("tr-TR")} TRY, TRY Karşılığı: ₺${tryValue.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}]`;
         finalDescription = description ? `${description} ${rateInfo}` : rateInfo;
       }
+
+      console.log("Final Description:", finalDescription);
 
       const newDebt = {
         debtAmount: parseFloat(debtAmount),
@@ -229,12 +235,15 @@ const DebtCreatePage = () => {
         status: "ACTIVE",
         debtType,
         paymentType,
-        user: { id: user.id },
+        userId: user.id,
       };
+
+
+
 
       // Set account for ACCOUNT_DEBT
       if (debtType === "ACCOUNT_DEBT" && selectedAccount) {
-        newDebt.account = { id: selectedAccount.id };
+        newDebt.moneyAccountId = selectedAccount.id;
       }
 
       // Set payment-specific fields
@@ -266,6 +275,8 @@ const DebtCreatePage = () => {
         newDebt.dueDate = endDate.toISOString().split("T")[0];
       }
 
+      console.log("New Debt:", newDebt);
+
       // Create debt
       await axios.post(
         `${backendUrl}/api/debts/create`,
@@ -278,18 +289,21 @@ const DebtCreatePage = () => {
         }
       );
 
+
       // If ACCOUNT_DEBT, increase account balance
       if (debtType === "ACCOUNT_DEBT" && selectedAccount) {
-        const createDate = new Date().toISOString();
+        const previousBalance = selectedAccount.balance;
         const updatedBalance = selectedAccount.balance + parseFloat(debtAmount);
 
         // Update account balance
+
+        const exchangeRate = CURRENCIES.find(c => c.value === selectedAccount.currency)?.exchangeRates;
+
         await axios.put(
-          `${backendUrl}/api/accounts/update/${selectedAccount.id}`,
+          `${backendUrl}/api/asset/update-money-account?updatedAccount=false&exchangeRate=${exchangeRate}`,
           {
             ...selectedAccount,
             balance: updatedBalance,
-            updateDate: createDate,
           },
           {
             headers: {
@@ -299,21 +313,21 @@ const DebtCreatePage = () => {
           }
         );
 
-        // Create transfer record
+
         await axios.post(
           `${backendUrl}/api/transfers/create`,
           {
             amount: parseFloat(debtAmount),
+            type: "incoming",
+            moneyAccountId: selectedAccount.id,
             category: "Kredi",
             details: `${finalToWhom}`,
-            date: createDate,
-            createDate,
-            user: { id: parseInt(user.id) },
-            account: { id: selectedAccount.id },
-            type: "incoming",
-            person: finalToWhom,
-            inputPreviousBalance: selectedAccount.balance,
+            exchangeRate: exchangeRate,
+            inputPreviousBalance: previousBalance,
             inputNextBalance: updatedBalance,
+            description: "Borç Ekleme Sonucu Hesaba Para Girişi Olmuştur",
+            currency: selectedAccount.currency,
+            transactionDateTime: toLocalISOTime(new Date())
           },
           {
             headers: {
@@ -322,6 +336,33 @@ const DebtCreatePage = () => {
             },
           }
         );
+
+
+
+
+
+
+
+
+        //   // Create transfer record
+        //   await axios.post(
+        //     `${backendUrl}/api/transfers/create`,
+        //     {
+        //       amount: parseFloat(debtAmount),
+        //       category: "Kredi",
+        //       details: `${finalToWhom}`,
+        //       type: "incoming",
+        //       person: finalToWhom,
+        //       inputPreviousBalance: selectedAccount.balance,
+        //       inputNextBalance: updatedBalance,
+        //     },
+        //     {
+        //       headers: {
+        //         Authorization: token ? `Bearer ${token}` : undefined,
+        //         "Content-Type": "application/json",
+        //       },
+        //     }
+        //   );
       }
 
       setOpenSnackbar(true);
@@ -332,6 +373,19 @@ const DebtCreatePage = () => {
       setError("Bir hata oluştu, tekrar deneyiniz.");
     }
   };
+
+
+  useEffect(() => {
+    if (selectedAccount)
+      setExchangeRate(CURRENCIES.find(currency => currency.value === selectedAccount.currency)?.exchangeRates || 1);
+  }, [selectedAccount]);
+
+
+  useEffect(() => {
+    if (exchangeRate) {
+      console.log("Exchange Rate:", exchangeRate);
+    }
+  }, [exchangeRate]);
 
   return (
     <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
@@ -381,8 +435,8 @@ const DebtCreatePage = () => {
               {debtType === "ACCOUNT_DEBT"
                 ? "Kredi tutarı seçilen banka hesabına eklenecek"
                 : debtType === "CASH_DEBT"
-                ? "Borç herhangi bir hesaba eklenmeyecek (nakit olarak alındı)"
-                : ""}
+                  ? "Borç herhangi bir hesaba eklenmeyecek (nakit olarak alındı)"
+                  : ""}
             </Typography>
           </Box>
 
@@ -409,7 +463,7 @@ const DebtCreatePage = () => {
                   Kredi tutarı bu hesaba eklenecek ve kredi hesabın dövizinde olacak
                 </Typography>
               </FormControl>
-              
+
               {selectedAccount && (
                 <Alert severity="info" sx={{ mt: 1, borderRadius: 2 }}>
                   Kredi para birimi: <strong>{selectedAccount.currency}</strong>
@@ -422,8 +476,8 @@ const DebtCreatePage = () => {
                   <TextField
                     label={`Döviz Kuru (1 ${selectedAccount.currency} = ? TRY)`}
                     type="number"
-                    value={exchangeRate}
-                    onChange={(e) => setExchangeRate(e.target.value)}
+                    value={exchangeRate === null ? 0 : exchangeRate}
+                    onChange={(e) => setExchangeRate(parseFloat(e.target.value))}
                     fullWidth
                     margin="normal"
                     required
@@ -431,11 +485,14 @@ const DebtCreatePage = () => {
                     InputProps={{
                       endAdornment: <InputAdornment position="end">TRY</InputAdornment>,
                     }}
+                    slotProps={{
+                      min: 0
+                    }}
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                   />
 
                   {/* TRY Equivalent Display for Kredi */}
-                  {exchangeRate && debtAmount && (
+                  {/* {exchangeRate && debtAmount && (  
                     <Card sx={{ bgcolor: isDarkMode ? "rgba(33, 150, 243, 0.15)" : "#e3f2fd", border: "1px solid #2196F3", borderRadius: 2, mt: 2 }}>
                       <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
                         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -451,7 +508,7 @@ const DebtCreatePage = () => {
                         </Typography>
                       </CardContent>
                     </Card>
-                  )}
+                  )} */}
                 </>
               )}
             </Box>
@@ -498,8 +555,8 @@ const DebtCreatePage = () => {
               {/* Borç Açıklaması - optional for Kredi, required for Nakit Borç */}
               <TextField
                 label="Borç Açıklaması"
-                placeholder={debtType === "ACCOUNT_DEBT" 
-                  ? `Boş bırakılırsa: "${selectedAccount?.accountName || 'Hesap'} Kredi"` 
+                placeholder={debtType === "ACCOUNT_DEBT"
+                  ? `Boş bırakılırsa: "${selectedAccount?.accountName || 'Hesap'} Kredi"`
                   : "Örn: Ahmet'e Borç, Kira, Arkadaş"}
                 value={toWhom}
                 onChange={(e) => setToWhom(e.target.value)}
@@ -533,7 +590,7 @@ const DebtCreatePage = () => {
                     value={debtCurrency}
                     onChange={(e) => {
                       setDebtCurrency(e.target.value);
-                      setExchangeRate(""); // Reset exchange rate when currency changes
+                      setExchangeRate(() => CURRENCIES.find((curr) => curr.value === e.target.value)?.exchangeRates || 1);
                     }}
                     label="Para Birimi"
                     sx={{ borderRadius: 2 }}

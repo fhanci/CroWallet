@@ -7,10 +7,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import org.springframework.cglib.core.Local;
+
 @Entity
 @Table(name = "transfers")
 @Data
-public class Transfer {
+public class Transfer extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,17 +25,14 @@ public class Transfer {
     @Column(name = "amount")
     private BigDecimal amount;
 
-    @Column(name = "date")
-    private LocalDate date;
-
-    @Column(name = "create_date")
-    private LocalDateTime createDate;
-
     @Column(name = "description")
     private String description;
 
-    @Column(name = "receiverId")
-    private Long receiverId;
+    // @Column(name = "receiverId")
+    // private Long receiverId;
+
+    @Column(name = "transaction_date_time")
+    private LocalDateTime transactionDateTime;
 
     @Column(name = "type")
     private String type;
@@ -57,11 +56,16 @@ public class Transfer {
     private BigDecimal outputPreviousBalance;
 
     @ManyToOne
+    @JoinColumn(name = "money_account_id", referencedColumnName = "id")
+    private MoneyAccount moneyAccount;
+
+    @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "account_id", referencedColumnName = "id")
-    private Account account;
+    @Column(name = "currency")
+    private String currency;
 
+    @Column(name = "is_account_to_account_transfer")    
+    private Boolean isAccountToAccountTransfer;
 }

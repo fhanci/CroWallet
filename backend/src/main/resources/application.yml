@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:sqlite:./data/wallet.db
+    url: jdbc:sqlite:./data/wallet.db?busy_timeout=5000
     driver-class-name: org.sqlite.JDBC
   jpa:
     hibernate:
@@ -11,6 +11,9 @@ spring:
   liquibase:
     change-log: classpath:db/changelog-master.xml
     enabled: false
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
 server:
   port: 8082
 

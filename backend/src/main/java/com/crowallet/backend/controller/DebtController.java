@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.crowallet.backend.dto.DebtDTO;
 import com.crowallet.backend.dto.DebtPaymentDTO;
+import com.crowallet.backend.dto.DebtRequestDTO;
+import com.crowallet.backend.dto.DebtResponseDTO;
 import com.crowallet.backend.dto.DebtSummaryDTO;
 import com.crowallet.backend.requests.DebtResponse;
 import com.crowallet.backend.requests.PayDebt;
@@ -28,24 +30,29 @@ public class DebtController {
     private DebtService debtService;
 
 
-    @GetMapping
-    public List<DebtDTO> getAllDebts() {
-        return debtService.getAllDebts();
-    }
+    // @GetMapping
+    // public List<DebtDTO> getAllDebts() {
+    //     return debtService.getAllDebts();
+    // }
 
-    @GetMapping("/get/{userId}")
-    public List<DebtDTO> getUserDebts(@PathVariable Long userId) {
-        return debtService.getUserDebts(userId);
-    }
+    // @GetMapping("/get/{userId}")
+    // public List<DebtDTO> getUserDebts(@PathVariable Long userId) {
+    //     return debtService.getUserDebts(userId);
+    // }
 
-    @GetMapping("/active/{userId}")
-    public List<DebtDTO> getUserActiveDebts(@PathVariable Long userId) {
-        return debtService.getUserActiveDebts(userId);
-    }
+    // @GetMapping("/active/{userId}")
+    // public List<DebtDTO> getUserActiveDebts(@PathVariable Long userId) {
+    //     return debtService.getUserActiveDebts(userId);
+    // }
 
     @GetMapping("/summary/{userId}")
     public DebtSummaryDTO getUserDebtSummary(@PathVariable Long userId) {
         return debtService.getUserDebtSummary(userId);
+    }
+
+    @GetMapping("/getAllPayments")
+    public List<DebtPaymentDTO> getAllPayments() {
+        return debtService.getAllPayments();
     }
 
     @GetMapping("/upcoming/{userId}")
@@ -55,7 +62,7 @@ public class DebtController {
     }
 
     @GetMapping("/{id}")
-    public DebtDTO getDebtById(@PathVariable Long id) {
+    public DebtResponseDTO getDebtById(@PathVariable Long id) {
         return debtService.getDebtById(id);
     }
 
@@ -65,14 +72,14 @@ public class DebtController {
     }
 
     @PostMapping("/create")
-    public DebtDTO createDebt(@RequestBody DebtDTO debt) {
+    public DebtResponseDTO createDebt(@RequestBody DebtRequestDTO debt) {
         return debtService.createDebt(debt);
     }
 
-    @PutMapping("/pay/{id}")
-    public DebtResponse payDebt(@PathVariable Long id, @RequestBody PayDebt debt){
-        return debtService.payDebt(id, debt);
-    }
+    // @PutMapping("/pay/{id}")
+    // public DebtResponse payDebt(@PathVariable Long id, @RequestBody PayDebt debt){
+    //     return debtService.payDebt(id, debt);
+    // }
 
     @PostMapping("/payment/{paymentId}/pay")
     public DebtPaymentDTO markPaymentAsPaid(@PathVariable Long paymentId, @RequestBody PayDebt payDebt) {
@@ -80,7 +87,7 @@ public class DebtController {
     }
 
     @PutMapping("/update/{id}")
-    public DebtDTO updateDebt(@PathVariable Long id, @RequestBody DebtDTO debt) {
+    public DebtResponseDTO updateDebt(@PathVariable Long id, @RequestBody DebtDTO debt) {
         return debtService.updateDebt(id, debt);
     }
 

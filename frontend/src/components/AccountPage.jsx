@@ -22,11 +22,14 @@ import { useTheme } from "../config/ThemeContext";
 import useCurrencyRates from "../config/useCurrencyRates";
 import axios from "axios";
 import { backendUrl } from "../utils/envVariables";
+import { CURRENCIES, exchangeRates, getCurrentCurrencyRates } from "../data/currencies";
+import { getGoldCurrentValue } from "../data/goldData";
+import { getStocksValue } from "../data/stocksData";
 
 // Currency Rates Display Component - Shows EUR/TRY, EUR/USD rates
 const CurrencyRatesDisplay = ({ isDarkMode }) => {
   const { rates, loading, refresh } = useCurrencyRates(60000);
-  
+
   const formatRate = (rate) => {
     if (!rate) return '-';
     return rate.toFixed(4);
@@ -38,12 +41,12 @@ const CurrencyRatesDisplay = ({ isDarkMode }) => {
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
       {/* EUR/TRY Rate */}
-      <Box sx={{ 
-        display: "flex", 
-        alignItems: "center", 
-        gap: 0.5, 
-        px: 1.5, 
-        py: 0.5, 
+      <Box sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 0.5,
+        px: 1.5,
+        py: 0.5,
         borderRadius: 2,
         bgcolor: bgColor,
         border: "1px solid",
@@ -58,12 +61,12 @@ const CurrencyRatesDisplay = ({ isDarkMode }) => {
       </Box>
 
       {/* USD/TRY Rate */}
-      <Box sx={{ 
-        display: "flex", 
-        alignItems: "center", 
-        gap: 0.5, 
-        px: 1.5, 
-        py: 0.5, 
+      <Box sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 0.5,
+        px: 1.5,
+        py: 0.5,
         borderRadius: 2,
         bgcolor: bgColor,
         border: "1px solid",
@@ -79,11 +82,11 @@ const CurrencyRatesDisplay = ({ isDarkMode }) => {
 
       {/* Refresh Button */}
       <MuiTooltip title="Kurları Güncelle">
-        <IconButton 
-          onClick={refresh} 
-          size="small" 
+        <IconButton
+          onClick={refresh}
+          size="small"
           disabled={loading}
-          sx={{ 
+          sx={{
             color: isDarkMode ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.5)",
             "&:hover": { color: "#2196F3" }
           }}
@@ -124,6 +127,31 @@ const AccountPage = () => {
     "#6A89CC",
   ];
 
+
+
+
+
+  useEffect(() => {
+    const fetchDataSequentially = async () => {
+      try {
+        // Önce altın fiyatlarını bekle ve bitir
+        await getGoldCurrentValue();
+
+        await getCurrentCurrencyRates();
+
+        // Altın işlemi TAMAMEN bittikten sonra hisseleri başlat
+        await getStocksValue();
+
+        console.log("İşlemler sırasıyla bitti.");
+      } catch (error) {
+        console.error("Hata oluştu:", error);
+      }
+    };
+
+    fetchDataSequentially();
+  }, []);
+
+
   // Fetch user account summary
   useEffect(() => {
     const fetchAccountSummary = async () => {
@@ -136,14 +164,41 @@ const AccountPage = () => {
             },
           }
         );
-        setAccountSummary(res.data);
-        console.log("AccountSummarData: " + JSON.stringify(res.data,4,4));
+        //setAccountSummary(res.data);
+        console.log("AccountSummarData: " + JSON.stringify(res.data, 4, 4));
+
+        await exchangeRates();
+
+
+        const resTest = await axios.get(
+          `${backendUrl}/api/asset/accountSummary`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+          }
+        );
+
+
+        console.log("İşlem Sonuçları: ")
+        console.log(resTest.data);
+        console.log("İşlem Update Sonucu:");
+        console.log("Kurlar: ")
+        console.log(CURRENCIES);
+        resTest.data.totalBalanceTRY =
+          resTest.data.currencyTotals.EUR * CURRENCIES[2].exchangeRates + resTest.data.currencyTotals.USD * CURRENCIES[1].exchangeRates + resTest.data.currencyTotals.TRY + resTest.data.totalInvestmentValue;
+        console.log(resTest.data.totalBalanceTRY);
+
+        setAccountSummary(resTest.data);
+
+
       } catch (error) {
         console.error("Error fetching account summary:", error);
       }
     };
     fetchAccountSummary();
   }, [user.id, token]);
+
 
   // Fetch debt summary
   useEffect(() => {
@@ -166,31 +221,34 @@ const AccountPage = () => {
   }, [user.id, token]);
 
   // Fetch upcoming payments (next 5)
-  useEffect(() => {
-    const fetchUpcomingPayments = async () => {
-      try {
-        const res = await axios.get(
-          `${backendUrl}/api/debts/upcoming/${user.id}?limit=5`,
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-            },
-          }
-        );
-        setUpcomingPayments(res.data);
-      } catch (error) {
-        console.error("Error fetching upcoming payments:", error);
-      }
-    };
-    fetchUpcomingPayments();
-  }, [user.id, token]);
+  // useEffect(() => {
+  //   const fetchUpcomingPayments = async () => {
+  //     try {
+  //       const res = await axios.get(
+  //         `${backendUrl}/api/debts/upcoming/${user.id}?limit=5`,
+  //         {
+  //           headers: {
+  //             Authorization: token ? `Bearer ${token}` : undefined,
+  //           },
+  //         }
+  //       );
+  //       setUpcomingPayments(res.data);
+  //     } catch (error) {
+  //       console.error("Error fetching upcoming payments:", error);
+  //     }
+  //   };
+  //   fetchUpcomingPayments();
+  // }, [user.id, token]);
 
   // Fetch user transfers
   useEffect(() => {
     const fetchTransfers = async () => {
       try {
+
+        //Burda Tüm Para Hesaplarının Transferleri Alınacak.
+
         const res = await axios.get(
-          `${backendUrl}/api/transfers/get/${user.id}`,
+          `${backendUrl}/api/transfers/getUserAllTransfers?userId=${user.id}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
@@ -198,6 +256,7 @@ const AccountPage = () => {
           }
         );
         setTransfers(res.data);
+        console.log("User Transfers:", res.data);
       } catch (error) {
         console.error("Transfer fetch error:", error);
       }
@@ -255,7 +314,7 @@ const AccountPage = () => {
     if (!debt.totalInstallments || debt.totalInstallments === 0) {
       return debt.status === "COMPLETED" ? 100 : 0;
     }
-    return ((debt.paidInstallments || 0) / debt.totalInstallments) * 100;
+    return ((debt.payments.reduce((acc, d) => d.status === "PAID" ? acc + 1 : acc, 0) || 0) / debt.totalInstallments) * 100;
   };
 
   // Modern glassy card style
@@ -265,8 +324,8 @@ const AccountPage = () => {
     border: `1px solid ${borderColor}`,
     boxShadow: isDarkMode ? "0 4px 24px rgba(0, 0, 0, 0.3)" : "0 4px 24px rgba(0, 0, 0, 0.12)",
     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-    "&:hover": { 
-      transform: "translateY(-2px)", 
+    "&:hover": {
+      transform: "translateY(-2px)",
       boxShadow: isDarkMode ? "0 8px 32px rgba(0, 0, 0, 0.4)" : "0 8px 32px rgba(0, 0, 0, 0.18)",
     },
   };
@@ -278,7 +337,7 @@ const AccountPage = () => {
         width: { xs: "90%", sm: 260, md: 300 },
         height: 130,
         p: 2,
-        bgcolor: isDarkMode 
+        bgcolor: isDarkMode
           ? (item.holdingType === "CASH" ? "rgba(76, 175, 80, 0.15)" : "rgba(33, 150, 243, 0.15)")
           : (item.holdingType === "CASH" ? "rgba(76, 175, 80, 0.12)" : "rgba(33, 150, 243, 0.12)"),
         borderRadius: 0,
@@ -301,11 +360,11 @@ const AccountPage = () => {
         <Typography variant="h6" sx={{ fontWeight: 700, fontSize: "1.25rem", letterSpacing: "-0.5px", color: textPrimary }}>
           {formatCurrency(item.balance, item.currency)}
         </Typography>
-        <Typography 
-          variant="caption" 
-          sx={{ 
-            mt: 1, 
-            px: 1.5, 
+        <Typography
+          variant="caption"
+          sx={{
+            mt: 1,
+            px: 1.5,
             py: 0.25,
             bgcolor: item.holdingType === "CASH" ? "rgba(76, 175, 80, 0.2)" : "rgba(33, 150, 243, 0.2)",
             color: item.holdingType === "CASH" ? "#4CAF50" : "#2196F3",
@@ -354,9 +413,9 @@ const AccountPage = () => {
         <Typography variant="h6" sx={{ fontWeight: 700, fontSize: "1.25rem", letterSpacing: "-0.5px", color: textPrimary }}>
           {formatCurrency(item.totalValue, "TRY")}
         </Typography>
-        <Typography 
-          variant="body2" 
-          sx={{ 
+        <Typography
+          variant="body2"
+          sx={{
             color: item.profitLoss >= 0 ? "#4CAF50" : "#f44336",
             fontWeight: 600,
             fontSize: "0.85rem",
@@ -364,11 +423,11 @@ const AccountPage = () => {
         >
           {item.profitLoss >= 0 ? "+" : ""}{formatCurrency(item.profitLoss, "TRY")}
         </Typography>
-        <Typography 
-          variant="caption" 
-          sx={{ 
-            mt: 1, 
-            px: 1.5, 
+        <Typography
+          variant="caption"
+          sx={{
+            mt: 1,
+            px: 1.5,
             py: 0.25,
             bgcolor: item.assetType === "GOLD" ? "rgba(212, 175, 55, 0.25)" : "rgba(156, 39, 176, 0.20)",
             color: item.assetType === "GOLD" ? "#FFD700" : "#BA68C8",
@@ -422,7 +481,7 @@ const AccountPage = () => {
             </Typography>
           </Box>
         </Box>
-        
+
         <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 700, color: "#f44336", fontSize: "1.25rem", letterSpacing: "-0.5px" }}>
@@ -432,12 +491,12 @@ const AccountPage = () => {
               Toplam: {formatCurrency(debt.debtAmount, debt.debtCurrency)}
             </Typography>
           </Box>
-          
+
           {debt.paymentType === "PERIODIC" && (
             <Box sx={{ mt: 1.5 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
                 <Typography variant="caption" sx={{ color: textSecondary, fontSize: "0.7rem" }}>
-                  Taksit: {debt.paidInstallments || 0}/{debt.totalInstallments}
+                  Taksit: {debt.payments.reduce((acc, d) => d.status === "PAID" ? acc + 1 : acc, 0) || 0} / {debt.totalInstallments}
                 </Typography>
                 <Typography variant="caption" sx={{ color: textSecondary, fontSize: "0.7rem" }}>
                   %{progress.toFixed(0)}
@@ -458,12 +517,12 @@ const AccountPage = () => {
               />
             </Box>
           )}
-          
+
           <Box sx={{ display: "flex", gap: 1, mt: 1.5 }}>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                px: 1.5, 
+            <Typography
+              variant="caption"
+              sx={{
+                px: 1.5,
                 py: 0.25,
                 bgcolor: isCredit ? "rgba(244, 67, 54, 0.2)" : "rgba(255, 152, 0, 0.2)",
                 color: isCredit ? "#f44336" : "#ff9800",
@@ -475,10 +534,10 @@ const AccountPage = () => {
             >
               {isCredit ? "Kredi" : "Nakit Borç"}
             </Typography>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                px: 1.5, 
+            <Typography
+              variant="caption"
+              sx={{
+                px: 1.5,
                 py: 0.25,
                 bgcolor: "rgba(0, 0, 0, 0.05)",
                 color: "text.secondary",
@@ -496,6 +555,20 @@ const AccountPage = () => {
     );
   };
 
+
+  const getNewChartData = (type, transfers) => {
+    const filteredTransfersByType = transfers.filter((t) => t.type === type);
+    const filteredTransfersByCategory = new Set(filteredTransfersByType.map((t) => t.category));
+    const total = Array.from(filteredTransfersByCategory).map((category) => {
+      const total = transfers
+        .filter((t) => t.category === category)
+        .reduce((sum, t) => sum + t.amount * (t.exchangeRate || 1), 0);
+      return { name: category, value: total };
+    });
+    return total;
+
+  }
+
   const getChartData = (sources, type, transfers) =>
     sources.map((source) => {
       const total = transfers
@@ -504,45 +577,66 @@ const AccountPage = () => {
       return { name: source, value: total };
     });
 
-  const incomeData = getChartData(incomeSources, "incoming", transfers);
-  const expenseData = getChartData(expenseSources, "outgoing", transfers);
 
-  // Helper to convert any currency to TRY using real-time rates
-  const convertToTRY = (amount, currency) => {
+  const incomeData = getNewChartData("incoming", transfers)//getChartData(incomeSources, "incoming", transfers);
+  const expenseData = getNewChartData("outgoing", transfers)//getChartData(expenseSources, "outgoing", transfers);
+  console.log("GetChartDataIncoming: " + JSON.stringify(getNewChartData("incoming", transfers)))
+  console.log("GetChartDataOutgoing: " + JSON.stringify(getNewChartData("outgoing", transfers)))
+
+  const convertToTRY2 = (amount, currency) => {
+    console.log(`Para Hesapları - ${currency}: ${amount}`);
     if (!amount || !currency || currency === "TRY") return amount || 0;
-    if (!rates || Object.keys(rates).length === 0 || !rates[currency] || !rates["TRY"]) {
-      return 0;
-    }
+    // if (!rates || Object.keys(rates).length === 0 || !rates[currency] || !rates["TRY"]) {
+    //   return 0;
+    // }
+    console.log("Bura")
     // rates[currency] = EUR rate, rates["TRY"] = EUR to TRY rate
     // X [currency] = X * (TRY_rate / currency_rate) TRY
-    return amount * (rates["TRY"] / rates[currency]);
-  };
+
+    return amount * CURRENCIES.find(c => c.value === currency)?.exchangeRates
+  }
+
+  // Helper to convert any currency to TRY using real-time rates
+  // const convertToTRY = (amount, currency) => {
+  //   if (!amount || !currency || currency === "TRY") return amount || 0;
+  //   if (!rates || Object.keys(rates).length === 0 || !rates[currency] || !rates["TRY"]) {
+  //     return 0;
+  //   }
+  //   // rates[currency] = EUR rate, rates["TRY"] = EUR to TRY rate
+  //   // X [currency] = X * (TRY_rate / currency_rate) TRY
+  //   return amount * (rates["TRY"] / rates[currency]);
+  // };
 
   // Calculate total assets in TRY using real-time rates
   const calculateTotalAssetsTRY = () => {
-    if (!rates || Object.keys(rates).length === 0) {
-      return accountSummary?.totalBalanceTRY || 0;
-    }
-    let total = 0;
-    if (accountSummary?.currencyTotals) {
-      Object.entries(accountSummary.currencyTotals).forEach(([currency, amount]) => {
-        total += convertToTRY(amount, currency);
-      });
-    }
-    total += accountSummary?.totalInvestmentValue || 0;
-    return total;
+    return accountSummary ? accountSummary.totalBalanceTRY : 0;
+    // if (!rates || Object.keys(rates).length === 0) {
+    //   return accountSummary?.totalBalanceTRY || 0;
+    // }
+    // let total = 0;
+    // if (accountSummary?.currencyTotals) {
+    //   Object.entries(accountSummary.currencyTotals).forEach(([currency, amount]) => {
+    //     total += convertToTRY2(amount, currency);
+    //   });
+    // }
+    // total += accountSummary?.totalInvestmentValue || 0;
+    // return total;
   };
 
   // Calculate total debts in TRY using real-time rates
   const calculateTotalDebtsTRY = () => {
-    if (!rates || Object.keys(rates).length === 0 || !debtSummary?.debts) {
-      return debtSummary?.totalRemainingAmount || 0;
-    }
-    let total = 0;
-    debtSummary.debts.forEach((debt) => {
-      total += convertToTRY(debt.remainingAmount, debt.debtCurrency);
-    });
-    return total;
+    return debtSummary ? Object.entries(debtSummary.debtsByCurrency).map(([currency, total]) => {
+      const exchangeRate = CURRENCIES.find(c => c.value === currency)?.exchangeRates || 1;
+      return total *= exchangeRate;
+    }).reduce((acc, curr) => acc + curr, 0) : 0;
+    // if (!rates || Object.keys(rates).length === 0 || !debtSummary?.debts) {
+    //   return debtSummary?.totalRemainingAmount || 0;
+    // }
+    // let total = 0;
+    // debtSummary.debts.forEach((debt) => {
+    //   total += convertToTRY2(debt.remainingAmount, debt.debtCurrency);
+    // });
+    // return total;
   };
 
   // Calculate net balance (assets - debts) with real-time conversion
@@ -556,19 +650,21 @@ const AccountPage = () => {
   // Calculate pie chart data by account type
   const calculatePieData = () => {
     if (!accountSummary) return [];
-    
+
+
     // Calculate currency accounts total in TRY using real-time rates
     let currencyTotal = 0;
     if (accountSummary.currencyTotals) {
       Object.entries(accountSummary.currencyTotals).forEach(([currency, amount]) => {
-        currencyTotal += convertToTRY(amount, currency);
+        //console.log(`Para Hesapları - ${currency}: ${amount}`);   
+        currencyTotal += convertToTRY2(amount, currency);
       });
     }
-    
+
     // Calculate gold and stock totals from investment accounts
     let goldTotal = 0;
     let stockTotal = 0;
-    
+
     if (accountSummary.investmentAccounts) {
       accountSummary.investmentAccounts.forEach((acc) => {
         if (acc.holdings) {
@@ -583,16 +679,19 @@ const AccountPage = () => {
         }
       });
     }
-    
+
+    console.log(goldTotal);
+    console.log(stockTotal);
+
     // Get debt total in TRY
     const debtTotal = totalDebts;
-    
+
     const data = [];
     if (stockTotal > 0) data.push({ name: "Hisse Yatırımları", value: stockTotal, color: "#9C27B0" });
     if (goldTotal > 0) data.push({ name: "Altın Yatırımları", value: goldTotal, color: "#FFD700" });
     if (currencyTotal > 0) data.push({ name: "Para Hesapları", value: currencyTotal, color: "#4CAF50" });
     if (debtTotal > 0) data.push({ name: "Borçlar", value: debtTotal, color: "#f44336" });
-    
+
     return data;
   };
 
@@ -601,7 +700,7 @@ const AccountPage = () => {
   // Custom active shape for pie chart with external label
   const renderActiveShape = (props) => {
     const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value } = props;
-    
+
     return (
       <g>
         <Sector
@@ -709,9 +808,16 @@ const AccountPage = () => {
                       <Typography variant="body2" sx={{ opacity: 0.7 }}>
                         {currency}
                       </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {formatCurrency(total, currency)}
-                      </Typography>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {formatCurrency(total, currency) + " "}
+                        </Typography>
+                        {currency !== "TRY" && (
+                          <Typography variant="body2" sx={{ color: "#fff", opacity: 0.7 }}>
+                            Kur: {CURRENCIES.find((c) => c.value === currency)?.exchangeRates + " ₺"}
+                          </Typography>
+                        )}
+                      </Box>
                     </Box>
                   ))}
 
@@ -796,7 +902,12 @@ const AccountPage = () => {
                 Toplam Borç
               </Typography>
               <Typography variant="h4" sx={{ fontWeight: 700, mb: 2, color: "#f44336" }}>
-                {formatCurrency(debtSummary?.totalRemainingAmount || 0, "TRY")}
+                {Math.max(0, Object.entries(debtSummary.debtsByCurrency).reduce((acc, [currency, total]) => {
+                  const rate = CURRENCIES.find((c) => c.value === currency)?.exchangeRates || 0;
+                  return acc + (rate * total);
+                }, 0)).toLocaleString("tr-TR") + " TRY"}
+
+                {/* {formatCurrency(Math.round(debtSummary?.totalRemainingAmount) || 0, "TRY")} */}
               </Typography>
 
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
@@ -807,7 +918,7 @@ const AccountPage = () => {
                         {currency}
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600, color: "#f44336" }}>
-                        {formatCurrency(total, currency)}
+                        {Math.max(0, total).toLocaleString("tr-TR") + " " + currency}
                       </Typography>
                     </Box>
                   ))}
@@ -821,16 +932,16 @@ const AccountPage = () => {
                   </Typography>
                 </Box>
 
-                {debtSummary?.totalPaidAmount > 0 && (
+                {/* {debtSummary?.totalPaidAmount > 0 && (
                   <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                     <Typography variant="body2" sx={{ opacity: 0.7, color: "#f44336" }}>
                       Ödenen
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: "#f44336" }}>
-                      {formatCurrency(debtSummary.totalPaidAmount, "TRY")}
+                      {formatCurrency(Math.round(debtSummary?.totalPaidAmount) || 0, "TRY")}
                     </Typography>
                   </Box>
-                )}
+                )} */}
               </Box>
             </Box>
           </Box>
@@ -859,19 +970,19 @@ const AccountPage = () => {
 
       {/* Currency Accounts Section */}
       <Divider sx={{ width: "100%", my: 4, borderColor: borderColor }} />
-      
+
       <Box sx={{ width: "100%", mt: 2 }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2, mb: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <AccountBalanceIcon sx={{ fontSize: 30, color: "#2196F3" }} />
             <Typography variant="h5" sx={{ color: textPrimary, fontWeight: 600 }}>Para Hesapları</Typography>
-            <Chip 
-              label={accountSummary?.currencyAccountCount || 0} 
-              size="small" 
-              color="primary" 
+            <Chip
+              label={accountSummary?.currencyAccountCount || 0}
+              size="small"
+              color="primary"
             />
           </Box>
-          
+
           {/* Real-time Currency Rates */}
           <CurrencyRatesDisplay isDarkMode={isDarkMode} />
         </Box>
@@ -901,10 +1012,10 @@ const AccountPage = () => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
           <TrendingUpIcon sx={{ fontSize: 30, color: "#9C27B0" }} />
           <Typography variant="h5" sx={{ color: textPrimary, fontWeight: 600 }}>Yatırım Hesapları</Typography>
-          <Chip 
-            label={accountSummary?.investmentAccountCount || 0} 
-            size="small" 
-            color="secondary" 
+          <Chip
+            label={accountSummary?.investmentAccountCount || 0}
+            size="small"
+            color="secondary"
           />
         </Box>
 
@@ -928,13 +1039,13 @@ const AccountPage = () => {
 
       {/* Debts Section (same format as accounts) */}
       <Divider sx={{ width: "100%", my: 4, borderColor: borderColor }} />
-      
+
       <Box sx={{ width: "100%", mt: 2 }}>
-        <Box 
-          sx={{ 
-            display: "flex", 
-            alignItems: "center", 
-            gap: 2, 
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
             mb: 2,
             cursor: "pointer",
             "&:hover": { opacity: 0.8 },
@@ -943,10 +1054,10 @@ const AccountPage = () => {
         >
           <CreditCardIcon sx={{ fontSize: 30, color: "#f44336" }} />
           <Typography variant="h5" sx={{ color: textPrimary, fontWeight: 600 }}>Borçlar</Typography>
-          <Chip 
-            label={debtSummary?.activeDebts || 0} 
-            size="small" 
-            color="error" 
+          <Chip
+            label={debtSummary?.activeDebts || 0}
+            size="small"
+            color="error"
           />
           <ArrowForwardIosIcon sx={{ fontSize: 18, color: textSecondary, ml: "auto" }} />
         </Box>
@@ -970,14 +1081,14 @@ const AccountPage = () => {
 
         {activeDebts.length > 6 && (
           <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               color="error"
               onClick={() => navigate("/debt")}
               startIcon={<ArrowForwardIosIcon />}
-              sx={{ 
-                borderRadius: 0, 
-                textTransform: "none", 
+              sx={{
+                borderRadius: 0,
+                textTransform: "none",
                 fontWeight: 600,
                 px: 3,
               }}
@@ -990,13 +1101,13 @@ const AccountPage = () => {
 
       {/* Recent Transactions Section */}
       <Divider sx={{ width: "100%", my: 4, borderColor: borderColor }} />
-      
+
       <Box sx={{ width: "100%", mt: 2 }}>
-        <Box 
-          sx={{ 
-            display: "flex", 
-            alignItems: "center", 
-            gap: 2, 
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
             mb: 2,
             cursor: "pointer",
             "&:hover": { opacity: 0.8 },
@@ -1015,18 +1126,18 @@ const AccountPage = () => {
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             {transfers
-              .sort((a, b) => new Date(b.createDate) - new Date(a.createDate))
+              .sort((b, a) => new Date(a.transactionDateTime) - new Date(b.transactionDateTime))
               .slice(0, 4)
-              .map((transaction) => {
-                const isIncome = transaction.type === "incoming" || 
+              .map((transaction, idx) => {
+                const isIncome = transaction.type === "incoming" ||
                   (transaction.type === "inter-account" && transaction.inputPreviousBalance !== null);
-                
+
                 return (
                   <Card
-                    key={transaction.id}
+                    key={idx}
                     sx={{
                       p: 2,
-                      bgcolor: isDarkMode 
+                      bgcolor: isDarkMode
                         ? (isIncome ? "rgba(76, 175, 80, 0.12)" : "rgba(244, 67, 54, 0.12)")
                         : (isIncome ? "rgba(76, 175, 80, 0.06)" : "rgba(244, 67, 54, 0.06)"),
                       borderRadius: 0,
@@ -1038,14 +1149,14 @@ const AccountPage = () => {
                       borderLeftStyle: "solid",
                       borderLeftColor: isIncome ? "#4CAF50" : "#f44336",
                       transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                      "&:hover": { 
-                        transform: "translateX(4px)", 
+                      "&:hover": {
+                        transform: "translateX(4px)",
                         bgcolor: isDarkMode
                           ? (isIncome ? "rgba(76, 175, 80, 0.18)" : "rgba(244, 67, 54, 0.18)")
                           : (isIncome ? "rgba(76, 175, 80, 0.10)" : "rgba(244, 67, 54, 0.10)"),
                       },
                     }}
-                    onClick={() => navigate(`/transactions/${transaction.account?.id}`)}
+                    onClick={() => navigate(`/transactions/${transaction.moneyAccountId}`)}
                   >
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <Box>
@@ -1053,19 +1164,19 @@ const AccountPage = () => {
                           {transaction.category || "Hesaplar Arası Transfer"}
                         </Typography>
                         <Typography variant="caption" sx={{ color: textSecondary }}>
-                          {transaction.account?.accountName} • {transaction.date}
+                          {transaction.accountName} • {new Date(transaction.transactionDateTime).toLocaleString("tr-TR")}
                         </Typography>
                       </Box>
-                      <Typography 
-                        variant="h6" 
-                        sx={{ 
-                          fontWeight: 700, 
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontWeight: 700,
                           color: isIncome ? "#4CAF50" : "#f44336",
                           fontSize: "1.1rem",
                           letterSpacing: "-0.5px",
                         }}
                       >
-                        {isIncome ? "+" : "-"}{Math.abs(transaction.amount)} {transaction.account?.currency}
+                        {isIncome ? "+" : "-"}{Math.abs(transaction.amount).toLocaleString("tr-TR")} {transaction.currency}
                       </Typography>
                     </Box>
                   </Card>
@@ -1075,17 +1186,17 @@ const AccountPage = () => {
         )}
 
         {transfers.length > 4 && (
-          <Box 
-            sx={{ 
-              display: "flex", 
-              justifyContent: "center", 
-              mt: 2 
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mt: 2
             }}
           >
-            <Button 
+            <Button
               variant="text"
-              onClick={() => navigate("/all-transactions")}
-              sx={{ 
+              onClick={() => navigate("/all-transactions")} ///////////////////////////////////////////////////////////////////////////////////////////
+              sx={{
                 textTransform: "none",
                 fontWeight: 600,
                 color: "#FF9800",
@@ -1103,13 +1214,13 @@ const AccountPage = () => {
       {upcomingPayments.length > 0 && (
         <>
           <Divider sx={{ width: "100%", my: 4 }} />
-          
+
           <Box sx={{ width: "100%", mt: 2 }}>
-            <Box 
-              sx={{ 
-                display: "flex", 
-                alignItems: "center", 
-                gap: 2, 
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
                 mb: 2,
                 cursor: "pointer",
                 "&:hover": { opacity: 0.8 },
@@ -1133,10 +1244,10 @@ const AccountPage = () => {
                     key={payment.id}
                     sx={{
                       p: 2,
-                      bgcolor: isOverdue 
-                        ? "rgba(244, 67, 54, 0.08)" 
-                        : isUrgent 
-                          ? "rgba(255, 152, 0, 0.08)" 
+                      bgcolor: isOverdue
+                        ? "rgba(244, 67, 54, 0.08)"
+                        : isUrgent
+                          ? "rgba(255, 152, 0, 0.08)"
                           : "rgba(244, 67, 54, 0.04)",
                       borderRadius: 0,
                       borderLeft: `3px solid ${isOverdue ? "#d32f2f" : isUrgent ? "#ff9800" : "#f44336"}`,
@@ -1148,12 +1259,12 @@ const AccountPage = () => {
                       borderLeftStyle: "solid",
                       borderLeftColor: isOverdue ? "#d32f2f" : isUrgent ? "#ff9800" : "#f44336",
                       transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                      "&:hover": { 
-                        transform: "translateX(4px)", 
-                        bgcolor: isOverdue 
-                          ? "rgba(244, 67, 54, 0.12)" 
-                          : isUrgent 
-                            ? "rgba(255, 152, 0, 0.12)" 
+                      "&:hover": {
+                        transform: "translateX(4px)",
+                        bgcolor: isOverdue
+                          ? "rgba(244, 67, 54, 0.12)"
+                          : isUrgent
+                            ? "rgba(255, 152, 0, 0.12)"
                             : "rgba(244, 67, 54, 0.08)",
                       },
                     }}
@@ -1186,8 +1297,8 @@ const AccountPage = () => {
                         </Box>
                       </Box>
                       <Box sx={{ textAlign: "right" }}>
-                        <Typography 
-                          variant="h6" 
+                        <Typography
+                          variant="h6"
                           sx={{ fontWeight: 700, color: "#f44336", fontSize: "1.1rem", letterSpacing: "-0.5px" }}
                         >
                           {formatCurrency(payment.amount, payment.debtCurrency)}
@@ -1197,10 +1308,10 @@ const AccountPage = () => {
                           sx={{
                             px: 1.5,
                             py: 0.25,
-                            bgcolor: isOverdue 
-                              ? "rgba(211, 47, 47, 0.12)" 
-                              : isUrgent 
-                                ? "rgba(255, 152, 0, 0.12)" 
+                            bgcolor: isOverdue
+                              ? "rgba(211, 47, 47, 0.12)"
+                              : isUrgent
+                                ? "rgba(255, 152, 0, 0.12)"
                                 : "rgba(0, 0, 0, 0.05)",
                             color: isOverdue ? "#c62828" : isUrgent ? "#e65100" : "text.secondary",
                             fontWeight: 600,
@@ -1209,10 +1320,10 @@ const AccountPage = () => {
                             letterSpacing: "0.3px",
                           }}
                         >
-                          {isOverdue 
-                            ? `${Math.abs(daysUntil)} gün geçti` 
-                            : daysUntil === 0 
-                              ? "Bugün" 
+                          {isOverdue
+                            ? `${Math.abs(daysUntil)} gün geçti`
+                            : daysUntil === 0
+                              ? "Bugün"
                               : `${daysUntil} gün kaldı`
                           }
                         </Typography>
@@ -1224,14 +1335,14 @@ const AccountPage = () => {
             </Box>
 
             <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-              <Button 
-                variant="outlined" 
+              <Button
+                variant="outlined"
                 color="error"
                 onClick={() => navigate("/debt")}
                 startIcon={<ArrowForwardIosIcon />}
-                sx={{ 
-                  borderRadius: 0, 
-                  textTransform: "none", 
+                sx={{
+                  borderRadius: 0,
+                  textTransform: "none",
                   fontWeight: 600,
                   px: 3,
                 }}
@@ -1268,10 +1379,10 @@ const AccountPage = () => {
             {t("noTransactions")}
           </Typography>
         ) : (
-          <Box sx={{ display: "flex", gap: 5, mt: 3, flexWrap: "wrap", justifyContent: "center" }}>
+          <Box sx={{ display: "flex", mt: 3, flexWrap: "wrap", gap: 4, justifyContent: "center" }}>
             <Box>
-              <Typography variant="h6">{t("incomeSources")}</Typography>
-              <PieChart width={400} height={300}>
+              <Typography variant="h5" sx={{ textAlign: "center" }}>{t("incomeSources")}</Typography>
+              <PieChart width={400} height={300} sx={{ textAlign: "center" }}>
                 <Pie
                   data={incomeData}
                   cx="50%"
@@ -1284,14 +1395,14 @@ const AccountPage = () => {
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => `${value} TRY`} />
+                <Tooltip formatter={(value) => `${value.toLocaleString("tr-TR")} TRY`} />
                 <Legend />
               </PieChart>
             </Box>
 
             <Box>
-              <Typography variant="h6">{t("expenseSources")}</Typography>
-              <PieChart width={400} height={300}>
+              <Typography variant="h5" sx={{ textAlign: "center" }}>{t("expenseSources")}</Typography>
+              <PieChart width={400} height={300} sx={{ textAlign: "center" }}>
                 <Pie
                   data={expenseData}
                   cx="50%"
@@ -1304,7 +1415,7 @@ const AccountPage = () => {
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => `${value} TRY`} />
+                <Tooltip formatter={(value) => `${value.toLocaleString("tr-TR")} TRY`} />
                 <Legend />
               </PieChart>
             </Box>

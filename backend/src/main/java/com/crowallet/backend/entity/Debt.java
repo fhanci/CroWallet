@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -52,11 +54,11 @@ public class Debt {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "debt_type")
-    private DebtType debtType = DebtType.ACCOUNT_DEBT;
+    private DebtType debtType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_type")
-    private PaymentType paymentType = PaymentType.SINGLE_DATE;
+    private PaymentType paymentType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_frequency")
@@ -74,24 +76,24 @@ public class Debt {
     @Column(name = "start_date")
     private LocalDate startDate;
 
-    @Column(name = "remaining_amount")
+    @Column(name = "remaining_amount") //Kalan Miktar
     private BigDecimal remainingAmount;
 
     @Column(name = "description")
     private String description;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "account_id", referencedColumnName = "id")
-    private Account account;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "money_account_id", referencedColumnName = "id")
+    private MoneyAccount moneyAccount;
 
-    @OneToMany(mappedBy = "debt", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "debt",fetch = FetchType.EAGER)    
+    @JsonManagedReference
     private List<DebtPayment> payments = new ArrayList<>();
 
-    // Calculate remaining amount
     @PrePersist
     @PreUpdate
     public void calculateRemainingAmount() {

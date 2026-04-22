@@ -1,24 +1,19 @@
-import React, { useState, useEffect } from "react";
-import { useUpdateHoldingMutation, useDeleteHoldingMutation } from "../api/holdingsApi";
+import React, { useState, useEffect, useMemo } from "react";
+import { useUpdateAssetMutation, useDeleteTransactionMutation, useAddTransactionMutation, useSellTransactionMutation, useDeleteAssetMutation } from "../api/holdingsApi";
 
-// Gold types for display
-const GOLD_TYPES = {
-    GRAM: { label: "Gram Altın", symbol: "gr" },
-    CEYREK: { label: "Çeyrek Altın", symbol: "adet" },
-    YARIM: { label: "Yarım Altın", symbol: "adet" },
-    TAM: { label: "Tam Altın", symbol: "adet" },
-    CUMHURIYET: { label: "Cumhuriyet Altını", symbol: "adet" },
-};
 
 import {
     Container,
     Typography,
     Box,
-    Stack,
     Card,
     CardContent,
-    CircularProgress,
+    Tooltip,
     IconButton,
+    FormControl,
+    FormLabel,
+    FormControlLabel,
+    RadioGroup, Radio,
     Chip,
     Divider,
     List,
@@ -32,33 +27,47 @@ import {
     DialogActions,
     TextField,
     InputAdornment,
-    Alert,
-    DialogContentText,
-    OutlinedInput,
-    Select,
-    MenuItem,
-    FormControl,
-    FormHelperText,
-    InputLabel
+    Alert, Stack, InputLabel, Select, MenuItem,
+
 } from "@mui/material";
 import { FaPlus } from "react-icons/fa";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { GiSellCard } from "react-icons/gi";
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
 import ShowChartIcon from "@mui/icons-material/ShowChart";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useTranslation } from "react-i18next";
 import { useTheme } from "../config/ThemeContext";
 import axios from "axios";
 import { backendUrl } from "../utils/envVariables";
+import { BuyInvestmentGold } from "../components/BuyInvestmentGold";
+import { GOLD_TYPES } from "../data/goldData";
+import { BuyInvestmentStock } from "../components/BuyInvestmentStock";
+import Marquee from "react-fast-marquee";
+import { getStocksValueApi, STOCKS } from "../data/stocksData";
+import { CURRENCIES, exchangeRates, getExchangeRateByPastDate } from "../data/currencies";
+import { useUser } from "../config/UserStore";
+import { MdDeleteForever } from "react-icons/md";
+import dayjs from "dayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { formatDateTime, toLocalISOTime } from "../utils/localIsoTime";
+
+
+
 
 const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
+    // Gold types for display
+
     console.log(`Ben Bir ${title} Hesabıyım. Itemlerım: ${JSON.stringify(item, 4, 4)}`);
+
     // const { t } = useTranslation();
 
+
+    const goldTypeKey = ["GRA", "CEYREKALTIN", "YARIMALTIN", "TAMALTIN", "CUMHURIYETALTINI"]
     const { isDarkMode } = useTheme();
     const token = localStorage.getItem("token");
     const [error, setError] = useState("");
@@ -69,95 +78,916 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     const [editQuantity, setEditQuantity] = useState("");
     const [editPrice, setEditPrice] = useState("");
     const [showAddDialog, setShowAddDialog] = useState(false);
+    const [showSellDialog, setShowSellDialog] = useState(false);
 
-    //       // Delete confirmation state
+    // Delete confirmation state
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deletingHoldingId, setDeletingHoldingId] = useState(null);
 
+
     //Update
-    const [updateHolding] = useUpdateHoldingMutation()
+    const [updateAsset] = useUpdateAssetMutation();
 
     //Delete
-    const [deleteHolding, { isLoading }] = useDeleteHoldingMutation();
+    const [deleteAsset] = useDeleteAssetMutation();
+
+    //Add Holding
+    const [addHolding] = useAddTransactionMutation();
+
+    //Sell Investment
+    const [sellTransaction] = useSellTransactionMutation();
+
+    //Delete
+    // const [deleteHolding, { isLoading }] = useDeleteHoldingMutation();
+    const [deleteTransaction, { isLoading }] = useDeleteTransactionMutation();
+
+    //GoldPrice
+    const [goldPrice, setGoldPrice] = useState([])
+    const [sellingTransactions, setSellingTransactions] = useState([{}])
+
+    //Stock Price
+    const [stockPrice, setStockPrice] = useState([])
+
+    const [selectedMoneyAccount, setSelectedMoneyAccount] = useState(0)
+    const [exchangeRate, setExchangeRate] = useState({})
+    const [isButtonDisabled, setIsButtonDisabled] = useState(true);
+    const [moneyAccountPersons, setMoneyAccountPersons] = useState([{}])
+
+    const { user } = useUser();
+
+    const [updateMoneyAccount, setUpdateMoneyAccount] = useState(true);
+
 
     const isGold = (title == "Altın")
 
+    const [goldItems, setGoldItems] = useState([
+        { id: 1, goldType: "", quantity: "", price: "", buyingDateTime: dayjs(), exchangeRate: 1 },
+    ]);
+
+    // Multiple stock items
+    const [stockItems, setStockItems] = useState([
+        { id: 1, stock: null, quantity: "", price: "", buyingDateTime: dayjs(), exchangeRate: 1 },
+    ]);
+
+    const [sellInvestmentList, setSellInvestmentList] = useState([
+        { key: 1, id: 1, assetName: "", exchangeRate: 1, quantity: 0, sellCount: 0, transactionId: 0, currency: "", unitPrice: 0, totalPrice: 0, currentPrice: 0, buyingDateTime: dayjs(), salesPrice: 0 }
+    ])
+
+    const totalInvestmentValue = useMemo(() => {
+        return sellInvestmentList.reduce((start, cur) => (cur.salesPrice * cur.sellCount * cur.exchangeRate) + start, 0);
+    }, [sellInvestmentList]);
+
+
+    useEffect(() => {
+        if (updateMoneyAccount) {
+            getMoneyAccountOfPerson();
+            setUpdateMoneyAccount(false);
+        }
+        const getExchangeRates = async () => {
+            const exchangeRates2 = await exchangeRates();
+            setExchangeRate(exchangeRates2)
+        }
+        getExchangeRates();
+    }, [updateMoneyAccount])
+
+    const showMoneytoLocalString = (money) => {
+        return money.toLocaleString("tr-TR", { minimumFractionDigits: 2, })
+    }
+
+
+    const getMoneyAccountOfPerson = async () => {
+
+
+        const response = await axios.get(
+            `${backendUrl}/api/accounts/me`,
+            {
+                headers: {
+                    Authorization: token ? `Bearer ${token}` : undefined,
+                    "Content-Type": "application/json",
+                },
+            }
+        )
+
+        const responseMoneyAccount = await axios.get(
+            `${backendUrl}/api/accounts/get-money-accounts?userId=${response.data}`,
+            {
+                headers: {
+                    Authorization: token ? `Bearer ${token}` : undefined,
+                    "Content-Type": "application/json",
+                },
+            }
+        )
+
+        console.log("Money accounts fetched:", responseMoneyAccount.data);
+        setMoneyAccountPersons(responseMoneyAccount.data);
+    }
+
+
+    const [allMoneyAccounts, setAllMoneyAccounts] = useState([]);
+
+    const [openDeleteInvestmentAccountDialog, setOpenDeleteInvestmentAccountDialog] = useState(false);
+
+    useEffect(() => {
+
+        const getAllMoneyAccounts = async () => {
+            const response = await axios.get(
+                `${backendUrl}/api/accounts/get-money-accounts?userId=${user.id}`,
+                {
+                    headers: {
+                        Authorization: token ? `Bearer ${token}` : undefined,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            console.log("Money accounts fetched:", response.data);
+            setAllMoneyAccounts(response.data);
+        };
+
+        getAllMoneyAccounts();
+    }, []);
 
 
 
-    //Add Investment
-    // const [goldList, setGoldList] = useState([]);
-    // const [selectedGold, setSelectedGold] = useState(-1);
-    // const [goldId, setGoldId] = useState(0);
+    const getTotalPriceBySellingItems = async (selectedAccount) => {
+
+        let totalPrice = sellInvestmentList.reduce((start, cur) => (cur.salesPrice * cur.sellCount) + start, 0);
+
+        // if (selectedAccount.currency === "EUR") {
+        //     totalPrice = totalPrice / (await exchangeRates()).EUR.Selling
+        //     console.log("Bu bir EURO hesabı olduğu için para birimi düşme işlemi buna göre yapıdlı")
+        // }
+        // else if (selectedAccount.currency === "USD") {
+        //     totalPrice = totalPrice / (await exchangeRates()).USD.Selling
+        //     console.log("Bu bir USD hesabı olduğu için para birimi düşme işlemi buna göre yapıdlı")
+        // }
+        return totalPrice;
+    }
 
 
-    // useEffect(() => {
-    //     console.log("Aha Burda: " + selectedGold);
-    //     console.log("Gold List Burda: " + JSON.stringify(goldList, 4, 4))
-    // }, [selectedGold])
 
-    // const handleAddShowDialog = () => {
+    const sellInvestment = async () => {
+        // console.log("Satılacaklar Bunlar: " + JSON.stringify(sellInvestmentList, 4, 4))
+        // setSellInvestmentList(
+        //     sellInvestmentList.map(item => ({
+        //         ...item,
+        //         currency: Object.keys(sellMoneyInfoDetail)[0],
+        //         exchangeRate: Object.values(sellMoneyInfoDetail)[0],
 
-    // }
+        //     }))
+        // );
+
+        const selectedAccount = await getAccountDetailInfo();
+
+        const rates = await exchangeRates();
+        const rate = selectedAccount.currency === "TRY" ? 1 :
+            selectedAccount.currency === "USD" ? rates.USD.Selling : rates.EUR.Selling;
+
+        const transferPayloads = [];
+
+        let currentBalance = selectedAccount.balance;
+
+        console.log("SellMoney:", sellMoneyInfoDetail);
+
+        console.log("Satılacaklar Bunlar: " + JSON.stringify(sellInvestmentList, 4, 4));
+
+        for (const item of sellInvestmentList) {
+            const itemTotal = parseFloat(item.sellCount) * parseFloat(item.salesPrice);
+            // const itemValueInAccountCurrency = itemTotal / rate;
+
+            const previousBalance = currentBalance;
+            currentBalance += itemTotal;
+
+            transferPayloads.push({
+                type: "incoming",
+                moneyAccountId: selectedAccount.id,
+                inputPreviousBalance: previousBalance,
+                inputNextBalance: currentBalance,
+                exchangeRate: item.exchangeRate,
+                description: "Altın/Hisse satım işlemi sırasında bu hesaba para girişi sağlanmıştır",
+                transactionDateTime: toLocalISOTime(item.buyingDateTime),
+                category: "Satım İşlemi",
+                amount: itemTotal,
+                currency: selectedAccount.currency,
+            })
+        }
+
+
+        const updatedAccount = {
+            ...selectedAccount,
+            balance: selectedAccount.balance + await getTotalPriceBySellingItems(selectedAccount),
+        };
+
+
+        console.log("Para Bilgisi:", updatedAccount);
+
+        try {
+
+            for (const transferPayload of transferPayloads) {
+                await axios.post(
+                    `${backendUrl}/api/transfers/create`,
+                    transferPayload,
+                    {
+                        headers: {
+                            Authorization: token ? `Bearer ${token}` : undefined,
+                            "Content-Type": "application/json",
+                        },
+                    }
+                );
+            }
+            await axios.put(
+                `${backendUrl}/api/asset/update-money-account?updatedAccount=false&exchangeRate=${CURRENCIES.find(c => c.value === selectedAccount.currency)?.exchangeRates}`,
+                updatedAccount,
+                {
+                    headers: {
+                        Authorization: token ? `Bearer ${token}` : undefined,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+        }
+        catch (err) {
+            console.error("Transfer hatası:", err);
+            setError("Bir hata oluştu, lütfen tekrar deneyin.");
+        }
+        await sellTransaction(sellInvestmentList).unwrap();
+
+        setUpdateMoneyAccount(true);
+        closeSellInvestmentDialog();
+    }
+
+    const [sellMoneyInfoDetail, setSellMoneyInfoDetail] = useState({})
+
+    useEffect(() => {
+        console.log("Sell Money Info Detail:", sellMoneyInfoDetail);
+        if (Object.keys(sellMoneyInfoDetail).length > 0) {
+            console.log("Para hesabı değişti ve girdim.")
+            console.log(sellMoneyInfoDetail)
+            setSellInvestmentList(prevList =>
+                prevList.map(item => ({
+                    ...item,
+                    currency: Object.keys(sellMoneyInfoDetail)[0],
+                    /*exchangeRate: Object.values(sellMoneyInfoDetail)[0],*/ //////////////////////////////////////////////////////
+                }))
+            );
+        }
+    }, [sellMoneyInfoDetail])
+
+    useEffect(() => {
+
+        const getMoneyAccountDetail = async () => {
+            const selectedAccount = await getAccountDetailInfo();
+            const rates = await exchangeRates();
+            const rate = selectedAccount.currency === "TRY" ? 1 :
+                selectedAccount.currency === "USD" ? rates.USD.Selling : rates.EUR.Selling;
+
+            setSellMoneyInfoDetail({ [selectedAccount.currency]: rate })
+
+
+        };
+
+        if (selectedMoneyAccount !== 0) {
+            getMoneyAccountDetail();
+        }
+    }, [selectedMoneyAccount]);
+
+
+    useEffect(() => { ///////////////////////////////////////////////////////////////////////////////////
+
+        if (item[0].assetType === "GOLD" && selectedMoneyAccount !== 0) {
+            const updatedData = sellInvestmentList.map((data) => {
+                if (data.transactionId !== 0) {
+                    const itemData = item.find((itemData) => itemData.transactionId === data.transactionId)
+                    const goldPriceData = goldPrice.find((dataGoldPrice) => dataGoldPrice.Name.split("ALTIN")[0] === itemData.assetSymbol).Buying / Object.values(sellMoneyInfoDetail)[0]
+                    return {
+                        ...data, salesPrice: Math.round(Number(goldPriceData) * 100) / 100,
+                        totalPrice: Number(goldPriceData) * data.sellCount,
+                        //unitPrice: Math.round(Number(goldPriceData) * 100) / 100,
+                        currentPrice: Math.round(Number(goldPriceData) * 100) / 100,
+                        /////////////////////////////////////////////////exchangeRate: Object.values(sellMoneyInfoDetail)[0],
+                        currency: Object.keys(sellMoneyInfoDetail)[0]
+                    }
+                }
+                return { ...data }
+            })
+
+            console.log("Updated Data Gold:", updatedData);
+            setSellInvestmentList(updatedData);
+        }
+        //STOCK
+        else if (item[0].assetType === "STOCK" && selectedMoneyAccount !== 0) {
+
+            const updatedData = sellInvestmentList.map((data) => {
+                if (data.transactionId !== 0) {
+                    const itemData = item.find((itemData) => itemData.transactionId === data.transactionId)
+                    const stockPriceData = stockPrice.find((data) => data.symbol === itemData.assetSymbol).value / Object.values(sellMoneyInfoDetail)[0]
+                    return {
+                        ...data, salesPrice: Math.round(Number(stockPriceData) * 100) / 100,
+                        totalPrice: Number(stockPriceData) * data.sellCount,
+                        //unitPrice: Math.round(Number(stockPriceData) * 100) / 100,
+                        currentPrice: Math.round(Number(stockPriceData) * 100) / 100,
+                        ////////////////////////////////////////////////////////////exchangeRate: Object.values(sellMoneyInfoDetail)[0],
+                        currency: Object.keys(sellMoneyInfoDetail)[0]
+                    }
+                }
+                return { ...data }
+            })
+
+            console.log("Updated Data Stock:", updatedData);
+            setSellInvestmentList(updatedData);
+        }
+
+    }, [sellMoneyInfoDetail]);
+
+
+    useEffect(() => {
+        getTransactionsByAsset();
+    }, [])
+
+    const currentPrice = (holding) => {
+        console.log("Current Price:", holding);
+        if (holding.assetType === "GOLD") {
+            const goldPriceCurrent = goldPrice.find((data) => data.Name.split("ALTIN")[0] === holding.assetSymbol);
+            return goldPriceCurrent ? Math.round(Number(goldPriceCurrent.Buying) * 100) / 100 : 0;
+        }
+        else if (holding.assetType === "STOCK") {
+            const stockPriceCurrent = stockPrice.find((data) => data.symbol === holding.assetSymbol);
+            return stockPriceCurrent ? Math.round(Number(stockPriceCurrent.value) * 100) / 100 : 0;
+        }
+
+    }
+
+
+
+    //Altın, Hisse Değişince Gerekli İşlemler Yapılır
+    const setTransactionId = (transactionId, id) => {
+
+        console.log("Burdayım")
+
+        //GOLD
+        if (item[0].assetType === "GOLD") {
+            const itemData = item.find((data) => data.transactionId === transactionId)
+            const updatedData = sellInvestmentList.map((data) => {
+                if (data.id === id) {
+                    const goldPriceData = goldPrice.find((data) => data.Name.split("ALTIN")[0] === itemData.assetSymbol).Buying / Object.values(sellMoneyInfoDetail)[0]
+                    return { ...data, currency: Object.keys(sellMoneyInfoDetail)[0], transactionId: transactionId, quantity: itemData.quantity, assetName: itemData.assetName, sellCount: 0, unitPrice: itemData.purchasePrice, currentPrice: goldPriceData, totalPrice: 0, buyingDateTime: dayjs(itemData.buyingDateTime), salesPrice: goldPriceData }
+                }
+                return data
+            })
+
+            setSellInvestmentList(updatedData);
+        }
+        //STOCK
+        else if (item[0].assetType === "STOCK") {
+            const itemData = item.find((data) => data.transactionId === transactionId)
+
+            const updatedData = sellInvestmentList.map((data) => {
+                if (data.id === id) {
+                    const stockPriceData = stockPrice.find((data) => data.symbol === itemData.assetSymbol).value / Object.values(sellMoneyInfoDetail)[0]
+                    return { ...data, currency: Object.keys(sellMoneyInfoDetail)[0], transactionId: transactionId, quantity: itemData.quantity, assetName: itemData.assetName, sellCount: 0, unitPrice: itemData.purchasePrice, salesPrice: stockPriceData, currentPrice: stockPriceData, totalPrice: 0, buyingDateTime: dayjs(itemData.buyingDateTime) }
+                }
+                return data
+            })
+
+            setSellInvestmentList(updatedData);
+        }
+
+
+    }
+
+    const deleteInvestmentAccount = async () => {
+        const deletingAccount = item[0].accountId;
+        const response = await deleteAsset(deletingAccount);
+        if (response.error) {
+            console.error("Error deleting asset:", response.error);
+            setError("Bir hata oluştu, lütfen tekrar deneyin.");
+        }
+
+    }
+
+    const updateSoldData = (id, field, newValue) => {
+        console.log("Updating sold data:", { id, field, newValue });
+        const updatedData = sellInvestmentList.map((item) => {
+            if (item.id === id) {
+                return { ...item, [field]: dayjs(newValue) };
+            }
+            return item;
+        });
+
+        setSellInvestmentList(updatedData);
+        setChangeExchangeRate(true);
+    };
+
+    const setSellCount = (value, id) => {
+        if (item[0].assetType === "GOLD") {
+            const sellingData = sellInvestmentList.find((data) => data.id === id);
+            if (!sellingData)
+                return null;
+            if (value > sellingData.quantity)
+                return null;
+
+            const updatedData = sellInvestmentList.map((data) => {
+                if (data.id === id) {
+                    return { ...data, sellCount: parseFloat(value), totalPrice: data.salesPrice * value }
+                }
+                return data
+            })
+
+            setSellInvestmentList(updatedData)
+        }
+        else if (item[0].assetType === "STOCK") {
+            const sellingData = sellInvestmentList.find((data) => data.id === id);
+            if (!sellingData)
+                return null;
+            if (value > sellingData.quantity)
+                return null;
+
+            const updatedData = sellInvestmentList.map((data) => {
+                if (data.id === id) {
+                    return { ...data, sellCount: parseFloat(value), totalPrice: data.salesPrice * value }
+                }
+                return data
+            })
+
+            setSellInvestmentList(updatedData)
+        }
+
+    }
+
+
+    const removeSellInvestment = (id) => {
+        const newList = sellInvestmentList.filter((data) => data.id !== id);
+        setSellInvestmentList(newList);
+    }
+
+
+    const addSellInvestment = () => {
+
+        const sellInvestmentListTransactionIds = sellInvestmentList.map((data) => data.transactionId);
+        const itemTransactionList = item.filter((data) => data.transactionId && data.assetName !== null);
+
+
+        if (sellInvestmentListTransactionIds.length === itemTransactionList.length) {
+            return;
+        }
+
+        const maxId = Math.max(...sellInvestmentList.map((data) => data.id));
+        const newItem = { key: maxId + 1, id: maxId + 1, assetName: "", quantity: 0, sellCount: 0, transactionId: 0, currency: Object.keys(sellMoneyInfoDetail)[0], exchangeRate: 1, unitPrice: 0, currentPrice: 0, totalPrice: 0, buyingDateTime: dayjs(), salesPrice: 0 };
+        const updateList = [...sellInvestmentList, newItem];
+
+        setChangeExchangeRate(true);
+        setSellInvestmentList(updateList)
+    }
+
+    const getTotalPrice = async (selectedAccount) => {
+
+        let totalPrice;
+        if (title === "Altın") {
+            totalPrice = goldItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
+        }
+        else if (title === "Yatırım") {
+            totalPrice = stockItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
+        }
+
+        // if (selectedAccount.currency === "EUR") {
+        //     totalPrice = totalPrice / (await exchangeRates()).EUR.Selling
+        //     console.log("Bu bir EURO hesabı olduğu için para birimi düşme işlemi buna göre yapıdlı")
+        // }
+        // else if (selectedAccount.currency === "USD") {
+        //     totalPrice = totalPrice / (await exchangeRates()).USD.Selling
+        //     console.log("Bu bir USD hesabı olduğu için para birimi düşme işlemi buna göre yapıdlı")
+        // }
+        return totalPrice;
+
+    }
+
+
+
+    const [changeExchangeRate, setChangeExchangeRate] = useState(false);
+
+    useEffect(() => {
+        const getExchangeRate = async () => {
+            const rates = await Promise.all(sellInvestmentList.map(async item => {
+                const moneyAccount = await axios.get(`${backendUrl}/api/accounts/get-money-account?moneyAccountId=${selectedMoneyAccount}`, {
+                    headers: {
+                        Authorization: token ? `Bearer ${token}` : undefined,
+                        "Content-Type": "application/json",
+                    },
+                });
+
+                console.log("İtem Burda: ")
+                console.log(item)
+                const response = await getExchangeRateByPastDate(
+                    moneyAccount.data.currency || "TRY",
+                    item.buyingDateTime.format("YYYY-MM-DD"),
+                    "TRY"
+                );
+
+                if (response === undefined || response.length === 0) {
+                    return 1;
+                }
+                return response.rate;
+            }));
+
+            console.log("Exchange rates fetched:", rates);
+
+            setSellInvestmentList(
+                sellInvestmentList.map((item, index) => ({
+                    ...item,
+                    exchangeRate: String(rates[index])
+                }))
+            )
+        };
+
+        if (changeExchangeRate) {
+            getExchangeRate();
+            setChangeExchangeRate(false);
+        }
+    }, [sellInvestmentList, selectedMoneyAccount])
+
+
+    useEffect(() => {
+        setChangeExchangeRate(true);
+    }, [selectedMoneyAccount])
+
+
+    useEffect(() => {
+        const getSellingHistory = async () => {
+            const response = await axios.get(`${backendUrl}/api/asset/get-transaction-by-asset-id/${item[0].accountId}`, {
+                headers: {
+                    Authorization: token ? `Bearer ${token}` : undefined,
+                    "Content-Type": "application/json",
+                },
+            });
+            setSellingTransactions(response.data);
+        }
+        getSellingHistory();
+    }, [item])
+
+
+    const getSoldQuantity = async (transactionId) => {
+        const response = await axios.get(`${backendUrl}/api/asset/get-selling-count?transactionId=${transactionId}`, {
+            headers: {
+                Authorization: token ? `Bearer ${token}` : undefined,
+                "Content-Type": "application/json",
+            },
+        });
+        return response.data;
+    }
+
+
+    const addInvestment = async () => {
+
+        const selectedAccount = await getAccountDetailInfo();
+
+        const rates = await exchangeRates();
+        const rate = selectedAccount.currency === "TRY" ? 1 :
+            selectedAccount.currency === "USD" ? rates.USD.Selling : rates.EUR.Selling;
+
+        const transferPayloads = [];
+
+        let currentBalance = selectedAccount.balance;
+
+        if (item[0].assetType === "GOLD") {
+            for (const item of goldItems) {
+                const itemTotal = parseFloat(item.quantity) * parseFloat(item.price);
+                // const itemValueInAccountCurrency = itemTotal / rate;
+
+                const previousBalance = currentBalance;
+                currentBalance -= itemTotal;
+
+                transferPayloads.push({
+                    type: "outgoing",
+                    moneyAccountId: selectedAccount.id,
+                    outputPreviousBalance: previousBalance,
+                    outputNextBalance: currentBalance,
+                    exchangeRate: item.exchangeRate,
+                    description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
+                    transactionDateTime: toLocalISOTime(item.buyingDateTime),
+                    category: "Satın Alım",
+                    amount: itemTotal,//itemValueInAccountCurrency,
+                    currency: selectedAccount.currency
+                })
+            }
+        }
+        else {
+            for (const item of stockItems) {
+                const itemTotal = parseFloat(item.quantity) * parseFloat(item.price);
+                // const itemValueInAccountCurrency = itemTotal / rate;
+                const previousBalance = currentBalance;
+                currentBalance -= itemTotal;
+                transferPayloads.push({
+                    type: "outgoing",
+                    moneyAccountId: selectedAccount.id,
+                    outputPreviousBalance: previousBalance,
+                    outputNextBalance: currentBalance,
+                    exchangeRate: item.exchangeRate,
+                    description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
+                    transactionDateTime: toLocalISOTime(item.buyingDateTime),
+                    category: "Satın Alım",
+                    amount: itemTotal,//itemValueInAccountCurrency,
+                    currency: selectedAccount.currency,
+                    buyingDateTime: item.buyingDateTime.toISOString()
+                })
+
+
+            }
+
+        };
+
+        console.log("Transfer payloadları:", transferPayloads);
+
+
+
+
+
+        // const transferPayload = {
+        //     type: "outgoing",
+        //     moneyAccountId: selectedAccount.id,
+        //     outputPreviousBalance: selectedAccount.balance,
+        //     outputNextBalance: selectedAccount.balance - await getTotalPrice(selectedAccount),
+        //     exchangeRate: selectedAccount.currency === "TRY" ? 1 : selectedAccount.currency === "USD" ? (await exchangeRates()).USD.Selling : (await exchangeRates()).EUR.Selling,
+        //     description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
+        //     category: "Satın Alım",
+        //     amount: await getTotalPrice(selectedAccount),
+        //     transactionDateTime: new Date(selectedTransfer.date).toISOString().slice(0, 19),
+        //     currency: selectedAccount.currency
+        // };
+
+        const updatedAccount = {
+            ...selectedAccount,
+            balance: selectedAccount.balance - await getTotalPrice(selectedAccount),
+        };
+
+        try {
+
+            for (const transferPayload of transferPayloads) {
+                await axios.post(
+                    `${backendUrl}/api/transfers/create`,
+                    transferPayload,
+                    {
+                        headers: {
+                            Authorization: token ? `Bearer ${token}` : undefined,
+                            "Content-Type": "application/json",
+                        },
+                    }
+                );
+            }
+
+            // await axios.post(
+            //     `${backendUrl}/api/transfers/create`,
+            //     transferPayload,
+            //     {
+            //         headers: {
+            //             Authorization: token ? `Bearer ${token}` : undefined,
+            //             "Content-Type": "application/json",
+            //         },
+            //     }
+            // );
+
+            await axios.put(
+                `${backendUrl}/api/asset/update-money-account?updatedAccount=false&exchangeRate=${CURRENCIES.find(c => c.value === selectedAccount.currency)?.exchangeRates}`,
+                updatedAccount,
+                {
+                    headers: {
+                        Authorization: token ? `Bearer ${token}` : undefined,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+        }
+        catch (err) {
+            console.error("Transfer hatası:", err);
+            setError("Bir hata oluştu, lütfen tekrar deneyin.");
+        }
+
+
+
+        // if (selectedMoneyAccount === 0) {
+        //     rate = 1;
+        // } else {
+        //     const selectedAccount = await getAccountDetailInfo();
+        //     const rates = await exchangeRates();
+        //     rate = selectedAccount.currency === "TRY" ? 1 :
+        //         selectedAccount.currency === "USD" ? rates.USD.Selling : rates.EUR.Selling;
+        // }
+
+
+        const holdings = item[0].assetType === "GOLD"
+            ? goldItems.map((goldItem) => {
+                const goldTypeInfo = GOLD_TYPES.find(
+                    (g) => g.value === goldItem.goldType
+                )
+                console.log("Gold Type Info:", goldItem);
+                return {
+                    assetId: item[0].accountId,
+                    transactionType: "BUY",
+                    assetSymbol: goldItem.goldType,
+                    assetName: goldTypeInfo?.label || goldItem.goldType,
+                    quantity: parseFloat(goldItem.quantity),
+                    unitPrice: parseFloat(goldItem.price),
+                    totalValue: parseFloat(goldItem.quantity) * parseFloat(goldItem.price),
+                    currentValue: parseFloat(goldTypeInfo.Buying / rate),
+                    buyingDateTime: goldItem.buyingDateTime.toISOString(),
+                    exchangeRate: parseFloat(goldItem.exchangeRate),
+                    currency: selectedAccount.currency
+                };
+            })
+            : stockItems.map((stockItem) => ({
+                assetId: item[0].accountId,
+                transactionType: "BUY",
+                assetSymbol: stockItem.stock.symbol,
+                assetName: stockItem.stock.name,
+                quantity: parseFloat(stockItem.quantity),
+                unitPrice: parseFloat(stockItem.price),
+                totalValue: parseFloat(stockItem.quantity) * parseFloat(stockItem.price),
+                currentValue: parseFloat(stockItem.stock.price / rate),
+                buyingDateTime: stockItem.buyingDateTime.toISOString(),
+                exchangeRate: parseFloat(stockItem.exchangeRate),
+                currency: selectedAccount.currency
+            }));
+
+
+
+
+        console.log("Holdings:");
+        console.log(holdings);
+
+
+        await addHolding(holdings).unwrap();
+        setUpdateMoneyAccount(true);
+        closeShowAddDialog();
+    }
+
+
+    const closeShowAddDialog = () => {
+        setShowAddDialog(false);
+        setGoldItems([{ id: 1, goldType: "", quantity: "", price: "", buyingDateTime: dayjs(), exchangeRate: 1 },])
+        setStockItems([{ id: 1, stock: "", quantity: "", price: "", buyingDateTime: dayjs(), exchangeRate: 1 },])
+        setSelectedMoneyAccount(0);
+    }
+
+    const getAccountDetailInfo = async () => {
+        const response = await axios.get(
+            `${backendUrl}/api/accounts/get-money-account?moneyAccountId=${selectedMoneyAccount}`,
+            {
+                headers:
+                {
+                    Authorization: token ? `Bearer ${token}` : undefined,
+                },
+            }
+        );
+        return response.data
+    }
+
+    const updateSellDataPrice = (id, newPrice) => {
+        setSellInvestmentList(prevList =>
+            prevList.map(item =>
+                item.id === id
+                    ? {
+                        ...item,
+                        salesPrice: Number(newPrice),
+                        totalPrice: Number(newPrice) * item.sellCount,
+                        //unitPrice: Math.round(Number(newPrice) * 100) / 100
+                    }
+                    : item
+            )
+        );
+
+    };
+
+
+    const updateSellDataExchangeRate = (id, field, value) => {
+        setSellInvestmentList(prevList =>
+            prevList.map(item =>
+                item.id === id
+                    ? {
+                        ...item,
+                        [field]: value,
+                    }
+                    : item
+            )
+        );
+
+    }
+
+    useEffect(() => {
+        const validate = async () => {
+            if (!selectedMoneyAccount || selectedMoneyAccount === "0") {
+                setIsButtonDisabled(true);
+                return;
+            }
+
+            try {
+                const accountDetail = await getAccountDetailInfo();
+                const pay = accountDetail.currency === "TRY"
+                    ? accountDetail.balance
+                    : accountDetail.balance * (exchangeRate[accountDetail.currency]?.Buying || 0);
+
+
+                let totalPrice = 0;
+                let fieldsValid = false;
+
+                const rate = accountDetail.currency === "TRY" ? 1 : accountDetail.currency === "USD" ? exchangeRate.USD.Buying : exchangeRate.EUR.Buying;
+                if (title === "Altın") {
+                    console.log("Gold Items for Validation:", accountDetail);
+
+                    totalPrice = goldItems.reduce((start, cur) => (cur.price * cur.quantity * rate) + start, 0);
+                    console.log("Total Price:", totalPrice);
+
+                    fieldsValid = goldItems.every((goldData) =>
+                        goldData.goldType !== "" &&
+                        goldData.price > 0 &&
+                        goldData.quantity > 0 &&
+                        goldData.buyingDateTime !== "" &&
+                        goldData.buyingDateTime !== 0 &&
+                        goldData.buyingDateTime !== null &&
+                        goldData.exchangeRate !== "" &&
+                        goldData.exchangeRate !== 0 &&
+                        goldData.exchangeRate !== null
+                    );
+
+                }
+                else if (title === "Yatırım") {
+                    totalPrice = stockItems.reduce((start, cur) => (cur.price * cur.quantity * rate) + start, 0);
+
+                    fieldsValid = stockItems.every((stockData) =>
+                        stockData.price !== "" &&
+                        stockData.price !== 0 &&
+                        stockData.quantity !== "" &&
+                        stockData.quantity !== 0 &&
+                        stockData.stock !== "" &&
+                        stockData.stock !== 0 &&
+                        stockData.stock !== null &&
+                        stockData.exchangeRate !== "" &&
+                        stockData.exchangeRate !== 0 &&
+                        stockData.exchangeRate !== null
+                    )
+                }
+
+                setIsButtonDisabled((totalPrice > pay) || !fieldsValid);
+            } catch (error) {
+                console.error("Hesap detayı alınamadı", error);
+                setIsButtonDisabled(true);
+            }
+        };
+
+        validate();
+    }, [selectedMoneyAccount, goldItems, stockItems, exchangeRate]);
+
 
     const openShowAddDialog = () => {
         setShowAddDialog(true);
-        // setSelectedGold(-1);
-        // setGoldList([{
-        //     id: goldId,
-        //     goldTpye: "",
-        //     goldQuantity: 0,
-        //     goldPrice: 0,
-        // }])
-        // setGoldId(() => goldId + 1);
     }
 
-    // const closeShowAddDialog = () => {
-    //     setShowAddDialog(false);
-    // }
+    const openSellInvestmentDialog = () => {
+        setShowSellDialog(true);
+    }
 
-    // const getPrice = (item) => {
-    //     return item.goldQuantity * item.goldPrice;
-    // }
+    const closeSellInvestmentDialog = () => {
+        setShowSellDialog(false);
+        setSelectedMoneyAccount(0);
+        setSellInvestmentList([
+            { key: 1, id: 1, assetName: "", quantity: 0, sellCount: 0, exchangeRate: 1, currency: "", transactionId: 0, unitPrice: 0, totalPrice: 0, currentPrice: 0, salesPrice: 0, buyingDateTime: dayjs() }]
+        )
+    }
 
-    // const getTotalPrice = () => {
-    //     return goldList.reduce(((sum, item) => sum + (item.goldQuantity * item.goldPrice)), 0)
-    // }
+    const getTransactionsByAsset = async () => {
 
-    // const addGold = () => {
-    //     const data = {
-    //         id: goldId,
-    //         goldTpye: "",
-    //         goldQuantity: 0,
-    //         goldPrice: 0
-    //     }
-    //     setGoldList(
-    //         [...goldList, data]
-    //     );
+        //Altın Fiyatlarını Çekme İşlemi
+        axios.get('https://finans.truncgil.com/v4/today.json')
+            .then(response => {
+                const goldPrices = (Object.entries(response.data).filter(([key]) => goldTypeKey.includes(key)).map(data => data[1]))
+                setGoldPrice(goldPrices)
+            })
+            .catch(error => console.error(error));
 
-    //     console.log("Tüm Data");
-    //     console.log(JSON.stringify(goldList, 4, 4))
-    //     setGoldId(() => goldId + 1)
-    // }
 
-    // const removeGold = (item) => {
-    //     console.log("İtem Burda" + JSON.stringify(item, 4, 4))
-    //     const newList = goldList.filter((goldItem) => goldItem.id !== item.id)
-    //     console.log("Item: " + newList)
-    //     setGoldList(
-    //         [...newList]
-    //     )
-    // }
 
-    // const updateGoldItem = (id, field, value) => {
+        //Stock Fiyatlarını Çekme İşlemi
+        const stockItem = []
+        await Promise.all(
+            STOCKS.map(async (stock) => {
+                stockItem.push({ symbol: stock.symbol, value: await getStocksValueApi(stock.symbol) })
+            })
+        );
 
-    //     setGoldList(
-    //         goldList.map((item) =>
-    //             item.id === id ? { ...item, [field]: value } : item
-    //         )
-    //     );
-    // }
+        setStockPrice(stockItem);
+    }
 
+    const [soldQuantity, setSoldQuantity] = useState(0)
+
+
+    useEffect(() => {
+        const fetchData = async () => {
+            if (editingHolding) {
+                const soldQuantity = await getSoldQuantity(editingHolding.transactionId);
+                setSoldQuantity(soldQuantity);
+
+            }
+        };
+        fetchData();
+    }, [editDialogOpen]);
 
     const handleEditClick = (holding) => {
         setEditingHolding(holding);
@@ -168,20 +998,33 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
     const handleEditSave = async () => {
         try {
-            console.log("Editlicez")
             console.log(editingHolding);
             console.log("purchase_price: " + parseFloat(editPrice))
-            console.log("quantity: " + parseFloat(editQuantity))
-            await updateHolding({
-                id: editingHolding.id,
-                quantity: parseFloat(editQuantity),
-                purchasePrice: parseFloat(editPrice),
+
+            // console.log("quantity: " + parseFloat(editQuantity))
+            // console.log(item.find(data => data.transactionId === editingHolding.transactionId))
+
+
+            let updatedCurrentPrice;
+            if (editingHolding.assetType === "GOLD") {
+                //Altının Güncel Fiyatı Bulunur
+                updatedCurrentPrice = GOLD_TYPES.find(item => item.value === editingHolding.assetSymbol)?.Buying || 0;
+                console.log("newGoldPrice: " + updatedCurrentPrice);
+            } else if (editingHolding.assetType === "STOCK") {
+                updatedCurrentPrice = STOCKS.find(item => item.symbol === editingHolding.assetSymbol)?.price || 0;
+                console.log("newStockPrice: " + updatedCurrentPrice);
+            }
+
+            await updateAsset({
+                ...editingHolding,
+                transactionId: editingHolding.transactionId,
+                updatedId: editingHolding.id,
+                updatedQuantity: parseFloat(editQuantity),
+                updatedPurchasePrice: parseFloat(editPrice),
+                updatedCurrentPrice: updatedCurrentPrice / editingHolding.exchangeRate,
             }).unwrap();
-            console.log("Güncellendi");
-            // window.location.reload();
 
             setEditDialogOpen(false);
-            // fetchAccountData();
         } catch (err) {
             console.error("Error updating holding:", err);
             setError("Güncelleme sırasında bir hata oluştu.");
@@ -193,25 +1036,101 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
         setDeleteDialogOpen(true);
     };
 
+
     const handleDeleteConfirm = async () => {
+        //  const [assetResponse] = item.filter((data) => data.id === deletingHoldingId)
+
+        // const response = await axios.get(
+        //     `${backendUrl}/api/accounts/get-money-account?moneyAccountId=${selectedMoneyAccount}`,
+        //     {
+        //         headers: {
+        //             Authorization: token ? `Bearer ${token}` : undefined,
+        //         },
+        //     }
+        // )
+
+
+        // const moneyAccount = response.data;
+        // const currentExchangeRate = (await getExchangeRateByPastDate(moneyAccount.currency, new Date().toDateString("dd.MM.yyyy"),"TRY") || {rate: 1});
+
+        // const itemTotal = parseFloat(assetResponse.quantity) * parseFloat(assetResponse.purchasePrice) * (assetResponse.exchangeRate / currentExchangeRate.rate);
+
+        // const previousBalance = moneyAccount.balance;
+        // const currentBalance = previousBalance + itemTotal;
+
+        // const transferPayload = {
+        //     type: "incoming",
+        //     moneyAccountId: selectedMoneyAccount,
+        //     inputPreviousBalance: previousBalance,
+        //     inputNextBalance: currentBalance,
+        //     exchangeRate: currentExchangeRate.rate,
+        //     description: "Yanlışlıkla alınan altın/hisse sonucu iade",
+        //     transactionDateTime: toLocalISOTime(new Date()),
+        //     category: "İade",
+        //     amount: itemTotal,
+        //     currency: moneyAccount.currency,
+        // }
+
+
+        // const updatedAccount = {
+        //     ...moneyAccount,
+        //     balance: moneyAccount.balance + itemTotal,
+        // };
+
+
+        // console.log("Para Bilgisi:", updatedAccount);
+        // console.log("Transfer Bilgisi:", transferPayload);
+
+        // try {
+
+        //     await axios.post(
+        //         `${backendUrl}/api/transfers/create`,
+        //         transferPayload,
+        //         {
+        //             headers: {
+        //                 Authorization: token ? `Bearer ${token}` : undefined,
+        //                 "Content-Type": "application/json",
+        //             },
+        //         }
+        //     )
+            
+        //     await axios.put(
+        //         `${backendUrl}/api/asset/update-money-account?updatedAccount=false&exchangeRate=${CURRENCIES.find(c => c.value === selectedAccount.currency)?.exchangeRates}`,
+        //         updatedAccount,
+        //         {
+        //             headers: {
+        //                 Authorization: token ? `Bearer ${token}` : undefined,
+        //                 "Content-Type": "application/json",
+        //             },
+        //         }
+        //     );
+        // }
+        // catch (err) {
+        //     console.error("Transfer hatası:", err);
+        //     setError("Bir hata oluştu, lütfen tekrar deneyin.");
+        // }
         try {
+            const [assetResponse] = item.filter((data) => data.id === deletingHoldingId)
+            const exchangeRates = CURRENCIES.map(currency => { return { [currency.value]: currency.exchangeRates } });
+            console.log("exchangeRates: ", exchangeRates);
+            console.log("transactionId: ", assetResponse.transactionId);
+            console.log("selectedMoneyAccountId: ", selectedMoneyAccount);
 
-            console.log("Silinecek ID: " + deletingHoldingId)
-            await deleteHolding(deletingHoldingId).unwrap();
-            console.log("Kişi Başarıyla Silindi");
-            console.log("İtem Uzunluğu: " + item.length);
-            console.log(item);
+            await axios.put(`${backendUrl}/api/asset/after-deleting-add-money?transactionId=${assetResponse.transactionId}&selectedMoneyAccountId=${selectedMoneyAccount}`,
+                exchangeRates,
+                { headers: { Authorization: token ? `Bearer ${token}` : undefined } }
+            );
 
-            console.log("Key Değeri Burda Ya: " + 1)
-            if (item.length === 1) {
+            await deleteTransaction({ ...assetResponse }).unwrap();
+            // if (item.length === 1) {
 
-                await axios.delete(backendUrl + `/api/accounts/delete/${item[0].accountId}`, {
-                    headers: {
-                        Authorization: token ? `Bearer ${token}` : undefined,
-                    },
-                });
+            //     await axios.delete(backendUrl + `/api/accounts/delete/${item[0].accountId}`, {
+            //         headers: {
+            //             Authorization: token ? `Bearer ${token}` : undefined,
+            //         },
+            //     });
 
-            }
+            // }
 
             setDeleteDialogOpen(false);
         } catch (err) {
@@ -245,7 +1164,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
     };
 
     const mainCardProfitLoss = item.reduce(
-        (sum, v) => sum + (parseFloat(v.currentPrice) * parseFloat(v.quantity)) - (parseFloat(v.purchasePrice) * parseFloat(v.quantity)), 0
+        (sum, v) => sum + (parseFloat(v.currentPrice) * parseFloat(v.quantity)) - (parseFloat(v.purchasePrice) * parseFloat(v.quantity) * v.exchangeRate), 0
     );
 
     if (Object.keys(item).length === 0) {
@@ -274,6 +1193,33 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
 
 
+    const [isSellingBefore, setIsSellingBefore] = useState([]);
+
+    useEffect(() => {
+
+        setIsSellingBefore([]);
+
+        const checkDeleteDisable = async () => {
+            for (const holding of item) {
+                const response = await axios.get(`${backendUrl}/api/asset/isDeleteTransactionBefore?transactionId=${holding.transactionId}`, {
+                    headers: {
+                        Authorization: token ? `Bearer ${token}` : undefined,
+                    },
+                });
+
+                setIsSellingBefore((prev) => [...prev, response.data]);
+            }
+        }
+
+        checkDeleteDisable();
+
+    }, [item])
+
+
+    useEffect(() => {
+        console.log("Selected Money Account:", selectedMoneyAccount);
+    }, [selectedMoneyAccount]);
+
     return (
 
         <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
@@ -282,10 +1228,12 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                 {/* <IconButton onClick={() => navigate("/account")} sx={{ p: 1 }}>
           <ArrowBackIcon />
         </IconButton> */}
-                <Box sx={{ flex: 1 }}>
+                <Box sx={{ flexDirection: 1 }}>
+
                     <Typography variant="h5" sx={{ fontWeight: 600 }}>
                         {item[0].accountName}
                     </Typography>
+
                     <Chip
                         icon={isGold ? <ViewInArIcon /> : <ShowChartIcon />}
                         label={isGold ? "Altın Hesabı" : "Hisse Hesabı"}
@@ -298,6 +1246,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                         }}
                     />
                 </Box>
+
             </Box>
 
 
@@ -377,14 +1326,98 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                             {item.length} farklı {isGold ? "altın türü" : "hisse senedi"}
                         </Typography>
 
-                        <IconButton
-                            size="small"
-                            onClick={() => openShowAddDialog()}
-                            sx={{ color: "green" }}
-                        >
-                            <FaPlus fontSize="large" />
-                        </IconButton>
+                        <Stack sx={{ display: "flex", flexDirection: "row", marginX: "5px" }}>
+                            <Tooltip title="Hesabı Kaldır">
+                                <IconButton
+                                    size="small"
+                                    onClick={() => setOpenDeleteInvestmentAccountDialog(true)} //deleteInvestmentAccount()
+                                    sx={{ color: "#f44336", marginX: "5px" }}
+                                >
+                                    <MdDeleteForever fontSize="large" />
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Satın Al">
+                                <IconButton
+                                    size="small"
+                                    onClick={() => openShowAddDialog()}
+                                    sx={{ color: "green", marginX: "5px" }}
+                                >
+                                    <FaPlus fontSize="large" />
+                                </IconButton>
+                            </Tooltip>
+
+                            <Tooltip title="Sat">
+                                <IconButton
+                                    size="small"
+                                    color="error"
+                                    disabled={item.every((data) => data.assetSymbol === null)}
+                                    onClick={() => openSellInvestmentDialog()}
+                                    sx={{ marginX: "5px" }}
+                                >
+                                    <GiSellCard fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+
+
+                        </Stack>
+
                     </Box>
+                    <Box sx={{
+                        mt: 2,
+                        pt: 2,
+                        borderTop: '1px solid',
+                        borderColor: 'divider',
+                        display: 'flex',
+                        flexDirection: 'row',
+                        gap: 2,
+                        justifyContent: 'space-around'
+                    }}>
+                        {[
+                            {
+                                label: "Satılanların Toplam Maliyet",
+                                value: sellingTransactions.reduce((acc, tx) => acc + (tx.quantity * tx.unitPrice * tx.purchaseExchangeRate), 0),
+                                color: 'text.secondary'
+                            },
+                            {
+                                label: "Satılanların Toplam Satış Bedeli",
+                                value: sellingTransactions.reduce((acc, tx) => acc + (tx.quantity * tx.sellingPrice * tx.exchangeRate), 0),
+                                color: 'primary.main'
+                            },
+                            {
+                                label: "Satılanların Net Kâr/Zarar",
+                                value: sellingTransactions.reduce((acc, tx) => acc + ((tx.quantity * tx.sellingPrice * tx.exchangeRate) - (tx.quantity * tx.unitPrice * tx.purchaseExchangeRate)), 0),
+                                isProfit: true // Özel renklendirme için
+                            }
+                        ].map((item, index) => {
+                            const isProfitValue = item.isProfit ? item.value >= 0 : null;
+
+                            return (
+                                <Box key={index} sx={{
+                                    textAlign: 'right',
+                                    px: 2,
+                                    py: 1,
+                                    borderRadius: '8px',
+                                    backgroundColor: 'action.hover',
+                                    minWidth: '120px'
+                                }}>
+                                    <Typography variant="caption" sx={{ display: 'block', fontWeight: '500', color: 'text.disabled', textTransform: 'uppercase' }}>
+                                        {item.label}
+                                    </Typography>
+                                    <Typography variant="body1" sx={{
+                                        fontWeight: 'bold',
+                                        fontFamily: 'monospace',
+                                        color: item.isProfit
+                                            ? (isProfitValue ? 'success.main' : 'error.main')
+                                            : (item.color || 'text.primary')
+                                    }}>
+                                        {item.isProfit && (isProfitValue ? '+' : '')}
+                                        {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(item.value)}
+                                    </Typography>
+                                </Box>
+                            );
+                        })}
+                    </Box>
+
                 </CardContent>
             </Card>
 
@@ -404,6 +1437,8 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                     <Divider />
                     <List sx={{ p: 0, }}>
                         {item.map((holding, index) => (
+
+                            holding.assetSymbol &&
                             <React.Fragment key={holding.id}>
                                 <ListItem
                                     sx={{
@@ -414,20 +1449,26 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                                     }}
                                     secondaryAction={
                                         <Box sx={{ display: "flex", gap: 1 }}>
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => handleEditClick(holding)}
-                                                sx={{ color: "primary.main" }}
-                                            >
-                                                <EditIcon fontSize="small" />
-                                            </IconButton>
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => handleDeleteClick(holding.id)}
-                                                sx={{ color: "error.main" }}
-                                            >
-                                                <DeleteIcon fontSize="small" />
-                                            </IconButton>
+                                            <Tooltip title="Item'ı Düzenle">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handleEditClick(holding)}
+                                                    sx={{ color: "primary.main" }}
+                                                >
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Yanlışlıkla Alınan Item'ı Sil">
+                                                <IconButton
+                                                    size="small"
+                                                    color="warning"
+                                                    // sx={{ display: isSellingBefore[index] ? "none" : "flex" }}
+                                                    onClick={() => handleDeleteClick(holding.id)}
+                                                >
+                                                    <DeleteIcon fontSize="small" />
+                                                </IconButton>
+
+                                            </Tooltip>
                                         </Box>
                                     }
                                 >
@@ -449,69 +1490,70 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                                     </ListItemIcon>
                                     <ListItemText
                                         primary={
-                                            <Typography sx={{ fontWeight: 500 }}>
+                                            <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", color: "text.primary" }}>
                                                 {getHoldingDisplayName(holding)}
                                             </Typography>
                                         }
                                         secondary={
+                                            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: 1 }}>
+                                                {/* Miktar Satırı */}
+                                                <Typography variant="body2" sx={{ color: "text.secondary", display: "flex", alignItems: "baseline", gap: 0.5 }}>
+                                                    Miktar:
+                                                    <Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
+                                                        {parseFloat(holding.quantity).toLocaleString("tr-TR")} {getQuantityUnit(holding)}
+                                                    </Box>
+                                                </Typography>
 
-                                            <Typography component={"div"} variant="body2" color="text.secondary">
-
-                                                <Box
-                                                    sx={{
-                                                        display: "flex",
-                                                        gap: 1,
-                                                        mt: 0.5,
-                                                        flexWrap: "wrap",
-
-                                                    }}
-                                                >
-                                                    <Typography component={"span"} variant="body2">
-                                                        Miktar:{" "}
-                                                        <strong>
-                                                            {parseFloat(holding.quantity).toLocaleString("tr-TR")}{" "}
-                                                            {getQuantityUnit(holding)}
-                                                        </strong>
+                                                {/* Fiyatlar Satırı */}
+                                                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                                                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                                        Maliyet: <Box component="span" sx={{ fontWeight: 600 }}>{formatCurrency(holding.purchasePrice * holding.exchangeRate)}</Box>
                                                     </Typography>
-                                                    <Typography component={"span"} variant="body2" color="text.secondary" sx={{
-                                                        display: "flex",
-                                                        gap: "5px"
-                                                    }}>
-                                                        Maliyet Fiyat:{" "}
-                                                        <strong>{formatCurrency(holding.purchasePrice)}</strong>
-
-                                                        Anlık Fiyat:{" "}
-                                                        <strong>{formatCurrency(holding.currentPrice)}</strong>
+                                                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                                        Anlık: <Box component="span" sx={{ fontWeight: 600, color: "info.main" }}>{"₺ " + currentPrice(holding).toLocaleString("tr-TR")}</Box>
                                                     </Typography>
-
-
                                                 </Box>
-
-                                            </Typography>
-
-
+                                            </Box>
                                         }
                                     />
-                                    <Box sx={{ textAlign: "left", mr: "10%", }}>
-                                        <Typography sx={{ fontWeight: 600, color: themeColor }}>
-                                            Toplam Değer: {formatCurrency(holding.quantity * holding.currentPrice)}
+
+                                    <Box sx={{ textAlign: "center", minWidth: "fit-content", ml: 2 }}>
+                                        {/* Toplam Değer */}
+                                        <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "text.primary" }}>
+                                            {formatCurrency(holding.quantity * holding.currentPrice)}
                                         </Typography>
-                                        <Typography sx={{ fontWeight: 600, color: themeColor }}>
-                                            Maliyet Tutarı: {formatCurrency(holding.quantity * holding.purchasePrice)}
+
+                                        {/* Maliyet Tutarı */}
+                                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 1 }}>
+                                            Maliyet: {formatCurrency(holding.quantity * holding.purchasePrice * holding.exchangeRate)}
                                         </Typography>
-                                        <Typography
-                                            variant="body2"
-                                            sx={{
-                                                color:
-                                                    parseFloat(holding.profitLoss) >= 0
-                                                        ? "#4caf50"
-                                                        : "#f44336",
-                                            }}
-                                        >
-                                            {parseFloat(holding.profitLoss) >= 0 ? "+ Kar " : "- Zarar "}
-                                            {formatCurrency((holding.currentPrice * holding.quantity) - (holding.purchasePrice * holding.quantity))}
-                                        </Typography>
+
+                                        {/* Kar/Zarar Rozeti */}
+                                        {(() => {
+                                            const profit = (holding.currentPrice * holding.quantity) - (holding.purchasePrice * holding.quantity * holding.exchangeRate);
+                                            const isProfit = profit >= 0;
+
+                                            return (
+                                                <Box
+                                                    sx={{
+                                                        display: "inline-flex",
+                                                        alignItems: "center",
+                                                        px: 1.5,
+                                                        py: 0.5,
+                                                        borderRadius: "6px",
+                                                        backgroundColor: isProfit ? "rgba(76, 175, 80, 0.1)" : "rgba(244, 67, 54, 0.1)",
+                                                        color: isProfit ? "#2e7d32" : "#d32f2f",
+                                                        fontWeight: 700,
+                                                        fontSize: "0.75rem",
+                                                        border: `1px solid ${isProfit ? "#4caf50" : "#f44336"}`
+                                                    }}
+                                                >
+                                                    {isProfit ? "▲" : "▼"} {isProfit ? "Kâr" : "Zarar"} {formatCurrency(Math.abs(profit))}
+                                                </Box>
+                                            );
+                                        })()}
                                     </Box>
+
                                 </ListItem>
                                 {index < item.length - 1 && <Divider />}
                             </React.Fragment>
@@ -521,113 +1563,22 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
             </Card>
 
 
-
             {/* Add Investment*/}
             {/* */}
-                {/* <Dialog open={showAddDialog} onClose={closeShowAddDialog} sx={{ height: "100%" }}>
-                    <DialogTitle>{isGold ? "Altın Ekleme Yap" : "Hisse Ekleme Yap"}</DialogTitle>
-                    {goldList.map((item, index) => {
 
-                        console.log("AAAAA");
-                        console.log(item)
-                        return <DialogContent key={index} sx={{height:"100%", overflow:"clip    "}}>
-                            <form onSubmit={handleAddShowDialog} id="addGold-form">
-                                <Stack>
-                                    <Box>
-                                        <FormControl sx={{ width: "100%", marginTop: "10px" }}>
-                                            <InputLabel id="gold-label">Altın Türleri</InputLabel>
-                                            <Select
-                                                labelId="gold-label"
-                                                id="gold-select"
-                                                value={item.goldType}
-                                                onChange={(e) => updateGoldItem(item.id, "goldTpye", (e.target.value))}
-                                                label="Altın Türleri"
-                                            >
-                                                <MenuItem value={-1}></MenuItem>
-                                                {Object.keys(GOLD_TYPES).map((gold, idx) => {
+            <Dialog onClose={closeShowAddDialog} open={showAddDialog}>
+                {item[0].assetType === "GOLD" ? <BuyInvestmentGold goldItems={goldItems} setGoldItems={setGoldItems} setSelectedMoneyAccount={setSelectedMoneyAccount} selectedMoneyAccount={selectedMoneyAccount}></BuyInvestmentGold> :
+                    item[0].assetType === "STOCK" ? <BuyInvestmentStock stockItems={stockItems} setStockItems={setStockItems} setSelectedMoneyAccount={setSelectedMoneyAccount} selectedMoneyAccount={selectedMoneyAccount} ></BuyInvestmentStock> : ""}
+                <DialogActions>
+                    <Button onClick={closeShowAddDialog} sx={{ color: "red", ":hover": { color: "black" } }}>Kapat</Button>
+                    <Button type="button" sx={{ color: "green" }} onClick={addInvestment} disabled={isButtonDisabled}>
+                        {/* <Button type="button" sx={{ color: "green" }} onClick={addInvestment} disabled={item[0].assetType === "GOLD" ? checkItemsGold() : checkItemsStock()}> */}
+                        Satın Al
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
-                                                    return <MenuItem value={idx}>
-                                                        <ViewInArIcon sx={{ fontSize: 20, color: "#d4af37", marginRight: "15px   " }} />
-                                                        {GOLD_TYPES[gold].label} </MenuItem>
-                                                })
-                                                }
-                                            </Select>
-                                        </FormControl>
-
-                                        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                                            <FormControl sx={{ width: "45%", marginTop: "10px" }}>
-                                                <InputLabel id="gold-label">Miktar</InputLabel>
-                                                <OutlinedInput
-                                                    id="alim-adedi"
-                                                    type="number"
-                                                    endAdornment={<InputAdornment position="end">{item.goldTpye === 0 ? "gr" : "adet"}</InputAdornment>}
-                                                    label="Miktar"
-                                                    value={item.goldQuantity}
-                                                    onChange={(e) => updateGoldItem(item.id, "goldQuantity", parseFloat(e.target.value))}
-
-                                                />
-                                            </FormControl>
-
-
-                                            <FormControl sx={{ width: "45%", marginTop: "10px" }}>
-                                                <InputLabel id="birim-label">Birim Fiyatı</InputLabel>
-                                                <OutlinedInput
-                                                    id="birim-adet"
-                                                    type="number"
-                                                    value={item.goldPrice}
-                                                    onChange={(e) => updateGoldItem(item.id, "goldPrice", parseFloat(e.target.value))}
-                                                    endAdornment={<InputAdornment position="end">₺</InputAdornment>}
-                                                    label="Birim Fiyatı"
-                                                />
-                                            </FormControl>
-
-                                        </Box>
-                                        <Box sx={{ display: getPrice(item) <= 0 ? "none" : "flex", flexDirection: "row", justifyContent: "space-between", fontWeight: 600, color: "white", backgroundColor: "#d4af37", borderRadius: "7px", my: "10px" }}>
-                                            <Typography variant="body2" sx={{ my: "10px", mx: "10px" }}>
-                                                Değer:
-                                            </Typography>
-                                            <Typography variant="body2" sx={{ my: "10px", mx: "10px" }}>
-                                                ₺{getPrice(item).toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                    <Box sx={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignContent: "space-evenly" }}>
-                                        <Button variant="contained" sx={{
-                                            width: "45%", my: "10px", border: "1px dashed #d4af37", background: "none",
-                                            color: "#d4af37", ":hover": { background: "#efede6ff" }
-                                        }} onClick={addGold}>Altın Ekle</Button>
-
-                                        <Button variant="contained" sx={{
-                                            width: "45%", my: "10px", border: "1px dashed #ff0000ff", background: "none",
-                                            color: "#cc2525ff", ":hover": { background: "#efede6ff" }
-                                        }} onClick={() => removeGold(item)}>Altını Kaldır</Button>
-                                    </Box>
-                                </Stack>
-
-                            </form>
-                            <Divider sx={{mt:"3px", }}></Divider>
-                        </DialogContent>
-                        
-                    })}
-                    <Box sx={{ display: getTotalPrice <= 0 ? "none" : "flex", flexDirection: "row", justifyContent: "space-between", fontWeight: 600, color: "white", backgroundColor: "#24ac3fff", borderRadius: "7px", my: "10px", margin:"10px 10px"}}>
-                        <Typography variant="body2" sx={{ my: "10px", mx: "10px" }}>
-                            Toplam Tutar:
-                        </Typography>
-                        <Typography variant="body2" sx={{ my: "10px", mx: "10px" }}>
-                            ₺{getTotalPrice().toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </Typography>
-                    </Box>
-                    <DialogActions>
-                        <Button onClick={closeShowAddDialog} sx={{ color: "red" }}>İptal Et</Button>
-                        <Button type="submit" form="subscription-form" sx={{ color: "green" }}>
-                            Onayla
-                        </Button>
-                    </DialogActions>
-                </Dialog> */}
-
-
-
-
+            {/* {<BuyInvestment isGold={isGold} showAddDialog={showAddDialog} setShowAddDialog={setShowAddDialog}></BuyInvestment>} */}
 
             {/* Edit Dialog */}
             <Dialog
@@ -644,11 +1595,18 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                 <DialogContent>
                     <Box sx={{ pt: 1, display: "flex", flexDirection: "column", gap: 2 }}>
                         <TextField
+                            label="Satılan Miktar"
+                            type="number"
+                            fullWidth
+                            disabled={true}
+                            value={soldQuantity}
+                        />
+                        <TextField
                             label="Miktar"
                             type="number"
                             fullWidth
                             value={editQuantity}
-                            onChange={(e) => setEditQuantity(e.target.value)}
+                            onChange={(e) => setEditQuantity(Math.abs(e.target.value))}
                             InputProps={{
                                 endAdornment: editingHolding && (
                                     <InputAdornment position="end">
@@ -662,13 +1620,16 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                             type="number"
                             fullWidth
                             value={editPrice}
-                            onChange={(e) => setEditPrice(e.target.value)}
+                            onChange={(e) => setEditPrice(Math.abs(e.target.value))}
                             InputProps={{
                                 startAdornment: (
-                                    <InputAdornment position="start">₺</InputAdornment>
+                                    <InputAdornment position="start">{CURRENCIES.find(c => c.value === (editingHolding && editingHolding.currency || "TRY"))?.symbol}</InputAdornment>
                                 ),
                             }}
                         />
+                        <Typography sx={{ color: "black", textAlign: "center", backgroundColor: "lightpink" }} component="p">
+                            {soldQuantity - editQuantity > 0 ? "Daha önceden yapılan satış miktarı düzenlemek istediğiniz sayıyı geçmektedir." : ""}
+                        </Typography>
                     </Box>
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -676,6 +1637,7 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                     <Button
                         variant="contained"
                         onClick={handleEditSave}
+                        disabled={soldQuantity - editQuantity > 0}
                         sx={{
                             background: `linear-gradient(135deg, ${themeColor} 0%, ${themeColor}dd 100%)`,
                         }}
@@ -687,7 +1649,33 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
 
 
 
+            {/* Delete Asset Dialog */}
+            <Dialog
+                open={openDeleteInvestmentAccountDialog}
+                onClose={() => setOpenDeleteInvestmentAccountDialog(false)}
+                maxWidth="xs"
+                disableScrollLock
+                PaperProps={{ sx: { borderRadius: 3 } }}
+            >
+                <DialogTitle sx={{ fontWeight: 600, textAlign: "center" }}>Silmeyi Onayla</DialogTitle>
+                <DialogContent>
+                    <Typography sx={{ textAlign: "justify" }}>
+                        Bu yatırım hesabını silmek istediğinizden emin misiniz? <b>Bu işlem geri alınamaz.</b>
 
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={() => setOpenDeleteInvestmentAccountDialog(false)}>İptal</Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        // disabled={selectedMoneyAccount === 0}
+                        onClick={deleteInvestmentAccount}
+                    >
+                        Sil
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
 
 
@@ -699,23 +1687,622 @@ const InvestmentAccountDetailPageItem = ({ title, item }) => {
                 disableScrollLock
                 PaperProps={{ sx: { borderRadius: 3 } }}
             >
-                <DialogTitle sx={{ fontWeight: 600 }}>Silmeyi Onayla</DialogTitle>
+                <DialogTitle sx={{ fontWeight: 600, textAlign: "center" }}>Silmeyi Onayla</DialogTitle>
                 <DialogContent>
                     <Typography>
-                        Bu yatırımı silmek istediğinizden emin misiniz? Bu işlem geri
-                        alınamaz.
+                        Bu yatırımı silmek istediğinizden emin misiniz? <b>Bu işlem geri
+                            alınamaz.</b>
                     </Typography>
+                    <Box>
+                        {(allMoneyAccounts.length === 0) ?
+                            <Typography
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 1.5,
+                                    p: 2,
+                                    my: 2,
+                                    border: "1px solid",
+                                    borderColor: 'error.light',
+                                    borderRadius: "12px",
+                                    textAlign: "center",
+                                    color: "error.main",
+                                    bgcolor: "#fff5f5",
+                                    fontWeight: '500',
+                                    fontSize: '0.95rem',
+                                    boxShadow: '0 2px 8px rgba(211, 47, 47, 0.1)',
+                                    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                                }}
+                            >
+
+                                <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                                Lütfen öncelikle bir banka/para hesabı ekleyiniz. Aksi halde işleme devam edilemeyecektir.
+                            </Typography>
+                            : allMoneyAccounts.length > 0 && (
+                                <FormControl component="fieldset" sx={{ width: '100%' }}>
+                                    <FormLabel id="selectMoneyAccount" sx={{ marginY: 2, textAlign: "center", fontWeight: 'bold', color: 'text.primary' }}>
+                                        Banka Hesap Seçimi
+                                    </FormLabel>
+                                    <Typography sx={{ textAlign: "justify", color: "rgba(255, 0, 0, 0.6)" }}>Lütfen bir banka hesabı seçin. Seçtiğiniz hesaba elde kalan adetleriniz doğrultusunda paranız iade edilecektir.</Typography>
+                                    <RadioGroup
+                                        aria-labelledby="selectMoneyAccount"
+                                        name="radio-buttons-group"
+                                        value={selectedMoneyAccount || ""}
+                                        onChange={(e) => setSelectedMoneyAccount(e.target.value)}
+                                    >
+                                        {allMoneyAccounts.map((data) => {
+
+                                            const isSelected = selectedMoneyAccount === String(data.id);
+
+                                            return (
+                                                <FormControlLabel
+                                                    key={data.id}
+                                                    value={data.id}
+                                                    control={<Radio sx={{ display: 'none' }} />}
+                                                    sx={{
+                                                        margin: '0.5rem 0',
+                                                        width: '100%',
+                                                        border: '2px solid',
+                                                        borderColor: isSelected ? 'primary.main' : 'divider',
+                                                        borderRadius: '12px',
+                                                        padding: '12px 16px',
+                                                        transition: 'all 0.2s ease',
+                                                        backgroundColor: isSelected ? 'action.selected' : 'background.paper',
+                                                        '&:hover': {
+                                                            borderColor: 'primary.light',
+                                                            transform: 'translateY(-2px)',
+                                                            boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                                                        },
+
+                                                        '& .MuiFormControlLabel-label': {
+                                                            width: '100%',
+                                                            fontFamily: 'monospace',
+                                                            whiteSpace: 'pre-wrap',
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            gap: '4px'
+                                                        }
+                                                    }}
+                                                    label={
+                                                        <>
+                                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                <Typography sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
+                                                                    {data.accountName.toUpperCase()}
+                                                                </Typography>
+                                                                <Typography sx={{
+                                                                    color: 'success.main',
+                                                                    fontWeight: 'bold',
+                                                                    fontSize: '0.9rem',
+                                                                    bgcolor: '#e8f5e9',
+                                                                    px: 1, borderRadius: 1
+                                                                }}>
+                                                                    {/* {isInsufficient ? "Yetersiz Bakiye" : "Bakiye Uygun"} */}
+                                                                </Typography>
+                                                            </Box>
+
+                                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, opacity: 0.8 }}>
+                                                                <span>Tür: {data.currency}</span>
+                                                                <span>Bakiye: {showMoneytoLocalString(data.balance)} {data.currency === "TRY" ? "₺" : data.currency === "EUR" ? "€" : "$"}</span>
+                                                            </Box>
+
+                                                            {/* {data.currency !== "TRY" && (
+                                                            <Box>
+                                                                <Box sx={{ textAlign: 'right', mt: 0.5, fontStyle: 'italic', fontSize: '0.8rem' }}>
+                                                                    TL Karşılığı: {showMoneytoLocalString(data.balance * (exchangeRate[data.currency]?.Buying || 0))} ₺
+                                                                </Box>
+                                                                <Box sx={{ textAlign: 'right', mt: 0.5, fontStyle: 'italic', fontSize: '0.8rem' }}>
+                                                                    Kur: {data.currency === "TRY" ? CURRENCIES[0].exchangeRates : data.currency === "USD" ? CURRENCIES[1].exchangeRates : CURRENCIES[2].exchangeRates} ₺
+                                                                </Box>
+
+
+                                                            </Box>
+                                                        )}
+                                                        {<Box sx={{ textAlign: 'right', mt: 0.5, fontStyle: 'italic', fontSize: '0.8rem' }}>
+                                                            İşlem Sonu Bakiye: {showMoneytoLocalString((totalInvestmentValue) / (data.currency === "TRY" ? CURRENCIES[0].exchangeRates : data.currency === "USD" ? CURRENCIES[1].exchangeRates : CURRENCIES[2].exchangeRates) + data.balance)} {CURRENCIES.find((d) => d.value === data.currency)?.label.split(" ")[0]}
+                                                        </Box>} */}
+                                                        </>
+                                                    }
+                                                />
+                                            );
+                                        })}
+                                    </RadioGroup>
+                                </FormControl>)}
+                    </Box>
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 2 }}>
                     <Button onClick={() => setDeleteDialogOpen(false)}>İptal</Button>
                     <Button
                         variant="contained"
                         color="error"
+                        disabled={selectedMoneyAccount === 0}
                         onClick={handleDeleteConfirm}
                     >
                         Sil
                     </Button>
                 </DialogActions>
+            </Dialog>
+
+
+            {/*Sell Investment */}
+            <Dialog
+                open={showSellDialog}
+                onClose={closeSellInvestmentDialog}
+                onTransitionEnter={getTransactionsByAsset}
+                fullWidth={true}
+                maxWidth="sm"
+            >
+                <DialogTitle sx={{ p: 0, overflow: "hidden" }}>
+                    <Box sx={{ backgroundColor: "#fdfbf0", borderBottom: "1px solid #e0e0e0" }}>
+                        <Marquee
+                            gradient={false}
+                            speed={40}
+                            style={{ padding: "10px 0" }}
+                        >
+                            {goldPrice.map((goldPriceItem, index) => (
+                                <Box key={index} sx={{ display: "flex", alignItems: "center", marginRight: "50px" }}>
+                                    <Typography sx={{ color: "#5d4037", fontSize: "13px", fontWeight: "600" }}>
+                                        {goldPriceItem.Name.split("ALTIN")[0]}
+                                    </Typography>
+                                    <Typography sx={{ color: "#d32f2f", fontSize: "13px", fontWeight: "bold", ml: 1 }}>
+                                        {goldPriceItem.Buying.toLocaleString()} ₺
+                                    </Typography>
+                                </Box>
+                            ))}
+                        </Marquee>
+                    </Box>
+
+                    <Box sx={{ backgroundColor: "#fdfbf0", borderBottom: "1px solid #e0e0e0", mt: "15px" }}>
+                        <Marquee
+                            gradient={false}
+                            speed={40}
+                            style={{ padding: "10px 0" }}
+                        >
+                            {stockPrice.map((stockPriceItem, index) => (
+                                <Box key={index} sx={{ display: "flex", alignItems: "center", marginRight: "50px" }}>
+                                    <Typography sx={{ color: "#5d4037", fontSize: "13px", fontWeight: "600" }}>
+                                        {stockPriceItem.symbol}
+                                    </Typography>
+                                    <Typography sx={{ color: "#d32f2f", fontSize: "13px", fontWeight: "bold", ml: 1 }}>
+                                        {stockPriceItem.value.toLocaleString()} ₺
+                                    </Typography>
+                                </Box>
+                            ))}
+                        </Marquee>
+                    </Box>
+
+
+                    <Box sx={{ p: 3, textAlign: "center" }}>
+                        <Typography
+                            variant="h5"
+                            sx={{
+                                fontWeight: "bold",
+                                color: "#1a237e",
+                                letterSpacing: "0.5px"
+                            }}
+                        >
+                            Varlık Satış İşlemi
+                        </Typography>
+                        <Typography
+                            sx={{
+                                color: "#616161",
+                                fontSize: "15px",
+                                mt: 1,
+                                fontStyle: "italic"
+                            }}
+                        >
+                            Hangi <span style={{ color: "#d32f2f", fontWeight: "bold" }}>{isGold ? "Altın" : "Hisse"}</span> Varlıklarınızı Satmak İstiyorsunuz?
+                        </Typography>
+                    </Box>
+                </DialogTitle>
+
+                <DialogContent
+                    sx={{ overflowX: "auto" }}>
+                    {moneyAccountPersons.length === 0 ?
+                        <Typography
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 1.5,
+                                p: 2,
+                                my: 2,
+                                border: "1px solid",
+                                borderColor: 'error.light',
+                                borderRadius: "12px",
+                                textAlign: "center",
+                                color: "error.main",
+                                bgcolor: "#fff5f5",
+                                fontWeight: '500',
+                                fontSize: '0.95rem',
+                                boxShadow: '0 2px 8px rgba(211, 47, 47, 0.1)',
+                                fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                            }}
+                        >
+
+                            <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                            Lütfen öncelikle bir banka/para hesabı ekleyiniz. Aksi halde işleme devam edilemeyecektir.
+                        </Typography>
+                        :
+                        <FormControl component="fieldset" sx={{ width: '100%' }}>
+                            <FormLabel id="selectMoneyAccount" sx={{ fontWeight: 'bold', mb: 2, color: 'text.primary' }}>
+                                Banka Hesap Seçimi
+                            </FormLabel>
+                            <RadioGroup
+                                aria-labelledby="selectMoneyAccount"
+                                name="radio-buttons-group"
+                                value={selectedMoneyAccount || ""}
+                                onChange={(e) => setSelectedMoneyAccount(e.target.value)}
+                            >
+                                {moneyAccountPersons.map((data) => {
+                                    const isSelected = selectedMoneyAccount === String(data.id);
+
+                                    return (
+                                        <FormControlLabel
+                                            key={data.id}
+                                            value={data.id}
+                                            control={<Radio sx={{ display: 'none' }} />}
+                                            sx={{
+                                                margin: '0.5rem 0',
+                                                width: '100%',
+                                                border: '2px solid',
+                                                borderColor: isSelected ? 'primary.main' : 'divider',
+                                                borderRadius: '12px',
+                                                padding: '12px 16px',
+                                                transition: 'all 0.2s ease',
+                                                backgroundColor: isSelected ? 'action.selected' : 'background.paper',
+                                                '&:hover': {
+                                                    borderColor: 'primary.light',
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                                                },
+
+                                                '& .MuiFormControlLabel-label': {
+                                                    width: '100%',
+                                                    fontFamily: 'monospace',
+                                                    whiteSpace: 'pre-wrap',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: '4px'
+                                                }
+                                            }}
+                                            label={
+                                                <>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                        <Typography sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
+                                                            {data.accountName?.toUpperCase() || ""}
+                                                        </Typography>
+                                                        <Typography sx={{
+                                                            color: 'success.main',
+                                                            fontWeight: 'bold',
+                                                            fontSize: '0.9rem',
+                                                            bgcolor: '#e8f5e9',
+                                                            px: 1, borderRadius: 1
+                                                        }}>
+                                                            {/* {isInsufficient ? "Yetersiz Bakiye" : "Bakiye Uygun"} */}
+                                                        </Typography>
+                                                    </Box>
+
+                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, opacity: 0.8 }}>
+                                                        <span>Tür: {data.currency}</span>
+                                                        <span>Bakiye: {showMoneytoLocalString(data.balance || 0)} {data.currency === "TRY" ? "₺" : data.currency === "EUR" ? "€" : "$"}</span>
+                                                    </Box>
+
+                                                    {/* {data.currency !== "TRY" && (
+                                                        <Box>
+                                                            <Box sx={{ textAlign: 'right', mt: 0.5, fontStyle: 'italic', fontSize: '0.8rem' }}>
+                                                                TL Karşılığı: {showMoneytoLocalString(data.balance * (exchangeRate[data.currency]?.Buying || 0))} ₺
+                                                            </Box>
+                                                            <Box sx={{ textAlign: 'right', mt: 0.5, fontStyle: 'italic', fontSize: '0.8rem' }}>
+                                                                Kur: {data.currency === "TRY" ? CURRENCIES[0].exchangeRates : data.currency === "USD" ? CURRENCIES[1].exchangeRates : CURRENCIES[2].exchangeRates} ₺
+                                                            </Box>
+
+
+                                                        </Box>
+                                                    )}
+                                                    {<Box sx={{ textAlign: 'right', mt: 0.5, fontStyle: 'italic', fontSize: '0.8rem' }}>
+                                                        İşlem Sonu Bakiye: {showMoneytoLocalString(((totalInvestmentValue) / (data.currency === "TRY" ? CURRENCIES[0].exchangeRates : data.currency === "USD" ? CURRENCIES[1].exchangeRates : CURRENCIES[2].exchangeRates)) + data.balance)} {CURRENCIES.find((d) => d.value === data.currency)?.label.split(" ")[0]}
+                                                    </Box>} */}
+                                                </>
+                                            }
+                                        />
+                                    );
+                                })}
+                            </RadioGroup>
+                        </FormControl>}
+                    {selectedMoneyAccount !== 0 ? sellInvestmentList.length > 0 ? (
+                        sellInvestmentList.map((sellData, index) => (
+
+                            <Box
+                                key={index}
+                                sx={{
+                                    background: "#fff",
+                                    border: "1px solid #eef0f2",
+                                    borderRadius: "16px",
+                                    minWidth: "100%",
+                                    padding: "24px",
+                                    marginY: "24px",
+                                    boxShadow: "0px 10px 20px rgba(0,0,0,0.04)",
+                                    position: "relative",
+                                    transition: "transform 0.2s",
+                                    "&:hover": { transform: "translateY(-2px)" }
+                                }}
+                            >
+                                {/* Üst Bilgi ve Aksiyonlar */}
+                                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                                    <Typography
+                                        sx={{
+                                            backgroundColor: "#f5f5f5",
+                                            px: 1.5, py: 0.5,
+                                            borderRadius: "6px",
+                                            fontSize: "11px",
+                                            fontWeight: "bold",
+                                            color: "#757575",
+                                            textTransform: "uppercase"
+                                        }}
+                                    >
+                                        #İşlem Seçimi {index + 1}
+                                    </Typography>
+
+                                    <Box>
+                                        <Tooltip title="Ekle">
+                                            <IconButton onClick={() => addSellInvestment()} sx={{ color: "#2e7d32", backgroundColor: "#e8f5e9", mr: 1, "&:hover": { backgroundColor: "#c8e6c9" } }}>
+                                                <FaPlus size={14} />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Kaldır">
+                                            <IconButton onClick={() => removeSellInvestment(sellData.id)} sx={{ color: "#d32f2f", backgroundColor: "#ffebee", "&:hover": { backgroundColor: "#ffcdd2" } }}>
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Box>
+                                </Box>
+
+                                {/* Seçim Alanı */}
+                                <Box sx={{ mb: 2 }}>
+                                    <InputLabel sx={{ fontSize: "13px", fontWeight: "600", mb: 0.5, color: "#444" }}>
+                                        {isGold ? "Altın Türü" : "Hisse Senedi"}
+                                    </InputLabel>
+                                    <Select
+                                        value={sellData.transactionId || ""}
+                                        onChange={(e) => setTransactionId(e.target.value, sellData.id)}
+                                        fullWidth
+                                        size="small"
+                                        sx={{ borderRadius: "8px", backgroundColor: "#fafafa" }}
+                                    >
+                                        <MenuItem value=""><em>Seçiniz...</em></MenuItem>
+                                        {item.map((data) => {
+                                            const isSelected = sellInvestmentList.some(s => s.transactionId === data.transactionId);
+                                            const isThisRow = sellData.transactionId === data.transactionId;
+                                            if ((!isSelected || isThisRow) && data.assetName) {
+                                                return (
+                                                    <MenuItem key={data.transactionId} value={data.transactionId}>
+                                                        <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
+                                                            <span>{data.assetName}</span>
+                                                            <span style={{ color: "#757575", fontSize: "0.8rem" }}>Maliyet: {(data.purchasePrice).toLocaleString("tr-TR") + " " + data.currency}</span>
+                                                        </Box>
+                                                    </MenuItem>
+                                                );
+                                            }
+                                            return null;
+                                        })}
+                                    </Select>
+                                </Box>
+
+                                {/* Miktar Girişi */}
+                                <TextField
+                                    label="Satış Miktarı"
+                                    fullWidth
+                                    size="small"
+                                    type="number"
+                                    value={sellData.sellCount || 0}
+                                    onChange={(e) => setSellCount(e.target.value, sellData.id)}
+                                    inputProps={{ min: 0, max: sellData.quantity }}
+                                    InputProps={{
+                                        startAdornment: <InputAdornment position="start" sx={{ fontSize: "12px" }}>{sellData.assetName?.includes("Gram") ? "Gr" : "Adet"}</InputAdornment>,
+                                    }}
+                                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                                />
+                                <TextField
+                                    label="Birim Satış Fiyatı"
+                                    fullWidth
+                                    size="small"
+                                    type="number"
+                                    value={sellData.salesPrice || 0}
+                                    onChange={(e) => updateSellDataPrice(sellData.id, e.target.value)}
+                                    inputProps={{ min: 0, max: sellData.quantity }}
+                                    InputProps={{
+                                        startAdornment: <InputAdornment position="start" sx={{ fontSize: "12px" }}>{Object.keys(sellMoneyInfoDetail)[0] || "TRY"}</InputAdornment>,
+                                    }}
+                                    sx={{ my: 2, "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                                />
+                                <Box>
+
+                                    <TextField
+                                        label={"Tarih Seçiniz"}
+                                        type="datetime-local"
+                                        inputProps={{ step: 1 }}
+                                        value={formatDateTime(sellData.buyingDateTime) || null}
+                                        onChange={(e) =>
+                                            updateSoldData(sellData.id, "buyingDateTime", e.target.value)
+                                        }
+                                        fullWidth
+                                        margin="normal"
+                                        InputLabelProps={{ shrink: true }}
+                                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+                                    />
+
+                                    <TextField
+                                        label={"Kur Bilgisi"}
+                                        type="number"
+                                        fullWidth
+                                        value={(sellData.exchangeRate || 1).toLocaleString("tr-TR")}
+                                        onChange={(e) => updateSellDataExchangeRate(sellData.id, "exchangeRate", e.target.value)}
+                                        margin="normal"
+                                        InputLabelProps={{ shrink: true }}
+                                    />
+
+                                </Box>
+
+                                {/* Uyarı ve Özet Bölümü */}
+                                <Box sx={{ mt: 2 }}>
+                                    <Typography
+                                        sx={{
+                                            color: "#c62828",
+                                            backgroundColor: "#fff5f5",
+                                            p: 1.5,
+                                            borderRadius: "10px",
+                                            fontSize: "0.75rem",
+                                            border: "1px dashed #ffcdd2",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 1
+                                        }}
+                                    >
+                                        ⚠️ Maksimum <strong>{sellData.quantity}</strong> {item[0].assetType === "STOCK" ? "adet" : "adet/gr"} satabilirsiniz.
+                                    </Typography>
+
+                                    {sellData.totalPrice > 0 && (
+                                        <Box
+                                            sx={{
+                                                mt: 1.5,
+                                                p: 2,
+                                                background: "linear-gradient(135deg, #fffde7 0%, #fff9c4 100%)",
+                                                borderRadius: "10px",
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                border: "1px solid #fff59d"
+                                            }}
+                                        >
+                                            <Typography sx={{ color: "#5d4037", fontWeight: "600", fontSize: "0.85rem" }}>Tahmini Tahsilat:</Typography>
+                                            <Typography sx={{ color: "#2e7d32", fontWeight: "800", fontSize: "1.1rem" }}>
+                                                {sellData.totalPrice.toLocaleString()} {" " + CURRENCIES.find(c => c.value === (Object.keys(sellMoneyInfoDetail)[0] || "TRY"))?.symbol}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                </Box>
+                            </Box>
+                        ))
+                    ) : (
+                        <Typography sx={{ textAlign: "center", color: "#999", my: 4 }}>Henüz bir yatırım seçilmedi.</Typography>
+                    ) : <Typography
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 1.5,
+                            p: 2,
+                            my: 2,
+                            border: "1px solid",
+                            borderColor: 'error.light',
+                            borderRadius: "12px",
+                            textAlign: "center",
+                            color: "error.main",
+                            bgcolor: "#fff5f5",
+                            fontWeight: '500',
+                            fontSize: '0.95rem',
+                            boxShadow: '0 2px 8px rgba(211, 47, 47, 0.1)',
+                            fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                        }}
+                    >
+
+                        <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                        Lütfen öncelikle bir banka/para hesabı seçiniz. Aksi halde işleme devam edilemeyecektir.
+                    </Typography>}
+                    {sellInvestmentList.reduce((sum, cur) => sum + cur.totalPrice, 0) > 0 && (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                mt: 2,
+                                p: 2,
+                                borderRadius: "12px",
+                                background: "linear-gradient(90deg, #fff9c4 0%, #fff176 100%)",
+                                boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.05)",
+                                border: "1px solid #fbc02d",
+                            }}
+                        >
+                            <Typography
+                                sx={{
+                                    color: "#5f4339",
+                                    fontWeight: "600",
+                                    fontSize: "0.95rem"
+                                }}
+                            >
+                                Toplam Satış Bedeli:
+                            </Typography>
+
+                            <Typography
+                                sx={{
+                                    color: "#d32f2f",
+                                    fontWeight: "bold",
+                                    fontSize: "1.1rem"
+                                }}
+                            >
+
+                                {sellInvestmentList.reduce((sum, cur) => sum + cur.totalPrice, 0).toLocaleString()} {" " + CURRENCIES.find(c => c.value === (Object.keys(sellMoneyInfoDetail)[0] || "TRY"))?.symbol}
+                            </Typography>
+
+
+                        </Box>
+                    )}
+
+
+                </DialogContent>
+
+                <DialogActions sx={{ marginRight: "20px", marginBottom: "15px", gap: "10px" }}>
+                    <Button
+                        variant="contained"
+                        onClick={() => sellInvestment()}
+                        disabled={sellInvestmentList.some(s => s.sellCount <= 0 || !s.transactionId) || selectedMoneyAccount === 0}
+                        sx={{
+                            backgroundColor: "rgba(255, 0, 0, 0.08)",
+                            color: "#d32f2f",
+                            border: "1.5px solid #d32f2f",
+                            fontWeight: "bold",
+                            borderRadius: "8px",
+                            padding: "6px 20px",
+                            boxShadow: "none",
+                            textTransform: "none",
+                            '&:hover': {
+                                backgroundColor: "#d32f2f",
+                                color: "white",
+                                boxShadow: "0px 4px 10px rgba(211, 47, 47, 0.3)",
+                                border: "1.5px solid #d32f2f",
+                            }
+                        }}
+                    >
+                        Sat
+                    </Button>
+
+                    <Button
+                        variant="contained"
+                        onClick={closeSellInvestmentDialog}
+                        sx={{
+                            backgroundColor: "rgba(0, 128, 0, 0.08)", // Hafif yeşil arka plan
+                            color: "#2e7d32",
+                            border: "1.5px solid #2e7d32",
+                            fontWeight: "bold",
+                            borderRadius: "8px",
+                            padding: "6px 20px",
+                            boxShadow: "none",
+                            textTransform: "none",
+                            '&:hover': {
+                                backgroundColor: "#2e7d32",
+                                color: "white",
+                                boxShadow: "0px 4px 10px rgba(46, 125, 50, 0.3)",
+                                border: "1.5px solid #2e7d32",
+                            }
+                        }}
+                    >
+                        İptal
+                    </Button>
+                </DialogActions>
+
+
             </Dialog>
         </Container>
     )
