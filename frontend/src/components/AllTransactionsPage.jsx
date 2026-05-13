@@ -32,6 +32,8 @@ import { useUser } from "../config/UserStore";
 import { useTheme } from "../config/ThemeContext";
 import axios from "axios";
 import { backendUrl } from "../utils/envVariables";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
 
 const AllTransactionsPage = () => {
   const { user } = useUser();
@@ -42,14 +44,15 @@ const AllTransactionsPage = () => {
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [expandedTransaction, setExpandedTransaction] = useState(null);
   const [error, setError] = useState("");
-  const [filterType, setFilterType] = useState("");
+  const [filterType, setFilterType] = useState();
   const [anchorEl, setAnchorEl] = useState(null);
   const [dateFilterDialogOpen, setDateFilterDialogOpen] = useState(false);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [startDate, setStartDate] = useState();
+  const [endDate, setEndDate] = useState();
+  const [searchQuery, setSearchQuery] = useState();
   const token = localStorage.getItem("token");
   const [allMoneyAccounts, setAllMoneyAccounts] = useState([]);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,13 +73,13 @@ const AllTransactionsPage = () => {
         console.log("Tüm para hesapları:", allMoneyAccounts.data);
 
         const sortedData = response.data.sort(
-          (b,a) => new Date(b.transactionDateTime) - new Date(a.transactionDateTime)
+          (b, a) => new Date(b.transactionDateTime) - new Date(a.transactionDateTime)
         );
 
         const transactionsWithAccountInfo = await Promise.all(
-          sortedData.map(async (transaction,idx) => {
+          sortedData.map(async (transaction, idx) => {
             const accountInfo = await getMoneyAccountInfo(transaction.moneyAccountId);
-            return { ...transaction, accountName: accountInfo?.accountName || "-", id: idx};
+            return { ...transaction, accountName: accountInfo?.accountName || "-", id: idx };
           })
         );
 
@@ -146,10 +149,10 @@ const AllTransactionsPage = () => {
   const handleCloseDateFilter = () => setDateFilterDialogOpen(false);
   const applyDateFilter = () => handleCloseDateFilter();
   const clearFilter = () => {
-    setFilterType("");
-    setStartDate("");
-    setEndDate("");
-    setSearchQuery("");
+    setFilterType();
+    setStartDate();
+    setEndDate();
+    setSearchQuery();
   };
 
   const handleSearch = (event) => {
@@ -170,7 +173,7 @@ const AllTransactionsPage = () => {
   };
 
   const getMoneyAccountInfo = async (moneyAccountId) => {
-     const response = await axios.get(
+    const response = await axios.get(
       `${backendUrl}/api/accounts/get-money-account?moneyAccountId=${moneyAccountId}`,
       {
         headers:
@@ -187,9 +190,8 @@ const AllTransactionsPage = () => {
 
     if (transaction.type === "inter-account") {
       const otherAccountName = transaction.person || "";
-      return `${t("interAccount")} - ${incomeOrExpense}${
-        otherAccountName ? " - " + otherAccountName : ""
-      }`;
+      return `${t("interAccount")} - ${incomeOrExpense}${otherAccountName ? " - " + otherAccountName : ""
+        }`;
     }
 
     if (transaction.type === "debt_payment") {
@@ -201,6 +203,60 @@ const AllTransactionsPage = () => {
     const detay = transaction.details || "";
     return `${kategori} - ${incomeOrExpense}${detay ? " - " + detay : ""}`;
   };
+
+const getPdf = async (detail) => {
+    const body ={
+      type: filterType,
+      startDate: startDate ,
+      endDate: endDate,
+      searchQuery: searchQuery
+    }
+    console.log(body);
+    const responseGetPdf = await axios.post(
+      `${backendUrl}/api/accounts/getPdf?detail=${detail}`,
+      body,
+      {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : undefined,
+        },
+        responseType: "blob",
+      },
+    )
+    if (responseGetPdf.status === 200) {
+      await downloadPDF(responseGetPdf, detail);
+    } else
+      console.error("PDF İndirilemedi.")
+  }
+
+  const downloadPDF = async (response, detail) => {
+    try {
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Tüm Hesapların ${detail ? "Detaylı" : "Sade"} Hesap Özeti.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('İndirme hatası:', error);
+    }
+  }
+
+
+  const [dowlandPdfBtnElement, setDowlandPdfBtnElement] = useState(null);
+  const openDowlandPdfBtnElement = Boolean(dowlandPdfBtnElement);
+
+  const handleOpenDownloadPdfMenuItem = (event) => {
+    setDowlandPdfBtnElement(event.currentTarget);
+  }
+
+  const handleCloseDownloadPdfMenuItem = () => {
+    setDowlandPdfBtnElement(null);
+  }
+
+  const handleItemClickByPdf = async (detail) => {
+    await getPdf(detail)
+  }
 
   return (
     <Container sx={{ px: { xs: 1, sm: 2, md: 4 }, mt: 2 }}>
@@ -254,6 +310,34 @@ const AllTransactionsPage = () => {
             }}
           />
         </Box>
+        <Button sx={{
+          borderColor: "black",
+          borderRadius: "5px",
+          color: "white",
+          backgroundColor: "#109fe1",
+          padding: "7px 15px",
+          textAlign: "center",
+        }}
+
+          onMouseEnter={handleOpenDownloadPdfMenuItem}
+        >
+          PDF Olarak İndir
+        </Button>
+
+        <Menu
+          id="hover-download-pdf"
+          anchorEl={dowlandPdfBtnElement}
+          open={openDowlandPdfBtnElement}
+          onClose={handleCloseDownloadPdfMenuItem}
+
+          MenuListProps={{
+            onMouseLeave: handleCloseDownloadPdfMenuItem,
+          }}
+        >
+
+          <MenuItem onClick={() => handleItemClickByPdf(true)}>Detaylı Rapor İndir </MenuItem>
+          <MenuItem onClick={() => handleItemClickByPdf(false)}>Basit Rapor İndir </MenuItem>
+        </Menu>
       </Box>
 
       <Menu
@@ -305,8 +389,8 @@ const AllTransactionsPage = () => {
                 const textColorisPassive = "rgba(69, 60, 60, 0.2)";
                 const incomeOrExpense = getIncomeOrExpense(transaction);
                 const isIncome = incomeOrExpense === t("income");
-                const textColor = isIncome 
-                  ? (isDarkMode ? "#4caf50" : "#0f5132") 
+                const textColor = isIncome
+                  ? (isDarkMode ? "#4caf50" : "#0f5132")
                   : (isDarkMode ? "#f44336" : "#842029");
 
                 return (
@@ -315,7 +399,7 @@ const AllTransactionsPage = () => {
                       onClick={() => handleExpandTransaction(transaction.id)}
                       sx={{
                         cursor: "pointer",
-                        backgroundColor: isDarkMode 
+                        backgroundColor: isDarkMode
                           ? (idx % 2 === 0 ? "rgba(255, 255, 255, 0.03)" : "transparent")
                           : (idx % 2 === 0 ? "#f9f9f9" : "white"),
                         "&:hover": {
@@ -329,11 +413,11 @@ const AllTransactionsPage = () => {
                         </IconButton>
                       </TableCell>
                       <TableCell>
-                        <Chip 
-                          label={transaction.accountName + (isActive ? "" : " (Pasif Hesap)")} 
-                          size="small" 
+                        <Chip
+                          label={transaction.accountName + (isActive ? "" : " (Pasif Hesap)")}
+                          size="small"
                           variant="outlined"
-                          color= {isActive ? textColor : textColorisPassive }
+                          color={isActive ? textColor : textColorisPassive}
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/transactions/${transaction.moneyAccountId}`);
@@ -341,7 +425,7 @@ const AllTransactionsPage = () => {
                           sx={{ cursor: "pointer" }}
                         />
                       </TableCell>
-                      
+
                       <TableCell sx={{ color: isActive ? textColor : textColorisPassive }}>
                         {getTransactionTypeLabel(transaction)}
                       </TableCell>
@@ -422,7 +506,7 @@ const AllTransactionsPage = () => {
           <TextField
             label={t("startDateLabel")}
             type="datetime-local"
-            inputProps={{step: 1}}
+            inputProps={{ step: 1 }}
             fullWidth
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
@@ -432,7 +516,7 @@ const AllTransactionsPage = () => {
           <TextField
             label={t("endDateLabel")}
             type="datetime-local"
-            inputProps={{step: 1}}
+            inputProps={{ step: 1 }}
             fullWidth
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}

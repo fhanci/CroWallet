@@ -1,56 +1,49 @@
 package com.crowallet.backend.service;
 
 import com.crowallet.backend.dto.AccountDTO;
-import com.crowallet.backend.dto.TransferDTO;
-import com.crowallet.backend.entity.Transfer;
 import com.crowallet.backend.mapper.AccountMapper;
 import com.crowallet.backend.mapper.MoneyAccountMapper;
 import com.crowallet.backend.mapper.TransferMapper;
 import com.crowallet.backend.repository.MoneyAccountRepository;
-// import com.crowallet.backend.mapper.UserMapper;
 import com.crowallet.backend.repository.TransferRepository;
 import jakarta.transaction.Transactional;
+
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
-
 import com.crowallet.backend.comman.GeneralException;
-import com.crowallet.backend.dto.AccountDTO;
 import com.crowallet.backend.dto.AccountSummaryDTO;
 import com.crowallet.backend.dto.CreateInvestmentAccountDTO;
 import com.crowallet.backend.dto.InvestmentHoldingDTO;
 import com.crowallet.backend.dto.MoneyAccountRequestDTO;
 import com.crowallet.backend.dto.MoneyAccountResponseDTO;
+import com.crowallet.backend.dto.TransferResponseDTO;
 import com.crowallet.backend.entity.Account;
 import com.crowallet.backend.entity.AccountType;
 import com.crowallet.backend.entity.AssetType;
 import com.crowallet.backend.entity.InvestmentHolding;
 import com.crowallet.backend.entity.MoneyAccount;
 import com.crowallet.backend.entity.User;
-import com.crowallet.backend.mapper.AccountMapper;
 import com.crowallet.backend.repository.AccountRepository;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import com.crowallet.backend.repository.InvestmentHoldingRepository;
 import com.crowallet.backend.repository.UserRepository;
 import com.crowallet.backend.security.CustomUserDetails;
-
-import jakarta.transaction.Transactional;
-
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
 @Service
 public class AccountService {
     private final MoneyAccountRepository moneyAccountRepository;
@@ -77,35 +70,6 @@ public class AccountService {
         this.moneyAccountMapper = moneyAccountMapper;
     }
 
-    // @Transactional
-    // public AccountDTO createAccount(AccountDTO accountDTO) {
-    //     Account account = AccountMapper.INSTANCE.toAccount(accountDTO);
-    //     if (accountDTO.getUserId() != null) {
-    //         User user = userRepository.findById(accountDTO.getUserId())
-    //                 .orElseThrow(() -> new GeneralException("User not found: " + accountDTO.getUserId()));
-    //         account.setUser(user);
-    //     }
-    //     account.setUpdateDate(LocalDateTime.now());
-
-    //     accountRepository.save(account);
-
-    //     Transfer transfer = new Transfer();
-    //     transfer.setAmount(account.getBalance());
-    //     transfer.setCategory("Başlangıç Bütçesi");
-    //     transfer.setDetails("Hesap oluşturulurken girilen bakiye");
-    //     transfer.setType("incoming");
-    //     transfer.setDate(LocalDate.now());
-    //     transfer.setCreateDate(LocalDateTime.now());
-    //     transfer.setUser(account.getUser());
-    //     transfer.setAccount(account);
-    //     transfer.setInputPreviousBalance(BigDecimal.ZERO);
-    //     transfer.setInputNextBalance(account.getBalance());
-
-    //     transferRepository.save(transfer);
-
-    //     return AccountMapper.INSTANCE.toAccountDTO(account);
-    // }
-
     @Transactional
     public MoneyAccountResponseDTO createMoneyAccount(MoneyAccountRequestDTO moneyAccountRequestDTO) {
         User user = userRepository.findById(moneyAccountRequestDTO.getUserId())
@@ -114,21 +78,6 @@ public class AccountService {
         moneyAccount.setUser(user);
         moneyAccount.setIsActive(true);
         MoneyAccount savedMoneyAccount = moneyAccountRepository.save(moneyAccount);
-
-
-        // Transfer transfer = new Transfer();
-        // transfer.setAmount(savedMoneyAccount.getBalance());
-        // transfer.setCategory("Başlangıç Bütçesi");
-        // transfer.setDetails("Hesap oluşturulurken girilen bakiye");
-        // transfer.setType("incoming");
-        // transfer.setDate(LocalDate.now());
-        // transfer.setCreateDate(LocalDateTime.now());
-        // transfer.setUser(user);
-        // transfer.setMoneyAccount(savedMoneyAccount);
-        // transfer.setInputPreviousBalance(BigDecimal.ZERO);
-        // transfer.setInputNextBalance(savedMoneyAccount.getBalance());
-
-        // transferRepository.save(transfer);
 
         return this.moneyAccountMapper.toMoneyAccountResponseDTO(savedMoneyAccount);
     }
@@ -423,106 +372,122 @@ public class AccountService {
                 .orElseThrow(() -> new GeneralException("Account not found: " + id)));
     }
 
-    // @Transactional
-    // public AccountDTO updateAccount(Long id, AccountDTO updatedAccount) {
-    //     Account existingAccount = accountRepository.findById(id)
-    //             .orElseThrow(() -> new GeneralException("Account to be updated not found: " + id));
-
-    //     BigDecimal oldBalance = existingAccount.getBalance();
-    //     BigDecimal newBalance = updatedAccount.getBalance();
-    //     BigDecimal difference = newBalance.subtract(oldBalance);
-
-    //     existingAccount.setUpdateDate(updatedAccount.getUpdateDate());
-    //     existingAccount.setAccountName(updatedAccount.getAccountName());
-    //     existingAccount.setBalance(newBalance);
-    //     existingAccount.setCurrency(updatedAccount.getCurrency());
-
-    //     // Update new fields
-    //     if (updatedAccount.getAccountType() != null) {
-    //         existingAccount.setAccountType(AccountType.valueOf(updatedAccount.getAccountType()));
-    //     }
-    //     if (updatedAccount.getHoldingType() != null) {
-    //         existingAccount.setHoldingType(
-    //                 com.crowallet.backend.entity.HoldingType.valueOf(updatedAccount.getHoldingType()));
-    //     }
-    //     if (updatedAccount.getAssetType() != null) {
-    //         existingAccount.setAssetType(
-    //                 com.crowallet.backend.entity.AssetType.valueOf(updatedAccount.getAssetType()));
-    //     }
-    //     existingAccount.setAssetSymbol(updatedAccount.getAssetSymbol());
-    //     existingAccount.setQuantity(updatedAccount.getQuantity());
-    //     existingAccount.setAverageCost(updatedAccount.getAverageCost());
-    //     existingAccount.setCurrentPrice(updatedAccount.getCurrentPrice());
-
-    //     if (updatedAccount.getUserId() != null) {
-    //         User user = userRepository.findById(updatedAccount.getUserId())
-    //                 .orElseThrow(() -> new GeneralException("User not found: " + updatedAccount.getUserId()));
-    //         existingAccount.setUser(user);
-    //     }
-
-    //     Account savedAccount = accountRepository.save(existingAccount);
-
-    //     if (difference.compareTo(BigDecimal.ZERO) != 0) {
-    //         Transfer transfer = new Transfer();
-    //         transfer.setAmount(difference.abs());
-    //         transfer.setType(difference.compareTo(BigDecimal.ZERO) > 0 ? "incoming" : "outgoing");
-    //         transfer.setCategory("Bakiye Güncellemesi");
-    //         transfer.setDetails("Hesap güncellemesi sonucu bakiye farkı");
-    //         transfer.setDate(LocalDate.now());
-    //         transfer.setCreateDate(LocalDateTime.now());
-    //         transfer.setUser(savedAccount.getUser());
-    //         transfer.setAccount(savedAccount);
-    //         transfer.setInputPreviousBalance(oldBalance);
-    //         transfer.setInputNextBalance(newBalance);
-
-    //         transferRepository.save(transfer);
-    //     }
-
-    //     return AccountMapper.INSTANCE.toAccountDTO(savedAccount);
-    // }
-
-    // @Transactional
-    // public void deleteAccount(Long id) {
-    //     Account account = accountRepository.findById(id)
-    //             .orElseThrow(() -> new GeneralException("Account to be deleted not found: " + id));
-
-    //     transferRepository.deleteByAccountId(account.getId());
-
-    //     accountRepository.delete(account);
-    // }
-
-    // @Transactional
-    // public TransferDTO withdrawMoney(TransferDTO transferDTO) {
-    //     Account account = accountRepository.findById(transferDTO.getAccount().getId())
-    //             .orElseThrow(() -> new GeneralException("Hesap bulunamadı"));
-
-    //     BigDecimal amount = transferDTO.getAmount();
-    //     BigDecimal currentBalance = account.getBalance();
-
-    //     if (currentBalance.compareTo(amount) < 0) {
-    //         throw new GeneralException("Yetersiz bakiye");
-    //     }
-
-    //     BigDecimal newBalance = currentBalance.subtract(amount);
-    //     account.setBalance(newBalance);
-    //     account.setUpdateDate(LocalDateTime.now());
-    //     accountRepository.save(account);
-
-    //     transferDTO.setType("outgoing");
-    //     transferDTO.setCreateDate(LocalDateTime.now());
-    //     transferDTO.setDate(LocalDate.now());
-    //     transferDTO.setOutputPreviousBalance(currentBalance);
-    //     transferDTO.setOutputNextBalance(newBalance);
-
-    //     Transfer transfer = TransferMapper.INSTANCE.toTransfer(transferDTO);
-    //     transferRepository.save(transfer);
-
-    //     return TransferMapper.INSTANCE.toTransferDTO(transfer);
-    // }
 
     public Boolean isThereThisAccountNameBefore(String accountName) {
         List<MoneyAccount> allByMoneyAccountName = moneyAccountRepository.findAllByAccountName(accountName);
         return allByMoneyAccountName.size() > 0;
+    }
+
+    public byte[] getPdfData(Long moneyAccountId,Boolean detail, Map<String,String> Filter){
+        List<TransferResponseDTO> pdfData;
+        if (moneyAccountId != null){
+            pdfData = transferService.getUserTransfersByMoneyAccount(moneyAccountId);
+        }
+        else{
+            //User bilgilerini güvenlik bağlamından al
+            CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication()
+                    .getPrincipal();
+            pdfData = transferService.getUserAllTransfers(userDetails.getId());
+        }
+
+        LocalDateTime filterStartDate = Filter.get("startDate") != null ? LocalDateTime.parse(Filter.get("startDate")) : null;
+        LocalDateTime filterEndDate = Filter.get("endDate") != null ? LocalDateTime.parse(Filter.get("endDate")) : null;
+        String transactionType = Filter.get("type") != null ? Filter.get("type") : null;
+        String searchQuery = Filter.get("searchQuery") != null ? Filter.get("searchQuery").toLowerCase() : null;
+        
+        List<TransferResponseDTO> filteredPdfData = pdfData.stream().filter(data -> {
+            LocalDateTime transactionDateTime = data.getTransactionDateTime();            
+            String dataDetails = data.getDetails() != null ? data.getDetails() : "";
+            String dataCategory = data.getCategory() != null ? data.getCategory() : "";
+            String dataDescription = data.getDescription() != null ? data.getDescription() : "";
+
+
+            boolean isTrueSearch = (searchQuery == null) || dataDetails.toLowerCase().contains(searchQuery) || dataCategory.toLowerCase().contains(searchQuery) || dataDescription.toLowerCase().contains(searchQuery);
+            boolean isTrueType = (transactionType == null) || data.getType().equals(transactionType);
+            boolean isAfterStart = (filterStartDate == null) || !transactionDateTime.isBefore(filterStartDate);
+            boolean isBeforeEnd = (filterEndDate == null) || !transactionDateTime.isAfter(filterEndDate);
+            return isBeforeEnd && isAfterStart && isTrueType && isTrueSearch;
+        }).toList();
+
+        Document document = new Document(PageSize.A4);
+        ByteArrayOutputStream outputData = new ByteArrayOutputStream();
+
+        try{
+            PdfWriter.getInstance(document, outputData);
+            document.open();
+        }
+        catch(DocumentException e){
+            e.printStackTrace();
+        }
+
+
+        List<String> detailAttribute = List.of("Hesap Adı","Kategori","İşlem Miktarı","Açıklama","İşlem Tipi","İşlem Detayı","İşlem Öncesi Bütçe","İşlem Sonrası Bütçe","Para Tipi","İşlem Tarihi");
+        List<String> basicAttribute = List.of("Hesap Adı","İşlem Miktarı","Açıklama","İşlem Öncesi Bütçe","İşlem Sonrası Bütçe","İşlem Tarihi");
+        PdfPTable table = new PdfPTable(detail ? detailAttribute.size() : basicAttribute.size());
+        table.setWidthPercentage(100);
+        table.setSpacingBefore(2f);
+
+        addHeader(
+            detail ? detailAttribute : basicAttribute,
+            table
+        );
+        addRows(
+            table,
+            filteredPdfData,
+            detail
+        );
+
+        document.add(table);
+        document.close();
+
+        return outputData.toByteArray();
+    }
+
+    public void addHeader(List<String> headerData,PdfPTable table){
+        headerData.stream().forEach(columnTitle -> {
+            table.addCell(new Phrase(columnTitle));
+        });
+    }
+
+    public void addRows(PdfPTable table,List<TransferResponseDTO> pdfData,Boolean detail){
+
+        Locale trLocale = Locale.of("tr","TR");
+        NumberFormat numberFormat = NumberFormat.getCurrencyInstance(trLocale);
+
+
+        if (detail){
+            pdfData.stream().forEach(data -> {
+                MoneyAccount moneyAccount = moneyAccountRepository.findById(data.getMoneyAccountId()).orElseThrow(() -> new RuntimeException("Para hesabı bulunamadı"));
+                table.addCell(moneyAccount.getAccountName() != null ? moneyAccount.getAccountName().toString() : "-");
+                table.addCell(data.getCategory() != null ? data.getCategory().toString() : "-");
+                table.addCell(data.getAmount() != null ? numberFormat.format(data.getAmount()).toString() : "-");
+                table.addCell(data.getDescription() != null ? data.getDescription().toString() : "-");
+                table.addCell(data.getType() != null ? data.getType().toString() : "-");
+                table.addCell(data.getDetails() != null ? data.getDetails().toString() : "-");
+    
+                table.addCell(data.getInputPreviousBalance() != null ? numberFormat.format(data.getInputPreviousBalance()).toString() : numberFormat.format(data.getOutputPreviousBalance()).toString() );
+                table.addCell(data.getInputNextBalance() != null ? numberFormat.format(data.getInputNextBalance()).toString()  :numberFormat.format(data.getOutputNextBalance()).toString());
+    
+                table.addCell(data.getCurrency() != null ? data.getCurrency().toString() : "-");
+
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+                table.addCell(data.getTransactionDateTime() != null ? data.getTransactionDateTime().format(formatter) : "-");
+            });
+        }
+        else{
+            pdfData.stream().forEach(data -> {
+                MoneyAccount moneyAccount = moneyAccountRepository.findById(data.getMoneyAccountId()).orElseThrow(() -> new RuntimeException("Para hesabı bulunamadı"));
+                table.addCell(moneyAccount.getAccountName() != null ? moneyAccount.getAccountName().toString() : "-");
+                table.addCell(data.getAmount() != null ? numberFormat.format(data.getAmount()).toString() : "-");
+                table.addCell(data.getDescription() != null ? data.getDescription().toString() : "-");
+    
+                table.addCell(data.getInputPreviousBalance() != null ? numberFormat.format(data.getInputPreviousBalance()).toString() : numberFormat.format(data.getOutputPreviousBalance()).toString() );
+                table.addCell(data.getInputNextBalance() != null ? numberFormat.format(data.getInputNextBalance()).toString()  : numberFormat.format(data.getOutputNextBalance()).toString());
+
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+                table.addCell(data.getTransactionDateTime() != null ? data.getTransactionDateTime().format(formatter) : "-");
+            });
+        }
     }
 
 }

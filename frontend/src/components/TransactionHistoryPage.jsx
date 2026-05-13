@@ -22,6 +22,7 @@ import {
   Menu,
   MenuItem,
   InputAdornment,
+  colors,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SearchIcon from "@mui/icons-material/Search";
@@ -73,18 +74,18 @@ const TransactionHistoryPage = () => {
             },
           }
         );
-        setAccountName(response2.data.accountName + " - " + response2.data.currency);        
+        setAccountName(response2.data.accountName + " - " + response2.data.currency);
 
         const sortedData = response.data.sort(
-          (a,b) => new Date(b.transactionDateTime) - new Date(a.transactionDateTime)
+          (a, b) => new Date(b.transactionDateTime) - new Date(a.transactionDateTime)
         );
 
         const transactionsList = sortedData.map((transaction, index) => ({ ...transaction, id: index }));
         console.log("İşlem Listesi:", transactionsList);
 
         //Burdaki tüm transactionlar içindeki inner-account'ları bul ve değiştir
-        for(const transaction of transactionsList){
-          if(transaction.type === "inter-account"){
+        for (const transaction of transactionsList) {
+          if (transaction.type === "inter-account") {
             const response = await axios.get(`${backendUrl}/api/transfers/getAccountToAccountTransfer?transferId=${transaction.transferId}`, {
               headers: {
                 Authorization: token ? `Bearer ${token}` : undefined,
@@ -93,13 +94,13 @@ const TransactionHistoryPage = () => {
 
             console.log("İşlem Çıktısı:", response.data);
 
-            if (response.data.hasAccountToAccountTransfer){
+            if (response.data.hasAccountToAccountTransfer) {
               transaction.type = response.data.senderAccount === transaction.moneyAccountId ? "outgoing" : response.data.receiverAccount === transaction.moneyAccountId ? "incoming" : "Have a problem";
-            }            
+            }
           }
         }
 
-        
+
         console.log("İşlem Listesi Çıktı")
         console.log(transactionsList)
         setTransactions(transactionsList);
@@ -119,28 +120,28 @@ const TransactionHistoryPage = () => {
 
   // güncel bakiye için
   const fetchAccountBalance = async () => {
-      // const res = await axios.get(
-      //   `${backendUrl}/api/accounts/${accountId}`,
-      //   {
-      //     headers: {
-      //       Authorization: token ? `Bearer ${token}` : undefined,
-      //     },
-      //   }
-      
-      // );
+    // const res = await axios.get(
+    //   `${backendUrl}/api/accounts/${accountId}`,
+    //   {
+    //     headers: {
+    //       Authorization: token ? `Bearer ${token}` : undefined,
+    //     },
+    //   }
 
-      const lastTransaction = transactions[0];
-      console.log("Son İşlem:", lastTransaction);
-      console.log(transactions)
-      setAccountBalance(lastTransaction?.outputNextBalance ?? lastTransaction?.inputNextBalance);
-      setAccountCurrency(lastTransaction?.currency);
+    // );
+
+    const lastTransaction = transactions[0];
+    console.log("Son İşlem:", lastTransaction);
+    console.log(transactions)
+    setAccountBalance(lastTransaction?.outputNextBalance ?? lastTransaction?.inputNextBalance);
+    setAccountCurrency(lastTransaction?.currency);
   }
 
   useEffect(() => {
     if (transactions.length > 0) {
       fetchAccountBalance();
     }
-    
+
   }, [transactions]);
 
   const applyFilters = () => {
@@ -166,7 +167,7 @@ const TransactionHistoryPage = () => {
       );
     }
 
-    filtered.sort((b,a) => new Date(b.createDate) - new Date(a.createDate));
+    filtered.sort((b, a) => new Date(b.createDate) - new Date(a.createDate));
     setFilteredTransactions(filtered);
   };
 
@@ -181,7 +182,7 @@ const TransactionHistoryPage = () => {
   };
 
   const handleOpenMenu = (event) => setAnchorEl(event.currentTarget);
-  
+
   const handleCloseMenu = () => setAnchorEl(null);
 
   const applyFilter = (type) => {
@@ -228,9 +229,8 @@ const TransactionHistoryPage = () => {
 
     if (transaction.type === "inter-account") {
       const otherAccountName = transaction.person || "";
-      return `${t("interAccount")} - ${incomeOrExpense}${
-        otherAccountName ? " - " + otherAccountName : ""
-      }`;
+      return `${t("interAccount")} - ${incomeOrExpense}${otherAccountName ? " - " + otherAccountName : ""
+        }`;
     }
 
     if (transaction.type === "debt_payment") {
@@ -242,6 +242,67 @@ const TransactionHistoryPage = () => {
     const detay = transaction.details || "";
     return `${kategori} - ${incomeOrExpense} ${detay ? "/ Detay: " + detay : ""}`;
   };
+
+
+  const getPdf = async (detail) => {
+
+    const body ={
+      type: filterType,
+      startDate: startDate,
+      endDate: endDate,
+      searchQuery: searchQuery
+    }
+    console.log(body);
+    const responseGetPdf = await axios.post(
+      `${backendUrl}/api/accounts/getPdf?detail=${detail}&moneyAccountId=${accountId}`,
+      body,
+      {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : undefined,
+        },
+        responseType: "blob",
+      },
+    )
+    if (responseGetPdf.status === 200) {
+      await downloadPDF(responseGetPdf, detail);
+    } else
+      console.error("PDF İndirilemedi.")
+  }
+
+  const downloadPDF = async (response, detail) => {
+    try {
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${accountName} ${detail ? "Detaylı" : "Sade"} Hesap Özeti.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('İndirme hatası:', error);
+    }
+  }
+
+
+  const [dowlandPdfBtnElement, setDowlandPdfBtnElement] = useState(null);
+  const openDowlandPdfBtnElement = Boolean(dowlandPdfBtnElement);
+
+  const handleOpenDownloadPdfMenuItem = (event) => {
+    setDowlandPdfBtnElement(event.currentTarget);
+  }
+
+  const handleCloseDownloadPdfMenuItem = () => {
+    setDowlandPdfBtnElement(null);
+  }
+
+  const handleItemClickByPdf = async (detail) => {
+    await getPdf(detail)
+  }
+
+
+
+
+
 
   return (
     <Container sx={{ px: { xs: 1, sm: 2, md: 4 }, mt: 2 }}>
@@ -324,7 +385,36 @@ const TransactionHistoryPage = () => {
             }}
           />
         </Box>
+        <Button sx={{
+          borderColor: "black",
+          borderRadius: "5px",
+          color: "white",
+          backgroundColor: "#109fe1",
+          padding: "7px 15px",
+          textAlign: "center",
+        }}
+
+          onMouseEnter={handleOpenDownloadPdfMenuItem}
+        >
+          PDF Olarak İndir
+        </Button>
+
+        <Menu
+          id="hover-download-pdf"
+          anchorEl={dowlandPdfBtnElement}
+          open={openDowlandPdfBtnElement}
+          onClose={handleCloseDownloadPdfMenuItem}
+
+          MenuListProps={{
+            onMouseLeave: handleCloseDownloadPdfMenuItem,
+          }}
+        >
+
+          <MenuItem onClick={() => handleItemClickByPdf(true)}>Detaylı Rapor İndir </MenuItem>
+          <MenuItem onClick={() => handleItemClickByPdf(false)}>Basit Rapor İndir </MenuItem>
+        </Menu>
       </Box>
+
 
 
       {filteredTransactions.length > 0 && (
@@ -395,8 +485,8 @@ const TransactionHistoryPage = () => {
               filteredTransactions.map((transaction, idx) => {
                 const incomeOrExpense = getIncomeOrExpense(transaction);
                 const isIncome = incomeOrExpense === t("income");
-                const textColor = isIncome 
-                  ? (isDarkMode ? "#4caf50" : "#0f5132") 
+                const textColor = isIncome
+                  ? (isDarkMode ? "#4caf50" : "#0f5132")
                   : (isDarkMode ? "#f44336" : "#842029");
 
                 return (
@@ -405,7 +495,7 @@ const TransactionHistoryPage = () => {
                       onClick={() => handleExpandTransaction(transaction.id)}
                       sx={{
                         cursor: "pointer",
-                        backgroundColor: isDarkMode 
+                        backgroundColor: isDarkMode
                           ? (idx % 2 === 0 ? "rgba(255, 255, 255, 0.03)" : "transparent")
                           : (idx % 2 === 0 ? "#f9f9f9" : "white"),
                         "&:hover": {
@@ -487,17 +577,17 @@ const TransactionHistoryPage = () => {
                   </React.Fragment>
                 );
               })
-            ) : 
-            
-            (
-              <TableRow>
-                <TableCell colSpan={4}>
-                  <Typography variant="body2" color="textSecondary">
-                    {t("noTransaction")}
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            )}
+            ) :
+
+              (
+                <TableRow>
+                  <TableCell colSpan={4}>
+                    <Typography variant="body2" color="textSecondary">
+                      {t("noTransaction")}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              )}
           </TableBody>
         </Table>
       </TableContainer>
@@ -508,7 +598,7 @@ const TransactionHistoryPage = () => {
           <TextField
             label={t("startDateLabel")}
             type="datetime-local"
-            inputProps={{step: 1}}
+            inputProps={{ step: 1 }}
             fullWidth
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
@@ -518,7 +608,7 @@ const TransactionHistoryPage = () => {
           <TextField
             label={t("endDateLabel")}
             type="datetime-local"
-            inputProps={{step: 1}}
+            inputProps={{ step: 1 }}
             fullWidth
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}

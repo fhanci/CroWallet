@@ -2,6 +2,7 @@ package com.crowallet.backend.controller;
 
 import com.crowallet.backend.dto.AccountDTO;
 import com.crowallet.backend.dto.TransferDTO;
+import com.crowallet.backend.dto.TransferResponseDTO;
 import com.crowallet.backend.entity.User;
 import com.crowallet.backend.dto.AccountSummaryDTO;
 import com.crowallet.backend.dto.CreateInvestmentAccountDTO;
@@ -19,6 +20,7 @@ import java.util.Map;
 
 import com.crowallet.backend.service.AccountService;
 import com.crowallet.backend.repository.UserRepository;
+
 
 
 
@@ -86,16 +88,6 @@ public class AccountController {
     return accountService.getAccountHoldings(id);
     }
 
-    // @GetMapping("/{id}/holdings")
-    // public List<Map<String, Object>> findByAccountInvesment(@PathVariable Long id) {
-    //     return accountService.findByAccountInvesment(id);
-    // }
-
-    // @PostMapping("/create-account")
-    // public AccountDTO createAccount(@RequestBody AccountDTO account) {
-    //     return accountService.createAccount(account);
-    // }
-
     @PostMapping("/create-money-account")
     public ResponseEntity<MoneyAccountResponseDTO> createMoneyAccount(@RequestBody MoneyAccountRequestDTO moneyAccountRequestDTO) {        
         MoneyAccountResponseDTO moneyAccounts = accountService.createMoneyAccount(moneyAccountRequestDTO);
@@ -113,12 +105,6 @@ public class AccountController {
         List<MoneyAccountResponseDTO> moneyAccounts = accountService.getMoneyAccountActiveAndPassive(userId);
         return ResponseEntity.ok(moneyAccounts);
     }
-
-    // @PutMapping("/update-money-account")
-    // public ResponseEntity<MoneyAccountResponseDTO> updateMoneyAccount(@RequestParam(required = true) Long exchangeRate,@RequestBody MoneyAccountResponseDTO moneyAccountResponseDTO) {
-    //     MoneyAccountResponseDTO updateMoneyAccount = accountService.updateMoneyAccount(exchangeRate,moneyAccountResponseDTO);
-    //     return ResponseEntity.ok(updateMoneyAccount);
-    // }
     
     @GetMapping("/get-money-account")
     public ResponseEntity<MoneyAccountResponseDTO> getMoneyAccountById(@RequestParam Long moneyAccountId) {
@@ -158,26 +144,14 @@ public class AccountController {
         accountService.removeHoldingFromAccount(holdingId);
     }
 
-    // @PutMapping("/update/{id}")
-    // public AccountDTO updateAccount(@PathVariable Long id, @RequestBody AccountDTO account) {
-    //     return accountService.updateAccount(id, account);
-    // }
-
-    // @PostMapping("/withdraw-money")
-    // public TransferDTO withdrawMoney(@RequestBody TransferDTO transferDTO) {
-    //     return accountService.withdrawMoney(transferDTO);
-    // }
-
-    // @DeleteMapping("/delete/{id}")
-    // public void deleteAccount(@PathVariable Long id) {
-    //     accountService.deleteAccount(id);
-    // }
-
     @GetMapping("/isThereThisAccountNameBefore")
     public Boolean isThereThisAccountNameBefore(@RequestParam String accountName) {
         return accountService.isThereThisAccountNameBefore(accountName);
     }
 
-    
-    
+    @PostMapping("/getPdf")
+    public ResponseEntity<byte[]> getPdfByMoneyAccount(@RequestParam(required = true) Boolean detail,@RequestParam(required = false) Long moneyAccountId, @RequestBody(required = false) Map<String,String> Filter) {
+        byte[] pdfData = accountService.getPdfData(moneyAccountId,detail,Filter);
+        return ResponseEntity.ok(pdfData);
+    }
 }
