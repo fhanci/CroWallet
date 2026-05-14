@@ -13,3 +13,16 @@ Settings:
 
 Profile:
     - Do from scratch
+
+
+1- When clicking on accounts in the investments screen, a chart will appear just like for money accounts, and it will show historical profit/loss statuses.
+2- Shares will be fetched from the frontend to the backend.  Users will be able to customize shares according to their preferences.
+3- On the debts screen, the person will be able to make a free debt payment. The requirement for paying in installments will be eliminated.
+4- When we attempt to rectify gold or stock transactions, refunds may be issued or funds may be withdrawn from the account, depending on the situation.
+5- Currently, profit and loss records are generated for every purchase or sale transaction in the system.  By adding a button to the investments screen, profit and loss records can be generated upon clicking that button. 
+6- As a future feature, the debt section can be added to the Google Calendar.
+7- On the debts screen, the "add debt" section allows you to lend money to individuals, and subsequently, the installments along with the loans can be repaid as we provide.
+8- The user can perform all transactions in either EURO or DOLLAR terms. This information can be obtained from the main menu and the process can be continued accordingly.
+9- In the debt payment and debt collection screen (if this screen is implemented), the user may pay less or more than the owed amount. Under the same conditions, they may also request a refund of their payment. Under this condition, adjustments to installment numbers and modifications to installment amounts may be made.
+10- When selecting the cash option while adding a debt, the funds are not transferred to the account.  There, the "transfer funds to cash account" operation can be performed. 
+11- Gold, stock, and money accounts should be opened with unique names.

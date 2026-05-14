@@ -9,7 +9,11 @@ import com.crowallet.backend.repository.TransferRepository;
 import jakarta.transaction.Transactional;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.math.BigDecimal;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -22,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import com.crowallet.backend.comman.GeneralException;
+import com.crowallet.backend.comman.PdfBackgroundImage;
 import com.crowallet.backend.dto.AccountSummaryDTO;
 import com.crowallet.backend.dto.CreateInvestmentAccountDTO;
 import com.crowallet.backend.dto.InvestmentHoldingDTO;
@@ -413,7 +418,17 @@ public class AccountService {
         ByteArrayOutputStream outputData = new ByteArrayOutputStream();
 
         try{
-            PdfWriter.getInstance(document, outputData);
+            PdfWriter writer = PdfWriter.getInstance(document, outputData);
+            // 1. Anlık olarak uygulamanın çalıştığı klasörü dinamik al (Örn: .../backend)
+            String anlikCalismaDizini = System.getProperty("user.dir");
+            System.out.println("Anlık Çalışma Dizini: " + anlikCalismaDizini);
+
+            // 2. Bir üst dizine çıkıp image/CroWallet.png ile birleştir ve normalize et
+            Path dinamikTemizYol = Paths.get(anlikCalismaDizini, "src","main","java","com","crowallet","backend","image", "CroWallet1.png").normalize();
+            System.out.println("Dinamik Temiz Yol: " + dinamikTemizYol);
+
+            PdfBackgroundImage pdfBackgroundImageListener = new PdfBackgroundImage(dinamikTemizYol.toString());
+            writer.setPageEvent(pdfBackgroundImageListener);            
             document.open();
         }
         catch(DocumentException e){
