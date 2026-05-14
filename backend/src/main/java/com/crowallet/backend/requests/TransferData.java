@@ -1,11 +1,11 @@
 package com.crowallet.backend.requests;
 
-import com.crowallet.backend.dto.AccountDTO;
-import com.crowallet.backend.dto.UserDTO;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import lombok.Data;
+
+@Data
 public class TransferData {
     private BigDecimal amount;
     private String category;

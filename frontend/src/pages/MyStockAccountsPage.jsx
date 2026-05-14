@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Container,
   Typography,
@@ -9,7 +9,6 @@ import {
   TextField,
   InputAdornment,
   Alert,
-  Divider,
   LinearProgress,
   IconButton,
   Dialog,

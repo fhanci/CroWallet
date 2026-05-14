@@ -108,7 +108,6 @@ const AccountToAccountTransferPage = () => {
   };
 
   useEffect(() => {
-    console.log("useRealTimeRate changed:", useRealTimeRate);
   },[useRealTimeRate])
 
   const calculateReceiverAmount = () => {
@@ -153,13 +152,6 @@ const AccountToAccountTransferPage = () => {
     return { baseCurrency: senderCurrency, quoteCurrency: receiverCurrency, invert: false };
   };
 
-  // Convert effective rate (for backend) to displayed rate (for UI)
-  // const getDisplayedRateFromEffective = (effectiveRate) => {
-  //   const cfg = getRateDisplayConfig();
-  //   if (!cfg || effectiveRate == null) return null;
-  //   if (cfg.invert) return effectiveRate > 0 ? 1 / effectiveRate : null;
-  //   return effectiveRate;
-  // };
 
   // Convert displayed rate (from UI) to effective rate (for backend)
   const getEffectiveRateFromDisplayed = (displayedRate) => {
@@ -213,7 +205,6 @@ const AccountToAccountTransferPage = () => {
             },
           }
         )
-        console.log(currencyAccounts.data);
         setAccounts(currencyAccounts.data);
       } catch (err) {
         console.error("Hesaplar alınamadı:", err);
@@ -224,9 +215,8 @@ const AccountToAccountTransferPage = () => {
 
   const handleSubmit = async () => {
 
-    console.log("transferData: ", transferData);
-    console.log("sender account: " + JSON.stringify(selectedSenderAccount))
-    console.log("receiver account: " + JSON.stringify(selectedReceiverAccount))
+
+    
 
     if (
       !selectedSenderAccount ||
@@ -238,10 +228,6 @@ const AccountToAccountTransferPage = () => {
       return;
     }
 
-    // if (isDifferentCurrency && !getEffectiveExchangeRate()) {
-    //   setError("Geçerli bir döviz kuru giriniz.");
-    //   return;
-    // }
 
     if (selectedSenderAccount.id === selectedReceiverAccount.id) {
       setError(t("sameAccountError"));
@@ -270,7 +256,7 @@ const AccountToAccountTransferPage = () => {
     const receiverAmount = amount * effectiveRate;
 
 
-    console.log("Effective exchange rate:", effectiveRate);
+
 
 
 
@@ -314,8 +300,6 @@ const AccountToAccountTransferPage = () => {
       balance: selectedReceiverAccount.balance + receiverAmount,
     };
 
-    console.log("Updated sender:", updatedSender);
-    console.log("Updated receiver:", updatedReceiver);
 
 
 
@@ -331,7 +315,7 @@ const AccountToAccountTransferPage = () => {
         }
       );
 
-      console.log("Sender transfer response:", responseSenderTransfer.data);
+      
 
       const responseReceiverTransfer = await axios.post(
         `${backendUrl}/api/transfers/create`,
@@ -344,7 +328,7 @@ const AccountToAccountTransferPage = () => {
         }
       );
 
-      console.log("Receiver transfer response:", responseReceiverTransfer.data);
+      
 
       const responseUpdateSender = await axios.put(
         `${backendUrl}/api/asset/update-money-account?updatedAccount=false&exchangeRate=${outgoingTransfer.exchangeRate}`,
@@ -703,7 +687,6 @@ const AccountToAccountTransferPage = () => {
             >
               İptal
             </Button>
-            {console.log(customExchangeRate)}
             <Button
               variant="contained"
               color="primary"

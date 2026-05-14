@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Container,
   Typography,
@@ -134,9 +134,6 @@ const OutgoingTransferPage = () => {
       return;
     }
 
-
-    console.log("selectedTransfer:", selectedTransfer);
-    console.log("selectedTransferAccount:", selectedTransferAccount);
 
     const transferPayload = {
       category: finalCategory,
@@ -395,11 +392,10 @@ const OutgoingTransferPage = () => {
             value={selectedTransfer.details || ""}
             onChange={(event, newValue) => {
               setSelectedTransfer({ ...selectedTransfer, details: newValue });
-              console.log("Updated Details:", newValue);
+
             }}
             onInputChange={(event, newValue) => {
               setSelectedTransfer({ ...selectedTransfer, details: newValue });
-              console.log("Updated Details:", newValue);
             }}
             renderInput={(params) => (
               <TextField

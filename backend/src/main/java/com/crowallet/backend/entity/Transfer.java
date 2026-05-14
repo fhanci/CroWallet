@@ -4,10 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import org.springframework.cglib.core.Local;
 
 @Entity
 @Table(name = "transfers")
@@ -27,9 +25,6 @@ public class Transfer extends BaseEntity {
 
     @Column(name = "description")
     private String description;
-
-    // @Column(name = "receiverId")
-    // private Long receiverId;
 
     @Column(name = "transaction_date_time")
     private LocalDateTime transactionDateTime;

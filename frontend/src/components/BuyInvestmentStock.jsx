@@ -10,11 +10,8 @@ import axios from 'axios';
 import Marquee from "react-fast-marquee";
 import { CURRENCIES, exchangeRates, getExchangeRateByPastDate } from '../data/currencies';
 import { backendUrl } from '../utils/envVariables';
-import { LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
-import { formatDateTime, toLocalISOTime } from '../utils/localIsoTime';
+import { formatDateTime } from '../utils/localIsoTime';
 
 
 export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoneyAccount, selectedMoneyAccount }) => {
@@ -29,8 +26,6 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
     //Stock Price
     const [stockPrice, setStockPrice] = useState([])
 
-    //BU
-    // const [selectedMoneyAccount, setSelectedMoneyAccount] = useState(0)
     const [getPrices, setGetPrices] = useState(false)
     const [moneyAccountPersons, setMoneyAccountPersons] = useState([{}])
     const [exchangeRate, setExchangeRate] = useState({})
@@ -55,12 +50,10 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
     useEffect(() => {
         const currentAccountExchangeRate = CURRENCIES.find((cur) => cur.value === selectedMoneyAccountDetail.currency)?.exchangeRates;
         const previousAccountExchangeRate = CURRENCIES.find((cur) => cur.value === previousMoneyAccountDetail.currency)?.exchangeRates || 1;
-        console.log("Selected account changed. Previous currency:", previousMoneyAccountDetail.currency, "Current currency:", selectedMoneyAccountDetail.currency);
         setStockItems(stockItems.map((item) => {
             if (item.price) {
                 const price = item.price * previousAccountExchangeRate; //TL Dönüşümü
                 const newPrice = Math.round((price / currentAccountExchangeRate) * 100) / 100;
-                console.log(`Updated price for item ${item.id} based on selected currency ${selectedMoneyAccountDetail.currency}: ${newPrice}`);
                 return { ...item, price: newPrice };
             }
             return item;
@@ -105,7 +98,7 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
     };
 
     const updateStockItem = (id, field, value) => {
-        console.log(`Updating stock item ${id}: setting ${field} to`, value);
+        
 
         //Ne
         if (field === "price" || field === "quantity")
@@ -127,12 +120,7 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
         //Manuel Fiyat Değiştirme
         else if (field === "price") {
 
-            // if (selectedMoneyAccountDetail) {
-            //     const exchangeRate = CURRENCIES.find((cur) => cur.value === selectedMoneyAccountDetail.currency)?.exchangeRates;
-            //     value /= exchangeRate;
-            // }
-
-            console.log(`IF Updating stock item ${id}: setting ${field} to`, value);
+            
             setStockItems(
                 stockItems.map((item) =>
                     item.id === id ? { ...item, [field]: value } : item
@@ -142,7 +130,6 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
 
         //Otomatik Fiyat Değiştirme
         else if (field === "stock") {
-            console.log(`ELSE Updating stock item ${id}: setting ${field} to`, value);
             const exchangeRate = CURRENCIES.find((cur) => cur.value === selectedMoneyAccountDetail.currency)?.exchangeRates;
             const currentStockPrice = typeof value === "object" ? stockPrice.find((s) => s.symbol === value.symbol).value : item.price
             const price = Math.round((exchangeRate ? currentStockPrice / exchangeRate : currentStockPrice) * 100) / 100;
@@ -250,7 +237,6 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
 
     const handleStockSelect = (stock) => {
         if (activeStockItemId) {
-            console.log(`Selected stock for item ${activeStockItemId}:`, stock);
             updateStockItem(activeStockItemId, "stock", stock);
         }
         setStockDialogOpen(false);
@@ -309,7 +295,7 @@ export const BuyInvestmentStock = ({ setStockItems, stockItems, setSelectedMoney
                 return response.rate;
             }));
 
-            console.log("Exchange rates fetched:", rates);
+            
 
             setStockItems(
                 stockItems.map((item, index) => ({

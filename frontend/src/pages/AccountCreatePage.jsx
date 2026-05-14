@@ -41,7 +41,6 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../config/UserStore";
-import { useTheme } from "../config/ThemeContext";
 import { backendUrl } from "../utils/envVariables";
 import { TURKISH_BANKS } from "../data/bankData"
 import { CURRENCIES, exchangeRates } from "../data/currencies"
@@ -184,7 +183,7 @@ const AccountCreatePage = () => {
 
     const validate = async () => {
 
-      console.log("İlk hesap mı? : ", isFirstAsset)
+  
       if (!isFirstAsset) {
 
         if (await checkAccountIsEmpty()) {
@@ -195,7 +194,7 @@ const AccountCreatePage = () => {
         let fieldsValid = false;
         if (assetType === "GOLD" || assetType === "STOCK") {
           fieldsValid = await checkField();
-          console.log(fieldsValid)
+   
         }
 
         if (!fieldsValid) {
@@ -209,7 +208,7 @@ const AccountCreatePage = () => {
         }
 
 
-        const accountDetail = await getAccountDetailInfo();/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        const accountDetail = await getAccountDetailInfo();
         const pay = accountDetail.currency === "TRY"
           ? accountDetail.balance
           : accountDetail.balance * (exchangeRate[accountDetail.currency]?.Buying || 0);
@@ -224,7 +223,7 @@ const AccountCreatePage = () => {
           totalPrice = stockItems.reduce((start, cur) => (cur.price * cur.quantity * rate) + start, 0);
         }
 
-        console.log("Bakiye Yetersiz mi? : " + (totalPrice > pay));
+     
         setIsButtonDisabled((totalPrice > pay));
         return;
       }
@@ -290,7 +289,7 @@ const AccountCreatePage = () => {
       // Reset investment-specific fields
       setGoldItems([{ id: 1, goldType: "", quantity: "", price: "", buyingDateTime: dayjs() }]);
       setStockItems([{ id: 1, stock: null, quantity: "", price: "", buyingDateTime: dayjs() }]);
-      // setAccountName("");
+      
     }
   };
 
@@ -402,14 +401,7 @@ const AccountCreatePage = () => {
       totalPrice = stockItems.reduce((start, cur) => (cur.price * cur.quantity) + start, 0);
     }
 
-    // if (selectedAccount.currency === "EUR") {
-    //   totalPrice = totalPrice / (await exchangeRates()).EUR.Selling
-    //   console.log("Bu bir EURO hesabı olduğu için para birimi düşme işlemi buna göre yapıdlı")
-    // }
-    // else if (selectedAccount.currency === "USD") {
-    //   totalPrice = totalPrice / (await exchangeRates()).USD.Selling
-    //   console.log("Bu bir USD hesabı olduğu için para birimi düşme işlemi buna göre yapıdlı")
-    // }
+
     return totalPrice;
   }
 
@@ -443,10 +435,7 @@ const AccountCreatePage = () => {
       return;
     }
 
-    // if (accountType === "INVESTMENT" && !isInvestmentFormValid()) {
-    //   setError("Lütfen tüm alanları doldurun!");
-    //   return;
-    // }
+
 
     try {
       if (accountType === "CURRENCY") {
@@ -522,7 +511,7 @@ const AccountCreatePage = () => {
 
       } else if (accountType === "INVESTMENT") {
 
-        console.log("User Assets Length: " + isFirstAsset);
+       
 
         const check = await axios.get(
           `${backendUrl}/api/asset/isThereThisAssetNameBefore?assetName=${accountName}`,
@@ -552,7 +541,7 @@ const AccountCreatePage = () => {
           if (assetType === "GOLD") {
             for (const item of goldItems) {
               const itemTotal = parseFloat(item.quantity) * parseFloat(item.price);
-              // const itemValueInAccountCurrency = itemTotal / rate;
+   
 
               const previousBalance = currentBalance;
               currentBalance -= itemTotal;
@@ -567,16 +556,16 @@ const AccountCreatePage = () => {
                 description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
                 transactionDateTime: toLocalISOTime(item.buyingDateTime),
                 category: "Satın Alım",
-                amount: itemTotal,//itemValueInAccountCurrency,
+                amount: itemTotal,
                 currency: selectedAccount.currency
               })
             }
-            console.log("Çıkış yapılacak transfer payloadları:", transferPayloads);
+        
           }
           else {
             for (const item of stockItems) {
               const itemTotal = parseFloat(item.quantity) * parseFloat(item.price);
-              // const itemValueInAccountCurrency = itemTotal / rate;
+              
               const previousBalance = currentBalance;
               currentBalance -= itemTotal;
               transferPayloads.push({
@@ -588,7 +577,7 @@ const AccountCreatePage = () => {
                 description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
                 transactionDateTime: toLocalISOTime(item.buyingDateTime),
                 category: "Satın Alım",
-                amount: itemTotal,//itemValueInAccountCurrency,
+                amount: itemTotal,
                 currency: selectedAccount.currency,
               })
 
@@ -597,21 +586,6 @@ const AccountCreatePage = () => {
 
           };
 
-          console.log("Transfer payloadları:", transferPayloads);
-
-
-          // const transferPayload = {
-          //   type: "outgoing",
-          //   moneyAccountId: selectedAccount.id,
-          //   outputPreviousBalance: selectedAccount.balance,
-          //   outputNextBalance: selectedAccount.balance - await getTotalPrice(selectedAccount),
-          //   exchangeRate: selectedAccount.currency === "TRY" ? 1 : selectedAccount.currency === "USD" ? (await exchangeRates()).USD.Selling : (await exchangeRates()).EUR.Selling,
-          //   description: "Altın/Hisse alım sırasında bu hesaptan para çıkışı sağlanmıştır",
-          //   transactionDateTime: new Date(selectedTransfer.date).toISOString().slice(0, 19),
-          //   category: "Satın Alım",
-          //   amount: await getTotalPrice(selectedAccount),
-          //   currency: selectedAccount.currency
-          // };
 
           const updatedAccount = {
             ...selectedAccount,
@@ -718,8 +692,6 @@ const AccountCreatePage = () => {
             ...selectedAccount,
           };
 
-          console.log("Selected Account:", selectedAccount);
-          console.log("Updated Account:", updatedAccount);
 
 
           await axios.put(

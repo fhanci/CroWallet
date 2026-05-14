@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Container,
   Typography,
@@ -100,10 +100,7 @@ const IncomingTransferPage = () => {
       ? customCategory
       : selectedTransfer.category;
 
-      console.log("Final Category: ", finalCategory);
-      console.log("Selected Transfer: ", selectedTransfer);
-      console.log("Custom Category: ", customCategory);
-      console.log("selectedTransferAccount: ", selectedTransferAccount);
+
 
 
     if (
@@ -116,7 +113,6 @@ const IncomingTransferPage = () => {
     }
 
     if (selectedTransfer.category === "Diğer" && !customCategory.trim()) {
-      console.log("Özel kategori adı girilmedi.");
       setError("Lütfen özel kategori adı girin.");
       return;
     }
@@ -145,7 +141,6 @@ const IncomingTransferPage = () => {
       inputNextBalance: currentBalance + parseFloat(selectedTransfer.amount),
     };
 
-    console.log("tra")
 
     const updatedAccount2 = {
       ...selectedTransferAccount,
@@ -205,7 +200,7 @@ const IncomingTransferPage = () => {
 
 
     useEffect(() => {
-      console.log(selectedTransfer.date);
+      
       
     }, [selectedTransfer.date]);
 
@@ -343,7 +338,7 @@ const IncomingTransferPage = () => {
             value={selectedTransfer.details || ""}
             onChange={(event, newValue) => {
               setSelectedTransfer({ ...selectedTransfer, details: newValue });
-              console.log("Updated Details:", newValue);
+              
             }}
             renderInput={(params) => (
               <TextField

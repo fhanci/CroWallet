@@ -2,7 +2,6 @@ package com.crowallet.backend.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.crowallet.backend.entity.DebtPayment;

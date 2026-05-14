@@ -60,12 +60,6 @@ export const STOCKS = [
 
 export const getStocksValueApi = async (symbol) => {
   try {
-    // const response = await axios.get(`${backendUrl}/api/asset/getYahoo/${symbol}.IS`);
-    // const stockValues = response.data;
-    // if (stockValues.includes("I/O error on GET request")) 
-    //   console.log(`${symbol} hissesinin fiyatına erişilemedi. Varsayılan fiyatlar üzerinden işlem yapılacak`)
-    // else
-    //   STOCKS[STOCKS.indexOf((data) => data.symbol === symbol)].price = response.data.chart.result[0].meta.regularMarketPrice
     return STOCKS[STOCKS.indexOf((data) => data.symbol === symbol)].price;
   }
   catch (e) {

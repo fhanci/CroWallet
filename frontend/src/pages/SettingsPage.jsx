@@ -1,4 +1,4 @@
-import { Box, Typography, Switch, Card, Divider } from "@mui/material";
+import { Box, Typography, Switch, Card } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../config/ThemeContext";

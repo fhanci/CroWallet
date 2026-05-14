@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 
 import com.crowallet.backend.dto.MoneyAccountRequestDTO;
 import com.crowallet.backend.dto.MoneyAccountResponseDTO;

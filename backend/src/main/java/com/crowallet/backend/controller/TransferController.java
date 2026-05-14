@@ -24,11 +24,6 @@ public class TransferController {
     @Autowired
     private TransferService transferService;
 
-    // @GetMapping
-    // public List<TransferDTO> getAllTransfers() {
-    //     return transferService.getAllTransfers();
-    // }
-
     @GetMapping("/get/{id}")
     public List<TransferResponseDTO> getUserTransfersByMoneyAccount(@PathVariable Long id) {
         return transferService.getUserTransfersByMoneyAccount(id);
@@ -41,30 +36,11 @@ public class TransferController {
     }
     
 
-    // @GetMapping("/{id}")
-    // public TransferDTO getTransferById(@PathVariable Long id) {
-    //     return transferService.getTransferById(id);
-    // }
 
     @PostMapping("/create")
     public TransferResponseDTO createTransfer(@RequestBody TransferDTO transfer) {
         return transferService.createTransfer(transfer);
     }
-
-    // @PutMapping("/update/{id}")
-    // public TransferDTO updateTransfer(@PathVariable Long id, @RequestBody TransferDTO transfer) {
-    //     return transferService.updateTransfer(id, transfer);
-    // }
-
-    // @PostMapping("/add-money")
-    // public TransferDTO addMoney(@RequestBody TransferDTO transferDTO) {
-    //     return transferService.addMoney(transferDTO);
-    // }
-
-    // @DeleteMapping("/delete/{id}")
-    // public void deleteTransfer(@PathVariable Long id) {
-    //     transferService.deleteTransfer(id);
-    // }
 
     @PostMapping("/create/account-to-account-transfer")
     public ResponseEntity<AccounttoAccountTransferResponseDTO> createAccountToAccountTransfer(@RequestBody AccounttoAccountTransferRequestDTO transferDTO) {

@@ -17,8 +17,8 @@ import lombok.Data;
 
 
 @Entity
-@Table(name = "money_account")
 @Data
+@Table(name = "money_account")
 public class MoneyAccount extends BaseEntity {
 
     @Id

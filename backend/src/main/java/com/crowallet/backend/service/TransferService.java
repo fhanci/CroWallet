@@ -2,33 +2,22 @@ package com.crowallet.backend.service;
 
 import com.crowallet.backend.dto.AccounttoAccountTransferRequestDTO;
 import com.crowallet.backend.dto.AccounttoAccountTransferResponseDTO;
-import com.crowallet.backend.dto.MoneyAccountRequestDTO;
 import com.crowallet.backend.dto.TransferDTO;
 import com.crowallet.backend.dto.TransferResponseDTO;
-import com.crowallet.backend.entity.Account;
 import com.crowallet.backend.entity.AccounttoAccountTransfer;
 import com.crowallet.backend.entity.MoneyAccount;
-import com.crowallet.backend.mapper.AccountMapper;
 import com.crowallet.backend.mapper.AccountToAccountTransferMapper;
 import com.crowallet.backend.mapper.TransferMapper;
-import com.crowallet.backend.mapper.UserMapper;
-import com.crowallet.backend.repository.AccountRepository;
 import com.crowallet.backend.repository.AccounttoAccountTransferRepository;
 import com.crowallet.backend.repository.MoneyAccountRepository;
 import jakarta.transaction.Transactional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 
 import com.crowallet.backend.comman.GeneralException;
 import com.crowallet.backend.entity.Transfer;
@@ -117,66 +106,6 @@ public class TransferService {
         AccounttoAccountTransfer savedTransfer = accountToAccountTransferRepository.save(accountToAccountTransfer);
         return accountToAccountTransferMapper.toResponseDto(savedTransfer);
     }
-
-    // public List<TransferDTO> getAllTransfers() {
-    //     return TransferMapper.INSTANCE.toTransferDTOList(transferRepository.findAll());
-    // }
-
-    // public TransferDTO getTransferById(Long id) {
-    //     return TransferMapper.INSTANCE.toTransferDTO(transferRepository.findById(id)
-    //             .orElseThrow(() -> new GeneralException("Transfer not found: " + id)));
-    // }
-
-    // public TransferDTO updateTransfer(Long id, TransferDTO updatedTransfer) {
-    //     Transfer existingTransfer = transferRepository.findById(id)
-    //             .orElseThrow(() -> new GeneralException("Transfer to be updated not found: " + id));
-
-    //     existingTransfer.setCategory(updatedTransfer.getCategory());
-    //     existingTransfer.setAmount(updatedTransfer.getAmount());
-    //     existingTransfer.setDate(updatedTransfer.getDate());
-    //     existingTransfer.setCreateDate(updatedTransfer.getCreateDate());
-    //     existingTransfer.setDescription(updatedTransfer.getDescription());
-    //     existingTransfer.setReceiverId(updatedTransfer.getReceiverId());
-    //     existingTransfer.setType(updatedTransfer.getType());
-    //     existingTransfer.setDetails(updatedTransfer.getDetails());
-    //     existingTransfer.setExchangeRate(updatedTransfer.getExchangeRate());
-    //     existingTransfer.setUser(UserMapper.INSTANCE.toUser(updatedTransfer.getUser()));
-    //     existingTransfer.setAccount(AccountMapper.INSTANCE.toAccount(updatedTransfer.getAccount()));
-
-    //     return TransferMapper.INSTANCE.toTransferDTO(transferRepository.save(existingTransfer));
-    // }
-
-    // public void deleteTransfer(Long id) {
-    //     if (!transferRepository.existsById(id)) {
-    //         throw new GeneralException("Transfer to be deleted not found: " + id);
-    //     }
-    //     transferRepository.deleteById(id);
-    // }
-
-    // @Transactional
-    // public TransferDTO addMoney(TransferDTO transferDTO) {
-    //     Account account = accountRepository.findById(transferDTO.getMoneyAccountDTO().getAccountName())
-    //             .orElseThrow(() -> new GeneralException("Hesap bulunamadı"));
-
-    //     BigDecimal amount = transferDTO.getAmount();
-    //     BigDecimal previousBalance = account.getBalance();
-    //     BigDecimal newBalance = previousBalance.add(amount);
-
-    //     account.setBalance(newBalance);
-    //     account.setUpdateDate(LocalDateTime.now());
-    //     accountRepository.save(account);
-
-    //     transferDTO.setType("incoming");
-    //     transferDTO.setCreateDate(LocalDateTime.now());
-    //     transferDTO.setDate(LocalDate.now());
-    //     transferDTO.setInputPreviousBalance(previousBalance);
-    //     transferDTO.setInputNextBalance(newBalance);
-
-    //     Transfer transfer = TransferMapper.INSTANCE.toTransfer(transferDTO);
-    //     transferRepository.save(transfer);
-
-    //     return TransferMapper.INSTANCE.toTransferDTO(transfer);
-    // }
 
     @Transactional
     public List<TransferResponseDTO> getUserTransfersByMoneyAccount(Long id) {

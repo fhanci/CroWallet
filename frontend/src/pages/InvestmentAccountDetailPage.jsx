@@ -8,10 +8,8 @@ import Divider from '@mui/material/Divider';
 import {
   Container,
   Alert,
-  Tooltip
 } from "@mui/material";
-import { getStockCurrentValue, getStocksValue } from "../data/stocksData";
-import { IoIosRefresh } from "react-icons/io";
+import { getStocksValue } from "../data/stocksData";
 import { getGoldCurrentValue } from "../data/goldData";
 
 
@@ -27,14 +25,13 @@ const InvestmentAccountDetailPage = () => {
   //UserID Toolkit Query
   const { data: userID, isLoading: userLoading } = useGetUserIDQuery();
 
-  //Holding Toolkit Query
-  // const { data: holdings, isLoading: holdingsLoading, } = useGetUserHoldingQuery(userID, { skip: userID === undefined || userID === null || userID === 0 });
+
 
   // //Asset Toolkit Query
   const { data: holdings, isLoading: holdingsLoading } = useGetUserAssetQuery(undefined, { refetchOnMountOrArgChange: true });
   const [getPrices, setGetPrices] = useState(false)
   const [goldPrice, setGoldPrice] = useState([])
-  // const goldTypeKey = ["GRA", "CEYREKALTIN", "YARIMALTIN", "TAMALTIN", "CUMHURIYETALTINI"]
+
   const [stockPrice, setStockPrice] = useState([])
 
 
@@ -127,9 +124,6 @@ const InvestmentAccountDetailPage = () => {
     return <div> Yükleniyor</div>
   return (
     <div>
-      {/* <Tooltip title="Yatırım Fiyatlarını Çek">
-        <IoIosRefresh style={{position:"absolute",right:"22vw",marginTop:"4"}} onClick={() => getInvestmentPrices()} />
-      </Tooltip> */}
 
       
       {Object.keys(finalHoldings.GOLD).length === 0 ? <Container sx={{ mt: 4, mb: 4 }}>

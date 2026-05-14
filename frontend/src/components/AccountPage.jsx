@@ -142,7 +142,6 @@ const AccountPage = () => {
         // Altın işlemi TAMAMEN bittikten sonra hisseleri başlat
         await getStocksValue();
 
-        console.log("İşlemler sırasıyla bitti.");
       } catch (error) {
         console.error("Hata oluştu:", error);
       }
@@ -164,8 +163,7 @@ const AccountPage = () => {
             },
           }
         );
-        //setAccountSummary(res.data);
-        console.log("AccountSummarData: " + JSON.stringify(res.data, 4, 4));
+
 
         await exchangeRates();
 
@@ -180,14 +178,9 @@ const AccountPage = () => {
         );
 
 
-        console.log("İşlem Sonuçları: ")
-        console.log(resTest.data);
-        console.log("İşlem Update Sonucu:");
-        console.log("Kurlar: ")
-        console.log(CURRENCIES);
         resTest.data.totalBalanceTRY =
           resTest.data.currencyTotals.EUR * CURRENCIES[2].exchangeRates + resTest.data.currencyTotals.USD * CURRENCIES[1].exchangeRates + resTest.data.currencyTotals.TRY + resTest.data.totalInvestmentValue;
-        console.log(resTest.data.totalBalanceTRY);
+
 
         setAccountSummary(resTest.data);
 
@@ -220,25 +213,7 @@ const AccountPage = () => {
     fetchDebtSummary();
   }, [user.id, token]);
 
-  // Fetch upcoming payments (next 5)
-  // useEffect(() => {
-  //   const fetchUpcomingPayments = async () => {
-  //     try {
-  //       const res = await axios.get(
-  //         `${backendUrl}/api/debts/upcoming/${user.id}?limit=5`,
-  //         {
-  //           headers: {
-  //             Authorization: token ? `Bearer ${token}` : undefined,
-  //           },
-  //         }
-  //       );
-  //       setUpcomingPayments(res.data);
-  //     } catch (error) {
-  //       console.error("Error fetching upcoming payments:", error);
-  //     }
-  //   };
-  //   fetchUpcomingPayments();
-  // }, [user.id, token]);
+
 
   // Fetch user transfers
   useEffect(() => {
@@ -256,9 +231,7 @@ const AccountPage = () => {
           }
         );
         setTransfers(res.data);
-        console.log("User Transfers:", res.data);
       } catch (error) {
-        console.error("Transfer fetch error:", error);
       }
     };
     fetchTransfers();
@@ -580,47 +553,17 @@ const AccountPage = () => {
 
   const incomeData = getNewChartData("incoming", transfers)//getChartData(incomeSources, "incoming", transfers);
   const expenseData = getNewChartData("outgoing", transfers)//getChartData(expenseSources, "outgoing", transfers);
-  console.log("GetChartDataIncoming: " + JSON.stringify(getNewChartData("incoming", transfers)))
-  console.log("GetChartDataOutgoing: " + JSON.stringify(getNewChartData("outgoing", transfers)))
 
   const convertToTRY2 = (amount, currency) => {
-    console.log(`Para Hesapları - ${currency}: ${amount}`);
     if (!amount || !currency || currency === "TRY") return amount || 0;
-    // if (!rates || Object.keys(rates).length === 0 || !rates[currency] || !rates["TRY"]) {
-    //   return 0;
-    // }
-    console.log("Bura")
-    // rates[currency] = EUR rate, rates["TRY"] = EUR to TRY rate
-    // X [currency] = X * (TRY_rate / currency_rate) TRY
 
     return amount * CURRENCIES.find(c => c.value === currency)?.exchangeRates
   }
 
-  // Helper to convert any currency to TRY using real-time rates
-  // const convertToTRY = (amount, currency) => {
-  //   if (!amount || !currency || currency === "TRY") return amount || 0;
-  //   if (!rates || Object.keys(rates).length === 0 || !rates[currency] || !rates["TRY"]) {
-  //     return 0;
-  //   }
-  //   // rates[currency] = EUR rate, rates["TRY"] = EUR to TRY rate
-  //   // X [currency] = X * (TRY_rate / currency_rate) TRY
-  //   return amount * (rates["TRY"] / rates[currency]);
-  // };
 
   // Calculate total assets in TRY using real-time rates
   const calculateTotalAssetsTRY = () => {
     return accountSummary ? accountSummary.totalBalanceTRY : 0;
-    // if (!rates || Object.keys(rates).length === 0) {
-    //   return accountSummary?.totalBalanceTRY || 0;
-    // }
-    // let total = 0;
-    // if (accountSummary?.currencyTotals) {
-    //   Object.entries(accountSummary.currencyTotals).forEach(([currency, amount]) => {
-    //     total += convertToTRY2(amount, currency);
-    //   });
-    // }
-    // total += accountSummary?.totalInvestmentValue || 0;
-    // return total;
   };
 
   // Calculate total debts in TRY using real-time rates
@@ -629,14 +572,6 @@ const AccountPage = () => {
       const exchangeRate = CURRENCIES.find(c => c.value === currency)?.exchangeRates || 1;
       return total *= exchangeRate;
     }).reduce((acc, curr) => acc + curr, 0) : 0;
-    // if (!rates || Object.keys(rates).length === 0 || !debtSummary?.debts) {
-    //   return debtSummary?.totalRemainingAmount || 0;
-    // }
-    // let total = 0;
-    // debtSummary.debts.forEach((debt) => {
-    //   total += convertToTRY2(debt.remainingAmount, debt.debtCurrency);
-    // });
-    // return total;
   };
 
   // Calculate net balance (assets - debts) with real-time conversion
@@ -656,7 +591,7 @@ const AccountPage = () => {
     let currencyTotal = 0;
     if (accountSummary.currencyTotals) {
       Object.entries(accountSummary.currencyTotals).forEach(([currency, amount]) => {
-        //console.log(`Para Hesapları - ${currency}: ${amount}`);   
+
         currencyTotal += convertToTRY2(amount, currency);
       });
     }
@@ -680,8 +615,6 @@ const AccountPage = () => {
       });
     }
 
-    console.log(goldTotal);
-    console.log(stockTotal);
 
     // Get debt total in TRY
     const debtTotal = totalDebts;
@@ -932,16 +865,6 @@ const AccountPage = () => {
                   </Typography>
                 </Box>
 
-                {/* {debtSummary?.totalPaidAmount > 0 && (
-                  <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                    <Typography variant="body2" sx={{ opacity: 0.7, color: "#f44336" }}>
-                      Ödenen
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#f44336" }}>
-                      {formatCurrency(Math.round(debtSummary?.totalPaidAmount) || 0, "TRY")}
-                    </Typography>
-                  </Box>
-                )} */}
               </Box>
             </Box>
           </Box>
@@ -1195,7 +1118,7 @@ const AccountPage = () => {
           >
             <Button
               variant="text"
-              onClick={() => navigate("/all-transactions")} ///////////////////////////////////////////////////////////////////////////////////////////
+              onClick={() => navigate("/all-transactions")}
               sx={{
                 textTransform: "none",
                 fontWeight: 600,

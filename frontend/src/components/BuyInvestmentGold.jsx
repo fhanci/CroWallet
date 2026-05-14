@@ -10,7 +10,7 @@ import Marquee from "react-fast-marquee";
 import { backendUrl } from '../utils/envVariables';
 import { CURRENCIES, exchangeRates, getExchangeRateByPastDate } from '../data/currencies';
 import dayjs from "dayjs";
-import { formatDateTime, toLocalISOTime } from '../utils/localIsoTime';
+import { formatDateTime } from '../utils/localIsoTime';
 
 
 
@@ -26,7 +26,6 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
     // const goldTypeKey = ["GRA", "CEYREKALTIN", "YARIMALTIN", "TAMALTIN", "CUMHURIYETALTINI"]
     const token = localStorage.getItem("token");
 
-    // const [selectedMoneyAccount, setSelectedMoneyAccount] = useState(0)
     const [moneyAccountPersons, setMoneyAccountPersons] = useState([{}])
     const [exchangeRate, setExchangeRate] = useState({})
 
@@ -70,7 +69,6 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
             { id: newId, goldType: "", quantity: "", price: "", buyingDateTime: dayjs(), exchangeRate: 1 },
         ]);
         setChangeExchangeRate(true);
-        console.log("Added new gold item:", goldItems);
     };
 
     const removeGoldItem = (id) => {
@@ -96,12 +94,11 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
     useEffect(() => {
         const currentAccountExchangeRate = CURRENCIES.find((cur) => cur.value === selectedMoneyAccountDetail.currency)?.exchangeRates;
         const previousAccountExchangeRate = CURRENCIES.find((cur) => cur.value === previousMoneyAccountDetail.currency)?.exchangeRates || 1;
-        console.log("Selected account changed. Previous currency:", previousMoneyAccountDetail.currency, "Current currency:", selectedMoneyAccountDetail.currency);
         setGoldItems(goldItems.map((item) => {
             if (item.price) {
                 const price = item.price * previousAccountExchangeRate; //TL Dönüşümü
                 const newPrice = Math.round((price / currentAccountExchangeRate) * 100) / 100;
-                console.log(`Updated price for item ${item.id} based on selected currency ${selectedMoneyAccountDetail.currency}: ${newPrice}`);
+                
                 return { ...item, price: newPrice };
             }
             return item;
@@ -126,7 +123,7 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
                 return response.rate;
             }));
 
-            console.log("Exchange rates fetched:", rates);  
+            
             
             setGoldItems(
                 goldItems.map((item, index) => ({
@@ -149,7 +146,7 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
 
 
     const updateGoldItem = (id, field, value) => {
-        console.log(`Updating gold item ${id}: setting ${field} to ${value}`);
+        
 
         if (field === "price" || field === "quantity")
             value = value < 0 ? value * -1 : value;
@@ -176,13 +173,8 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
                 )
             );
 
-            console.log("Updated gold items:", goldItems);
         }
         else if (field === "price") {
-            // if (selectedMoneyAccountDetail) {
-            //     const exchangeRate = CURRENCIES.find((cur) => cur.value === selectedMoneyAccountDetail.currency)?.exchangeRates;
-            //     value /= exchangeRate;
-            // }
 
 
             setGoldItems(
@@ -190,7 +182,7 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
                     item.id === id ? { ...item, [field]: value } : item)
             )
 
-            console.log("Updated gold items:", goldItems)
+
         }
 
 
@@ -234,7 +226,6 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
     }, [])
 
     useEffect(() => {
-        console.log("Gold items updated:", goldItems);
     }, [goldItems])
 
     const [userAssets, setUserAsset] = useState([]);
@@ -424,11 +415,6 @@ export const BuyInvestmentGold = ({ goldItems, setGoldItems, setSelectedMoneyAcc
                                                         <span>Bakiye: {showMoneytoLocalString(data.balance || 0)} {data.currency === "TRY" ? "₺" : data.currency === "EUR" ? "€" : "$"}</span>
                                                     </Box>
 
-                                                    {/* {data.currency !== "TRY" && (
-                                                        <Box sx={{ textAlign: 'right', mt: 0.5, fontStyle: 'italic', fontSize: '0.8rem' }}>
-                                                            TL Karşılığı: {showMoneytoLocalString(data.balance * (exchangeRate[data.currency]?.Buying || 0))} ₺
-                                                        </Box>
-                                                    )} */}
                                                 </>
                                             }
                                         />

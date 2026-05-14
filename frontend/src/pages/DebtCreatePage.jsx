@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Container,
   Typography,
@@ -214,7 +214,7 @@ const DebtCreatePage = () => {
         : toWhom;
 
 
-      console.log("Final To Whom:", finalToWhom);
+  
 
       // Calculate description with exchange rate info if applicable
       let finalDescription = description;
@@ -224,7 +224,7 @@ const DebtCreatePage = () => {
         finalDescription = description ? `${description} ${rateInfo}` : rateInfo;
       }
 
-      console.log("Final Description:", finalDescription);
+
 
       const newDebt = {
         debtAmount: parseFloat(debtAmount),
@@ -275,7 +275,7 @@ const DebtCreatePage = () => {
         newDebt.dueDate = endDate.toISOString().split("T")[0];
       }
 
-      console.log("New Debt:", newDebt);
+
 
       // Create debt
       await axios.post(
@@ -354,11 +354,6 @@ const DebtCreatePage = () => {
   }, [selectedAccount]);
 
 
-  useEffect(() => {
-    if (exchangeRate) {
-      console.log("Exchange Rate:", exchangeRate);
-    }
-  }, [exchangeRate]);
 
   return (
     <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
@@ -464,24 +459,7 @@ const DebtCreatePage = () => {
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                   />
 
-                  {/* TRY Equivalent Display for Kredi */}
-                  {/* {exchangeRate && debtAmount && (  
-                    <Card sx={{ bgcolor: isDarkMode ? "rgba(33, 150, 243, 0.15)" : "#e3f2fd", border: "1px solid #2196F3", borderRadius: 2, mt: 2 }}>
-                      <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <Typography variant="body2" sx={{ color: isDarkMode ? "rgba(255, 255, 255, 0.7)" : "text.secondary" }}>
-                            TRY Karşılığı:
-                          </Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 600, color: "#1976d2" }}>
-                            ₺{(parseFloat(debtAmount) * parseFloat(exchangeRate)).toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
-                          </Typography>
-                        </Box>
-                        <Typography variant="caption" color="text.secondary">
-                          {getCurrencySymbol(selectedAccount.currency)}{parseFloat(debtAmount).toLocaleString("tr-TR", { minimumFractionDigits: 2 })} × {parseFloat(exchangeRate).toLocaleString("tr-TR", { minimumFractionDigits: 2 })} = ₺{(parseFloat(debtAmount) * parseFloat(exchangeRate)).toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  )} */}
+                
                 </>
               )}
             </Box>

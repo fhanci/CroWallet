@@ -22,19 +22,16 @@ import {
   Menu,
   MenuItem,
   InputAdornment,
-  colors,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SearchIcon from "@mui/icons-material/Search";
 import { useTranslation } from "react-i18next";
-import { useUser } from "../config/UserStore";
 import { useTheme } from "../config/ThemeContext";
 import axios from "axios";
 import Graph from "./Graph";
 import { backendUrl } from "../utils/envVariables";
 
 const TransactionHistoryPage = () => {
-  const { user } = useUser();
   const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const { accountId } = useParams();
@@ -81,7 +78,6 @@ const TransactionHistoryPage = () => {
         );
 
         const transactionsList = sortedData.map((transaction, index) => ({ ...transaction, id: index }));
-        console.log("İşlem Listesi:", transactionsList);
 
         //Burdaki tüm transactionlar içindeki inner-account'ları bul ve değiştir
         for (const transaction of transactionsList) {
@@ -92,7 +88,7 @@ const TransactionHistoryPage = () => {
               },
             });
 
-            console.log("İşlem Çıktısı:", response.data);
+
 
             if (response.data.hasAccountToAccountTransfer) {
               transaction.type = response.data.senderAccount === transaction.moneyAccountId ? "outgoing" : response.data.receiverAccount === transaction.moneyAccountId ? "incoming" : "Have a problem";
@@ -100,9 +96,6 @@ const TransactionHistoryPage = () => {
           }
         }
 
-
-        console.log("İşlem Listesi Çıktı")
-        console.log(transactionsList)
         setTransactions(transactionsList);
         setFilteredTransactions(transactionsList);
         setGraphTransactions(transactionsList);
@@ -120,19 +113,8 @@ const TransactionHistoryPage = () => {
 
   // güncel bakiye için
   const fetchAccountBalance = async () => {
-    // const res = await axios.get(
-    //   `${backendUrl}/api/accounts/${accountId}`,
-    //   {
-    //     headers: {
-    //       Authorization: token ? `Bearer ${token}` : undefined,
-    //     },
-    //   }
-
-    // );
 
     const lastTransaction = transactions[0];
-    console.log("Son İşlem:", lastTransaction);
-    console.log(transactions)
     setAccountBalance(lastTransaction?.outputNextBalance ?? lastTransaction?.inputNextBalance);
     setAccountCurrency(lastTransaction?.currency);
   }
@@ -209,12 +191,9 @@ const TransactionHistoryPage = () => {
 
   const getIncomeOrExpense = (transaction) => {
     if (transaction.type === "inter-account") {
-      console.log("accountId:", accountId);
-      console.log("transaction.account.id:", transaction);
       if (transaction.moneyAccountId.toString() === accountId.toString()) {
         return t("expense");
       }
-      console.log("Eşit Çıkmadı");
       if (transaction.receiverId.toString() === accountId.toString()) {
         return t("income");
       }
@@ -252,7 +231,6 @@ const TransactionHistoryPage = () => {
       endDate: endDate,
       searchQuery: searchQuery
     }
-    console.log(body);
     const responseGetPdf = await axios.post(
       `${backendUrl}/api/accounts/getPdf?detail=${detail}&moneyAccountId=${accountId}`,
       body,

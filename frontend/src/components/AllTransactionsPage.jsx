@@ -32,8 +32,6 @@ import { useUser } from "../config/UserStore";
 import { useTheme } from "../config/ThemeContext";
 import axios from "axios";
 import { backendUrl } from "../utils/envVariables";
-import { jsPDF } from "jspdf";
-import "jspdf-autotable";
 
 const AllTransactionsPage = () => {
   const { user } = useUser();
@@ -70,7 +68,6 @@ const AllTransactionsPage = () => {
         });
 
         setAllMoneyAccounts(allMoneyAccounts.data);
-        console.log("Tüm para hesapları:", allMoneyAccounts.data);
 
         const sortedData = response.data.sort(
           (b, a) => new Date(b.transactionDateTime) - new Date(a.transactionDateTime)
@@ -83,7 +80,6 @@ const AllTransactionsPage = () => {
           })
         );
 
-        //console.log(transactionsWithAccountInfo)
 
 
         setTransactions(transactionsWithAccountInfo);
@@ -211,7 +207,6 @@ const getPdf = async (detail) => {
       endDate: endDate,
       searchQuery: searchQuery
     }
-    console.log(body);
     const responseGetPdf = await axios.post(
       `${backendUrl}/api/accounts/getPdf?detail=${detail}`,
       body,
