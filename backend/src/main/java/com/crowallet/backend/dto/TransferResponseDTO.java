@@ -23,7 +23,7 @@ public class TransferResponseDTO {
     private BigDecimal outputNextBalance;
     private BigDecimal outputPreviousBalance;
     private Long moneyAccountId;
-    private String currency;
+    private String currency; 
     private LocalDateTime transactionDateTime;
     private Boolean isAccountToAccountTransfer;
     private Long transferId;

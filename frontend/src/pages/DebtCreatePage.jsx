@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Container,
   Typography,
@@ -214,7 +214,7 @@ const DebtCreatePage = () => {
         : toWhom;
 
 
-      console.log("Final To Whom:", finalToWhom);
+  
 
       // Calculate description with exchange rate info if applicable
       let finalDescription = description;
@@ -224,7 +224,7 @@ const DebtCreatePage = () => {
         finalDescription = description ? `${description} ${rateInfo}` : rateInfo;
       }
 
-      console.log("Final Description:", finalDescription);
+
 
       const newDebt = {
         debtAmount: parseFloat(debtAmount),
@@ -242,7 +242,7 @@ const DebtCreatePage = () => {
 
 
       // Set account for ACCOUNT_DEBT
-      if (debtType === "ACCOUNT_DEBT" && selectedAccount) {
+      if (selectedAccount) {
         newDebt.moneyAccountId = selectedAccount.id;
       }
 
@@ -275,7 +275,7 @@ const DebtCreatePage = () => {
         newDebt.dueDate = endDate.toISOString().split("T")[0];
       }
 
-      console.log("New Debt:", newDebt);
+
 
       // Create debt
       await axios.post(
@@ -291,7 +291,7 @@ const DebtCreatePage = () => {
 
 
       // If ACCOUNT_DEBT, increase account balance
-      if (debtType === "ACCOUNT_DEBT" && selectedAccount) {
+      if (selectedAccount) {
         const previousBalance = selectedAccount.balance;
         const updatedBalance = selectedAccount.balance + parseFloat(debtAmount);
 
@@ -336,33 +336,6 @@ const DebtCreatePage = () => {
             },
           }
         );
-
-
-
-
-
-
-
-
-        //   // Create transfer record
-        //   await axios.post(
-        //     `${backendUrl}/api/transfers/create`,
-        //     {
-        //       amount: parseFloat(debtAmount),
-        //       category: "Kredi",
-        //       details: `${finalToWhom}`,
-        //       type: "incoming",
-        //       person: finalToWhom,
-        //       inputPreviousBalance: selectedAccount.balance,
-        //       inputNextBalance: updatedBalance,
-        //     },
-        //     {
-        //       headers: {
-        //         Authorization: token ? `Bearer ${token}` : undefined,
-        //         "Content-Type": "application/json",
-        //       },
-        //     }
-        //   );
       }
 
       setOpenSnackbar(true);
@@ -381,11 +354,6 @@ const DebtCreatePage = () => {
   }, [selectedAccount]);
 
 
-  useEffect(() => {
-    if (exchangeRate) {
-      console.log("Exchange Rate:", exchangeRate);
-    }
-  }, [exchangeRate]);
 
   return (
     <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
@@ -435,7 +403,7 @@ const DebtCreatePage = () => {
               {debtType === "ACCOUNT_DEBT"
                 ? "Kredi tutarı seçilen banka hesabına eklenecek"
                 : debtType === "CASH_DEBT"
-                  ? "Borç herhangi bir hesaba eklenmeyecek (nakit olarak alındı)"
+                  ? "Borç tutarı seçilen banka hesabına eklenecek"
                   : ""}
             </Typography>
           </Box>
@@ -443,7 +411,7 @@ const DebtCreatePage = () => {
           <Divider sx={{ my: 2 }} />
 
           {/* For Kredi: Show bank account selection FIRST */}
-          <Fade in={debtType === "ACCOUNT_DEBT"} unmountOnExit>
+          <Fade in={true} unmountOnExit>
             <Box sx={{ mb: 3 }}>
               <FormControl fullWidth margin="normal" required>
                 <InputLabel>Banka Hesabı Seçin</InputLabel>
@@ -491,31 +459,14 @@ const DebtCreatePage = () => {
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                   />
 
-                  {/* TRY Equivalent Display for Kredi */}
-                  {/* {exchangeRate && debtAmount && (  
-                    <Card sx={{ bgcolor: isDarkMode ? "rgba(33, 150, 243, 0.15)" : "#e3f2fd", border: "1px solid #2196F3", borderRadius: 2, mt: 2 }}>
-                      <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <Typography variant="body2" sx={{ color: isDarkMode ? "rgba(255, 255, 255, 0.7)" : "text.secondary" }}>
-                            TRY Karşılığı:
-                          </Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 600, color: "#1976d2" }}>
-                            ₺{(parseFloat(debtAmount) * parseFloat(exchangeRate)).toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
-                          </Typography>
-                        </Box>
-                        <Typography variant="caption" color="text.secondary">
-                          {getCurrencySymbol(selectedAccount.currency)}{parseFloat(debtAmount).toLocaleString("tr-TR", { minimumFractionDigits: 2 })} × {parseFloat(exchangeRate).toLocaleString("tr-TR", { minimumFractionDigits: 2 })} = ₺{(parseFloat(debtAmount) * parseFloat(exchangeRate)).toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  )} */}
+                
                 </>
               )}
             </Box>
           </Fade>
 
           {/* Payment Type Selection - Show after account is selected for Kredi, or after type is selected for Nakit */}
-          <Fade in={(debtType === "ACCOUNT_DEBT" && selectedAccount) || debtType === "CASH_DEBT"} unmountOnExit>
+          <Fade in={selectedAccount} unmountOnExit>
             <Box sx={{ mb: 3 }}>
               <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 500 }}>
                 Ödeme Planı

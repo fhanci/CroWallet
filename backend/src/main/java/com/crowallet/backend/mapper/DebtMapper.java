@@ -1,6 +1,5 @@
 package com.crowallet.backend.mapper;
 
-import com.crowallet.backend.dto.DebtDTO;
 import com.crowallet.backend.dto.DebtPaymentDTO;
 import com.crowallet.backend.dto.DebtRequestDTO;
 import com.crowallet.backend.dto.DebtResponseDTO;
@@ -9,7 +8,6 @@ import com.crowallet.backend.entity.DebtPayment;
 import com.crowallet.backend.entity.DebtType;
 import com.crowallet.backend.entity.PaymentFrequency;
 import com.crowallet.backend.entity.PaymentType;
-import com.crowallet.backend.requests.DebtResponse;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -33,16 +31,11 @@ public interface DebtMapper {
     @Mapping(source = "debtType", target = "debtType", qualifiedByName = "debtTypeToString")
     @Mapping(source = "paymentType", target = "paymentType", qualifiedByName = "paymentTypeToString")
     @Mapping(source = "paymentFrequency", target = "paymentFrequency", qualifiedByName = "paymentFrequencyToString")
-    // @Mapping(target = "nextPayment", ignore = true)
-    // @Mapping(target = "remainingInstallments", ignore = true)
     DebtResponseDTO toDebtResponseDTO(Debt debt);
 
     List<Debt> toDebtList(List<DebtRequestDTO> debts);
     List<DebtResponseDTO> toDebtResponseList(List<Debt> debts);
 
-
-    // @Mapping(target = "moneyAccountId", source = "debtResponseDTO.id", qualifiedByName = "getMoneyAccountId")
-    // DebtPayment toDebtPayment(DebtResponseDTO debtResponseDTO);
 
     // DebtPayment mappings
     @Mapping(source = "debt.id", target = "debtId")

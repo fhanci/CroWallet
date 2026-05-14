@@ -18,7 +18,6 @@ import com.crowallet.backend.dto.DebtPaymentDTO;
 import com.crowallet.backend.dto.DebtRequestDTO;
 import com.crowallet.backend.dto.DebtResponseDTO;
 import com.crowallet.backend.dto.DebtSummaryDTO;
-import com.crowallet.backend.requests.DebtResponse;
 import com.crowallet.backend.requests.PayDebt;
 import com.crowallet.backend.service.DebtService;
 
@@ -28,22 +27,6 @@ public class DebtController {
 
     @Autowired
     private DebtService debtService;
-
-
-    // @GetMapping
-    // public List<DebtDTO> getAllDebts() {
-    //     return debtService.getAllDebts();
-    // }
-
-    // @GetMapping("/get/{userId}")
-    // public List<DebtDTO> getUserDebts(@PathVariable Long userId) {
-    //     return debtService.getUserDebts(userId);
-    // }
-
-    // @GetMapping("/active/{userId}")
-    // public List<DebtDTO> getUserActiveDebts(@PathVariable Long userId) {
-    //     return debtService.getUserActiveDebts(userId);
-    // }
 
     @GetMapping("/summary/{userId}")
     public DebtSummaryDTO getUserDebtSummary(@PathVariable Long userId) {
@@ -75,11 +58,6 @@ public class DebtController {
     public DebtResponseDTO createDebt(@RequestBody DebtRequestDTO debt) {
         return debtService.createDebt(debt);
     }
-
-    // @PutMapping("/pay/{id}")
-    // public DebtResponse payDebt(@PathVariable Long id, @RequestBody PayDebt debt){
-    //     return debtService.payDebt(id, debt);
-    // }
 
     @PostMapping("/payment/{paymentId}/pay")
     public DebtPaymentDTO markPaymentAsPaid(@PathVariable Long paymentId, @RequestBody PayDebt payDebt) {

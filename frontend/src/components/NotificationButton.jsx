@@ -1,4 +1,3 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import { IconButton } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
@@ -14,8 +13,6 @@ const NotificationButton = ({
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const token = localStorage.getItem("token");
-  const { t } = useTranslation();
 
   const handleClick = () => {
     navigate("/notification");

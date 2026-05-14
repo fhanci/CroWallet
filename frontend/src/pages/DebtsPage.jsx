@@ -33,13 +33,11 @@ import { useUser } from "../config/UserStore";
 import { useTheme } from "../config/ThemeContext";
 import { getCardStyles } from "../config/cardStyles";
 import AddIcon from "@mui/icons-material/Add";
-import EventIcon from "@mui/icons-material/Event";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import PaymentIcon from "@mui/icons-material/Payment";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import CreditCardIcon from "@mui/icons-material/CreditCard";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import SavingsIcon from "@mui/icons-material/Savings";
@@ -353,18 +351,6 @@ const DebtsPage = () => {
       const amountDiff = newAmount - (editingDebt.debtAmount || 0);
       const newRemainingAmount = (editingDebt.remainingAmount || 0) + amountDiff;
 
-      console.log("Editing Debt:", {
-        ...editingDebt,
-        toWhom: editToWhom,
-        debtAmount: newAmount,
-        remainingAmount: newRemainingAmount > 0 ? newRemainingAmount : 0,
-        dueDate: editDueDate,
-        description: editDescription,
-        warningPeriod: parseInt(editWarningPeriod) || 7,
-      });
-      console.log("Amount Difference:", amountDiff);
-
-
       await axios.put(
         `${backendUrl}/api/debts/update/${editingDebt.id}`,
         {
@@ -451,7 +437,7 @@ const DebtsPage = () => {
               borderRadius: 3,
             }}
           >
-            {console.log("Rendering Total Remaining Amount:", debtSummary)}
+            
             <Typography variant="body2" sx={{ opacity: 0.8 }}>
               Toplam Kalan Borç
             </Typography>
@@ -555,7 +541,7 @@ const DebtsPage = () => {
         </Alert>
       )}
 
-      {console.log(displayedDebts)}
+      
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {displayedDebts
           .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))

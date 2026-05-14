@@ -1,4 +1,3 @@
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import useCurrencyRates from '../config/useCurrencyRates';
 import { Box, Typography, Card, CardContent, CircularProgress, IconButton, Tooltip, Chip } from '@mui/material';

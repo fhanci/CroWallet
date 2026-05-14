@@ -3,13 +3,11 @@ package com.crowallet.backend.service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,14 +19,12 @@ import com.crowallet.backend.dto.DebtPaymentDTO;
 import com.crowallet.backend.dto.DebtRequestDTO;
 import com.crowallet.backend.dto.DebtResponseDTO;
 import com.crowallet.backend.dto.DebtSummaryDTO;
-import com.crowallet.backend.entity.Account;
 import com.crowallet.backend.entity.Debt;
 import com.crowallet.backend.entity.DebtPayment;
 import com.crowallet.backend.entity.DebtType;
 import com.crowallet.backend.entity.MoneyAccount;
 import com.crowallet.backend.entity.PaymentFrequency;
 import com.crowallet.backend.entity.PaymentType;
-import com.crowallet.backend.entity.Transfer;
 import com.crowallet.backend.entity.User;
 import com.crowallet.backend.mapper.DebtMapper;
 import com.crowallet.backend.repository.AccountRepository;
@@ -37,7 +33,6 @@ import com.crowallet.backend.repository.DebtRepository;
 import com.crowallet.backend.repository.MoneyAccountRepository;
 import com.crowallet.backend.repository.TransferRepository;
 import com.crowallet.backend.repository.UserRepository;
-import com.crowallet.backend.requests.DebtResponse;
 import com.crowallet.backend.requests.PayDebt;
 
 import jakarta.transaction.Transactional;
@@ -173,19 +168,7 @@ public class DebtService {
         }
     }
 
-    // @Transactional
-    // public DebtDTO updatePaymentSchedule(Debt debt){
 
-    //     List<DebtPayment> payments = paymentRepository.findPendingPaymentsByDebtId(debt.getId());
-    //         for (int i = 1; i <= payments.size(); i++) {
-    //             DebtPayment payment = payments.get(i);
-    //             payment.setAmount(debt.getInstallmentAmount());
-    //             paymentRepository.save(payment);
-    //         }
-
-    //         debtRepository.save(debt);
-    //         return DebtMapper.INSTANCE.toDebtDTO(debt);
-    // }
 
     private LocalDate calculateNextPaymentDate(LocalDate current, PaymentFrequency frequency) {
         return switch (frequency) {
@@ -289,11 +272,6 @@ public class DebtService {
         return dto;
     }
 
-    // public List<DebtDTO> getAllDebts() {
-    //     return debtRepository.findAll().stream()
-    //             .map(d -> enrichDebtDTO(DebtMapper.INSTANCE.toDebtDTO(d)))
-    //             .collect(Collectors.toList());
-    // }
 
     public DebtResponseDTO getDebtById(Long id) {
         Debt debt = debtRepository.findById(id)
@@ -316,12 +294,6 @@ public class DebtService {
         existingDebt.setDueDate(updatedDebt.getDueDate());
         existingDebt.setDescription(updatedDebt.getDescription());
     
-
-        // if (updatedDebt.getAccount() != null && updatedDebt.getAccount().getId() != null) {
-        //     Account account = accountRepository.findById(updatedDebt.getAccount().getId())
-        //             .orElseThrow(() -> new GeneralException("Account not found"));
-        //     existingDebt.setAccount(account);
-        // }
 
         
         //Bugüne kadar ödenen ne kadar?
@@ -361,11 +333,6 @@ public class DebtService {
         //Debt üzerinde aylık taksit tutarı
         existingDebt.setInstallmentAmount(newInstallmentAmount);
 
-        // if (updatedDebt.getTotalInstallments() != null && updatedDebt.getTotalInstallments() > 0) {
-        //         existingDebt.setInstallmentAmount(updatedDebt.getDebtAmount().divide(
-        //                 BigDecimal.valueOf(updatedDebt.getTotalInstallments()), 2, RoundingMode.HALF_UP));
-        // }
-
         
         Debt saved = debtRepository.save(existingDebt);
 
@@ -386,20 +353,7 @@ public class DebtService {
         debtRepository.deleteById(id);
     }
 
-    // public List<DebtDTO> getUserDebts(Long userId) {
-    //     return debtRepository.findAll().stream()
-    //             .filter(s -> Objects.equals(s.getUser().getId(), userId))
-    //             .map(d -> enrichDebtDTO(DebtMapper.INSTANCE.toDebtDTO(d)))
-    //             .collect(Collectors.toList());
-    // }
-
-    // public List<DebtDTO> getUserActiveDebts(Long userId) {
-    //     return debtRepository.findAll().stream()
-    //             .filter(s -> Objects.equals(s.getUser().getId(), userId))
-    //             .filter(s -> !"COMPLETED".equals(s.getStatus()))
-    //             .map(d -> enrichDebtDTO(DebtMapper.INSTANCE.toDebtDTO(d)))
-    //             .collect(Collectors.toList());
-    // }
+   
 
     public DebtSummaryDTO getUserDebtSummary(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new GeneralException("User not found: " + userId));
@@ -478,44 +432,6 @@ public class DebtService {
         return dto;
     }
 
-    // @Transactional
-    // public DebtResponse payDebt(Long id, PayDebt debt) {
-    //     Debt existingDebt = debtRepository.findById(id)
-    //             .orElseThrow(() -> new RuntimeException("Borç bulunamadı"));
-
-    //     Account account = accountRepository.findById(debt.getAccountId())
-    //             .orElseThrow(() -> new RuntimeException("Hesap bulunamadı"));
-
-    //     BigDecimal payAmount = debt.getAmount();
-    //     BigDecimal updatedDebtAmount = existingDebt.getDebtAmount().subtract(payAmount);
-    //     BigDecimal updatedBalance = account.getBalance().subtract(payAmount);
-
-    //     if (updatedBalance.compareTo(BigDecimal.ZERO) < 0) {
-    //         throw new RuntimeException("Yetersiz bakiye");
-    //     }
-
-    //     existingDebt.setDebtAmount(updatedDebtAmount.max(BigDecimal.ZERO));
-    //     existingDebt.setStatus(updatedDebtAmount.compareTo(BigDecimal.ZERO) <= 0 ? "odendi" : "odenmedi");
-    //     debtRepository.save(existingDebt);
-
-    //     account.setBalance(updatedBalance);
-    //     account.setUpdateDate(LocalDateTime.now());
-    //     accountRepository.save(account);
-
-    //     Transfer transfer = new Transfer();
-    //     transfer.setAmount(payAmount);
-    //     transfer.setCategory("Borç Ödeme");
-    //     transfer.setDetails("Borç ödeme");
-    //     // transfer.setDate(LocalDate.now());
-    //     // transfer.setCreateDate(LocalDateTime.now());
-    //     transfer.setUser(userRepository.findById(debt.getUserId()).orElse(null));
-    //     //transfer.setAccount(account);
-    //     transfer.setType("outgoing");
-    //     transfer.setOutputPreviousBalance(account.getBalance().add(payAmount));
-    //     transfer.setOutputNextBalance(updatedBalance);
-    //     transferRepository.save(transfer);
-
-    //     return new DebtResponse(updatedBalance, DebtMapper.INSTANCE.toDebtDTO(existingDebt));
-    // }
+   
 
 }

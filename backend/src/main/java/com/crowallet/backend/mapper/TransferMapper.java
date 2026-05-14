@@ -3,11 +3,9 @@ package com.crowallet.backend.mapper;
 import com.crowallet.backend.dto.TransferDTO;
 import com.crowallet.backend.dto.TransferResponseDTO;
 import com.crowallet.backend.entity.Transfer;
-import com.crowallet.backend.requests.TransferResponse;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 

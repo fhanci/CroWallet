@@ -19,14 +19,6 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 
-// Sub-menu Icons
-import AddIcon from "@mui/icons-material/Add";
-import RemoveIcon from "@mui/icons-material/Remove";
-import FolderIcon from "@mui/icons-material/Folder";
-import CreditCardIcon from "@mui/icons-material/CreditCard";
-import ListAltIcon from "@mui/icons-material/ListAlt";
-import ShowChartIcon from "@mui/icons-material/ShowChart";
-import ViewInArIcon from "@mui/icons-material/ViewInAr";
 
 // Sage Green Color
 const MENU_COLOR = "#AEC9B8";
@@ -92,36 +84,7 @@ const MenuPage = () => {
   const renderMenu = () => {
     let items = [];
 
-    // switch (activeMenu) {
-    // case "investment":
-    //   items = [
-    //     { label: "Hisse Hesaplarım", path: "/investment/stock_and_gold", icon: <ShowChartIcon fontSize="small" /> },
-    //     { label: "Altın Hesaplarım", path: "/investment/stock_and_gold", icon: <ViewInArIcon fontSize="small" /> }
-    //   ];
-    //   break;
-    // case "accounts":
-    //   items = [
-    //     { label: "Hesaplarım", path: "/accounts/my", icon: <FolderIcon fontSize="small" /> },
-    //     { label: "Hesap Ekle", path: "/account/create", icon: <AddIcon fontSize="small" /> }
-    //   ];
-    //   break;
-    // case "debt":
-    //   items = [
-    //     { label: "Borçlar", path: "/debt", icon: <CreditCardIcon fontSize="small" /> },
-    //     { label: "Borç Ekle", path: "/debt/create", icon: <AddIcon fontSize="small" /> },
-    //     { label: "Taksitler", path: "/debt/installments", icon: <ListAltIcon fontSize="small" /> }
-    //   ];
-    //   break;
-    // case "transfer":
-    //   items = [
-    //     { label: "Gelir Ekle", path: "/transfer/incoming", icon: <AddIcon fontSize="small" color="success" /> },
-    //     { label: "Gider Ekle", path: "/transfer/outgoing", icon: <RemoveIcon fontSize="small" color="error" /> },
-    //     { label: "Transfer Yap", path: "/transfer/accounts", icon: <SwapHorizIcon fontSize="small" color="action" /> }
-    //   ];
-    //   break;
-    // default:
-    //   return null;
-    // }
+  
 
     const contextMenuBgColor = "rgba(174, 201, 184, 0.85)";
 

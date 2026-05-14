@@ -1,6 +1,4 @@
-import React from "react";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
-// Sub-menu Icons
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { Button, Box } from "@mui/material";

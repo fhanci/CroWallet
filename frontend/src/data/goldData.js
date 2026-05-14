@@ -17,7 +17,6 @@ const goldTypeKey = ["GRA", "CEYREKALTIN", "YARIMALTIN", "TAMALTIN", "CUMHURIYET
 export const getGoldCurrentValue = async () => {
   const response = await axios.get('https://finans.truncgil.com/v4/today.json');
   const goldPrices = (Object.entries(response.data).filter(([key]) => goldTypeKey.includes(key)).map(data => data[1]))
-  // setGoldPrice(goldPrices)
 
   const updatedGoldTypes = GOLD_TYPES.map((goldType) => ({
     ...goldType,

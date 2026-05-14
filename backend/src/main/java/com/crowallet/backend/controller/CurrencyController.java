@@ -5,7 +5,6 @@ import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -98,10 +97,5 @@ public class CurrencyController {
         return ResponseEntity.ok(currencyService.setExchangeRate(exchangeRateDTO));
     }
 
-    // @DeleteMapping("/deleteRate")
-    // public ResponseEntity<Void> deleteRate() {
-    //     currencyService.deleteExchangeRate();
-    //     return ResponseEntity.noContent().build();
-    // }
 
 }

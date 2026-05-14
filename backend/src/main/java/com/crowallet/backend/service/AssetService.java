@@ -541,21 +541,7 @@ public class AssetService {
             BigDecimal costBasis = BigDecimal.ZERO;
             BigDecimal currentValue = BigDecimal.ZERO;
 
-            // İlgili asset'in bağlı olduğu 2 pozisyon arası hangi transactionlar var
-            // kontrol ediliyor.
-            // List<Transactions> historyCheck = transactionRepository
-            // .findAllByCreatedDateBetweenAndAsset(controlTime, positions.getCreatedDate(),
-            // positions.getAsset());
-
-            // 2 pozisyon arasında transaction yoksa işlem yoktur. İşlem yoksa bu pozisyonu
-            // tutmaya gerek yok.
-            // Demekki arada transaction yok. Haliyle işlem olmadığı için bu position'ın
-            // tutulmasına gerek yok
-            // if (historyCheck.size() == 0) {
-            // positionRepository.delete(positions);
-            // continue;
-            // }
-
+           
             // Eğer 2 position arasında işlem varsa geçmişten ilgili tarihe kadar olan tüm
             // transactionlar getiriliyor
             // Çünkü bu positiondaki kar zarar durumu geçmişteki tüm transactionlardan
@@ -593,8 +579,6 @@ public class AssetService {
 
             positionRepository.save(positions);
 
-            // Kontrol zamanı güncelleniyor
-            // controlTime = positions.getCreatedDate();
         }
         return true;
     }
@@ -621,12 +605,6 @@ public class AssetService {
 
         ExchangeRate exchangeRateValue = exchangeRateRepository.findByCurrency(moneyAccount.getCurrency()).orElseThrow(() -> new IllegalArgumentException("Geçersiz döviz kuru"));
         ExchangeRate transactionExchangeRate = exchangeRateRepository.findByCurrency(transaction.getCurrency()).orElseThrow(() -> new IllegalArgumentException("Geçersiz döviz kuru"));
-
-        // BigDecimal exchangeRateValue = exchangeRate.stream()
-        //         .filter(m -> m.containsKey(moneyAccount.getCurrency()))
-        //         .findFirst()
-        //         .map(m -> m.get(moneyAccount.getCurrency()))
-        //         .orElse(BigDecimal.ONE);
 
         System.out.println("exchangeRateValue: " + exchangeRateValue);
         BigDecimal returnTotalValue = transaction.getUnitPrice().multiply(transaction.getQuantity());

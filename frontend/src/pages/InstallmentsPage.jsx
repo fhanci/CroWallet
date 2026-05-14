@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Container,
   Typography,
@@ -42,7 +42,6 @@ import { CURRENCIES, exchangeRates } from "../data/currencies";
 import { toLocalISOTime } from "../utils/localIsoTime";
 
 const InstallmentsPage = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
   const [allPayments, setAllPayments] = useState([]);
@@ -74,7 +73,7 @@ const InstallmentsPage = () => {
         `http://localhost:8082/api/accounts/get-money-accounts?userId=${user.id}`,
         { headers: { Authorization: token ? `Bearer ${token}` : undefined } }
       );
-      console.log("Fetched accounts:", response.data);
+      
       setAccounts(response.data || []);
     } catch (error) {
       console.error("Error fetching accounts:", error);
@@ -94,44 +93,8 @@ const InstallmentsPage = () => {
         }
       );
 
-      console.log("Fetched Payments:", response.data);
-      // Collect all payments from all debts
-      // const payments = [];
-      // if (response.data.upcomingPayments) {
-      //   response.data.upcomingPayments.forEach((payment) => {
-      //     payments.push({ ...payment, status: payment.status || "PENDING" });
-      //   });
-      // }
-
-      // Also fetch paid payments by getting all debt details
-      // if (response.data.debts) {
-      //   for (const debt of response.data.debts) {
-      //     try {  
-      //       const debtPaymentsRes = await axios.get(
-      //         `${backendUrl}/api/debts/${debt.id}`,
-      //         {
-      //           headers: { Authorization: token ? `Bearer ${token}` : undefined },
-      //         }
-      //       );
-      //       if (debtPaymentsRes.data.payments) {
-      //         debtPaymentsRes.data.payments.forEach((p) => {
-      //           // Avoid duplicates
-      //           if (!payments.find((existing) => existing.id === p.id)) {
-      //             payments.push({
-      //               ...p,
-      //               debtToWhom: debt.toWhom,
-      //               debtCurrency: debt.debtCurrency,
-      //               accountName: debt.account?.accountName,
-      //             });
-      //           }
-      //         });
-      //       }
-      //     } catch (e) {
-      //       console.error("Error fetching debt payments:", e);
-      //     }
-      //   }
-      // }
-
+      
+      
       setAllPayments(response.data);
     } catch (error) {
       console.error("Error fetching payments:", error);
@@ -226,8 +189,6 @@ const InstallmentsPage = () => {
         }
       }
 
-      console.log("Paying Payment");
-      console.log(payingPayment);
       const payload = {
         moneyAccountId: selectedAccount.id,
         userId: user.id,
@@ -265,8 +226,6 @@ const InstallmentsPage = () => {
         }
       );
 
-      console.log("Account updated successfully");
-      console.log(payingPayment)
       //Transfer Kaydı da Ekle
       await axios.post(
         `${backendUrl}/api/transfers/create`,
@@ -399,9 +358,6 @@ const InstallmentsPage = () => {
   // Calculate amount to deduct from account
   const calculateDeductAmount = () => {
 
-    console.log("customExchangeRate:", customExchangeRate);
-    console.log("useRealTimeRate:", useRealTimeRate);
-
     let effectiveRate = 0;
     if (!useRealTimeRate) {
       effectiveRate = customExchangeRate;
@@ -441,7 +397,7 @@ const InstallmentsPage = () => {
     return account.balance >= requiredAmount;
   };
 
-  console.log("Filtered Payments:", allPayments);
+  
   const pendingCount = allPayments.filter((p) => p.status === "PENDING").length;
   const paidCount = allPayments.filter((p) => p.status === "PAID").length;
 

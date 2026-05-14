@@ -1,13 +1,9 @@
 package com.crowallet.backend.repository;
 
 import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import com.crowallet.backend.repository.UserRepository;
-import com.crowallet.backend.repository.AccountRepository;
 import java.util.Map;
 
 import com.crowallet.backend.entity.InvestmentHolding;
