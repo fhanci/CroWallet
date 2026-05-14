@@ -242,7 +242,7 @@ const DebtCreatePage = () => {
 
 
       // Set account for ACCOUNT_DEBT
-      if (debtType === "ACCOUNT_DEBT" && selectedAccount) {
+      if (selectedAccount) {
         newDebt.moneyAccountId = selectedAccount.id;
       }
 
@@ -291,7 +291,7 @@ const DebtCreatePage = () => {
 
 
       // If ACCOUNT_DEBT, increase account balance
-      if (debtType === "ACCOUNT_DEBT" && selectedAccount) {
+      if (selectedAccount) {
         const previousBalance = selectedAccount.balance;
         const updatedBalance = selectedAccount.balance + parseFloat(debtAmount);
 
@@ -336,33 +336,6 @@ const DebtCreatePage = () => {
             },
           }
         );
-
-
-
-
-
-
-
-
-        //   // Create transfer record
-        //   await axios.post(
-        //     `${backendUrl}/api/transfers/create`,
-        //     {
-        //       amount: parseFloat(debtAmount),
-        //       category: "Kredi",
-        //       details: `${finalToWhom}`,
-        //       type: "incoming",
-        //       person: finalToWhom,
-        //       inputPreviousBalance: selectedAccount.balance,
-        //       inputNextBalance: updatedBalance,
-        //     },
-        //     {
-        //       headers: {
-        //         Authorization: token ? `Bearer ${token}` : undefined,
-        //         "Content-Type": "application/json",
-        //       },
-        //     }
-        //   );
       }
 
       setOpenSnackbar(true);
@@ -435,7 +408,7 @@ const DebtCreatePage = () => {
               {debtType === "ACCOUNT_DEBT"
                 ? "Kredi tutarı seçilen banka hesabına eklenecek"
                 : debtType === "CASH_DEBT"
-                  ? "Borç herhangi bir hesaba eklenmeyecek (nakit olarak alındı)"
+                  ? "Borç tutarı seçilen banka hesabına eklenecek"
                   : ""}
             </Typography>
           </Box>
@@ -443,7 +416,7 @@ const DebtCreatePage = () => {
           <Divider sx={{ my: 2 }} />
 
           {/* For Kredi: Show bank account selection FIRST */}
-          <Fade in={debtType === "ACCOUNT_DEBT"} unmountOnExit>
+          <Fade in={true} unmountOnExit>
             <Box sx={{ mb: 3 }}>
               <FormControl fullWidth margin="normal" required>
                 <InputLabel>Banka Hesabı Seçin</InputLabel>
@@ -515,7 +488,7 @@ const DebtCreatePage = () => {
           </Fade>
 
           {/* Payment Type Selection - Show after account is selected for Kredi, or after type is selected for Nakit */}
-          <Fade in={(debtType === "ACCOUNT_DEBT" && selectedAccount) || debtType === "CASH_DEBT"} unmountOnExit>
+          <Fade in={selectedAccount} unmountOnExit>
             <Box sx={{ mb: 3 }}>
               <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 500 }}>
                 Ödeme Planı
